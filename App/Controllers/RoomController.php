@@ -85,7 +85,7 @@ class RoomController
         try {
             $numero      = $_POST['numero'] ?? '';
             $piso        = $_POST['piso'] ?? '';
-            $idTipo      = $_POST['tipo_habitacion'] ?? 0;
+            $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
             $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
             $precioNoche = $_POST['precio_noche_base'] ?? '';
 
@@ -112,7 +112,7 @@ class RoomController
             $habitacion = new Habitacion();
             $habitacion->setNumero((int)$numero);
             $habitacion->setPiso((int)$piso);
-            $habitacion->setTipoHabitacion((int)$idTipo);
+            $habitacion->setIdTipoHabitacion((int)$idTipo);
             $habitacion->setIdEstadoHabitacion((int)$idEstado);
             $habitacion->setPrecioNocheBase((float)$precioNoche);
 

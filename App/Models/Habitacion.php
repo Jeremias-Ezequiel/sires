@@ -13,7 +13,7 @@ class Habitacion extends Model
     private int $id;
     private int $numero;
     private int $piso;
-    private int $tipo_habitacion;
+    private int $id_tipo_habitacion;
     private int $id_estado_habitacion;
     private float $precio_noche_base;
 
@@ -33,7 +33,7 @@ class Habitacion extends Model
         }
 
         if ($type !== null && $type !== '') {
-            $conditions[] = "h.tipo_habitacion = :type";
+            $conditions[] = "h.id_tipo_habitacion = :type";
             $params['type'] = (int)$type;
         }
 
@@ -44,9 +44,9 @@ class Habitacion extends Model
 
         $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                        th.descripcion AS tipo, eh.descripcion AS estado,
-                       h.tipo_habitacion, h.id_estado_habitacion
+                       h.id_tipo_habitacion, h.id_estado_habitacion
                 FROM Habitaciones h
-                JOIN Tipos_Habitacion th ON h.tipo_habitacion = th.id
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id";
 
         if (!empty($conditions)) {
@@ -107,14 +107,14 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
 
-            $sql = "INSERT INTO Habitaciones (numero, piso, tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                    VALUES (:numero, :piso, :tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
+                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 ':numero'               => $habitacion->getNumero(),
                 ':piso'                 => $habitacion->getPiso(),
-                ':tipo_habitacion'      => $habitacion->getTipoHabitacion(),
+                ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
                 ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
                 ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
             ]);
@@ -161,16 +161,16 @@ class Habitacion extends Model
         $this->piso = $piso;
     }
 
-    public function getTipoHabitacion(): int
+    public function getIdTipoHabitacion(): int
     {
-        return $this->tipo_habitacion;
+        return $this->id_tipo_habitacion;
     }
-    public function setTipoHabitacion(int $tipo_habitacion): void
+    public function setIdTipoHabitacion(int $id_tipo_habitacion): void
     {
-        if ($tipo_habitacion <= 0) {
+        if ($id_tipo_habitacion <= 0) {
             throw new Exception("El tipo de habitación no es válido.");
         }
-        $this->tipo_habitacion = $tipo_habitacion;
+        $this->id_tipo_habitacion = $id_tipo_habitacion;
     }
 
     public function getIdEstadoHabitacion(): int

@@ -43,12 +43,12 @@
 
         <div class="form-grid-layout grid-three-columns">
             <div class="form-field-group">
-                <label class="label-input" for="tipo_habitacion">Tipo de Habitación</label>
-                <select id="tipo_habitacion" name="tipo_habitacion" required class="select-form-field">
-                    <option value="" disabled <?= !isset($_POST['tipo_habitacion']) && !isset($old['tipo_habitacion']) ? 'selected' : '' ?>>Seleccione un Tipo</option>
+                <label class="label-input" for="id_tipo_habitacion">Tipo de Habitación</label>
+                <select id="id_tipo_habitacion" name="id_tipo_habitacion" required class="select-form-field">
+                    <option value="" disabled <?= !isset($_POST['id_tipo_habitacion']) && !isset($old['id_tipo_habitacion']) ? 'selected' : '' ?>>Seleccione un Tipo</option>
                     <?php if (!empty($tipos)): ?>
                         <?php foreach ($tipos as $tipo): ?>
-                            <?php $current_tipo_id = $_POST['tipo_habitacion'] ?? $old['tipo_habitacion'] ?? ''; ?>
+                            <?php $current_tipo_id = $_POST['id_tipo_habitacion'] ?? $old['id_tipo_habitacion'] ?? ''; ?>
                             <option value="<?= $tipo['id'] ?>" <?= (string)$current_tipo_id === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
                         <?php endforeach; ?>
                     <?php endif; ?>
