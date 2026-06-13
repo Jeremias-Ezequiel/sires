@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIRES - Registro de Usuario</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/register.css">
+</head>
+
+<body>
+
+    <div class="main-container">
+
+        <div class="logo-side">
+            <img src="<?= APP_PREFIX ?>/public/img/logo.png" alt="Logo SIRES" class="logo-formulario">
+        </div>
+
+        <div class="register-card">
+            <h2>CREAR CUENTA</h2>
+            <p class="register-subtitle">
+                Registrá un nuevo operador en el sistema
+            </p>
+
+            <?php if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            } ?>
+
+            <?php if (isset($_SESSION['registro_exitoso'])): ?>
+                <div class="alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <?= htmlspecialchars($_SESSION['registro_exitoso']) ?>
+                </div>
+                <?php unset($_SESSION['registro_exitoso']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['registro_error'])): ?>
+                <div class="alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= htmlspecialchars($_SESSION['registro_error']) ?>
+                </div>
+                <?php unset($_SESSION['registro_error']); ?>
+            <?php endif; ?>
+
+            <form action="<?= APP_PREFIX ?>/register/process" method="POST" autocomplete="off">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="label-input">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan" required
+                            pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                            title="El nombre solo puede contener letras y espacios.">
+                    </div>
+                    <div class="form-group">
+                        <label class="label-input">Apellido</label>
+                        <input type="text" name="apellido" id="apellido" placeholder="Ej. Pérez" required
+                            pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                            title="El apellido solo puede contener letras y espacios.">
+                    </div>
+                </div>
+
+                <label class="label-input">Correo Electrónico</label>
+                <input type="email" name="email" placeholder="operador@sires.com" required>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="label-input">Contraseña</label>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label-input">Confirmar Contraseña</label>
+                        <input type="password" name="confirm_password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <label class="label-input">Asignar Rol del Sistema</label>
+                <select name="rol" required>
+                    <option value="" disabled selected>Seleccione un rol...</option>
+                    <?php if (isset($roles) && is_array($roles)): ?>
+                        <?php foreach ($roles as $rol): ?>
+                            <option value="<?= $rol['id'] ?>"><?= $rol['descripcion'] ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn-register">REGISTRARSE</button>
+
+                    <a href="<?= APP_PREFIX ?>/dashboard" class="btn-back-dashboard">
+                        <i class="fas fa-arrow-left"></i> Volver al Inicio
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const password = document.querySelector('input[name="password"]');
+            const confirmPassword = document.querySelector('input[name="confirm_password"]');
+            const inputNombre = document.getElementById('nombre');
+            const inputApellido = document.getElementById('apellido');
+
+            // 🚫 Bloqueo absoluto de números y símbolos (Escritura, pegado y arrastrado)
+            const inputsLetras = [inputNombre, inputApellido];
+            inputsLetras.forEach(input => {
+                if (input) {
+                    // 1. Al escribir
+                    input.addEventListener('keypress', function(e) {
+                        const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/;
+                        if (!regex.test(e.key)) {
+                            e.preventDefault();
+                        }
+                    });
+
+                    // 2. Al cambiar el contenido dinámicamente
+                    input.addEventListener('input', function() {
+                        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                    });
+
+                    // 3. Al pegar texto explícitamente
+                    input.addEventListener('paste', function(e) {
+                        const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                        const regexGeneral = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+                        if (!regexGeneral.test(dataPegada)) {
+                            e.preventDefault();
+                            alert('❌ No podés pegar números o símbolos en este campo.');
+                        }
+                    });
+                }
+            });
+
+            // Validación de coincidencia de contraseñas
+            form.addEventListener('submit', function(e) {
+                if (password.value !== confirmPassword.value) {
+                    e.preventDefault();
+                    alert('❌ Las contraseñas no coinciden. Por favor, revisalas antes de continuar.');
+                    password.style.borderColor = '#ef4444';
+                    confirmPassword.style.borderColor = '#ef4444';
+                    confirmPassword.focus();
+                }
+            });
+
+            [password, confirmPassword].forEach(input => {
+                input.addEventListener('input', function() {
+                    password.style.borderColor = '';
+                    confirmPassword.style.borderColor = '';
+                });
+            });
+        });
+    </script>
+
+</body>
+
+</html>

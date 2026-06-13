@@ -1,0 +1,163 @@
+/* Estilos específicos para la pantalla de mantenimiento */
+.maintenance-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--fondo-principal);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.maintenance-card {
+    background-color: var(--fondo-panel);
+    border: 1px solid var(--borde-input);
+    border-radius: 12px;
+    padding: 40px 30px;
+    max-width: 550px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Icono principal de engranajes con animación sutil */
+.icon-container {
+    position: relative;
+    margin-bottom: 30px;
+    display: inline-block;
+}
+
+.icon-main {
+    font-size: 4.5rem;
+    color: var(--dorado-sires);
+    animation: spin-slow 8s linear infinite;
+}
+
+.icon-sub {
+    font-size: 2.2rem;
+    color: var(--texto-gris);
+    position: absolute;
+    bottom: -5px;
+    right: -10px;
+    animation: spin-reverse 4s linear infinite;
+}
+
+.maintenance-card h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--texto-blanco);
+    margin-bottom: 15px;
+    letter-spacing: 0.5px;
+}
+
+.maintenance-card p {
+    color: var(--texto-gris);
+    font-size: 11pt;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+/* Barra de progreso decorativa */
+.progress-bar-container {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    height: 6px;
+    width: 80%;
+    margin: 0 auto 30px auto;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    background-color: var(--dorado-sires);
+    height: 100%;
+    width: 35%;
+    /* Simula un avance del trabajo */
+    border-radius: 20px;
+    animation: pulse-progress 2s ease-in-out infinite alternate;
+}
+
+.badge-503 {
+    display: inline-block;
+    background-color: rgba(205, 164, 52, 0.1);
+    color: var(--dorado-sires);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(205, 164, 52, 0.2);
+}
+
+/* =====================================================================
+   🔄 ESTILOS DEL BOTÓN VOLVER ATRÁS (Agregado)
+   ===================================================================== */
+.btn-back-container {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background-color: transparent;
+    color: var(--dorado-sires);
+    border: 1px solid var(--borde-input);
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 10pt;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background-color: rgba(205, 164, 52, 0.1);
+    color: var(--dorado-sires-hover);
+    border-color: var(--dorado-sires);
+    transform: translateX(-3px); /* Desplazamiento sutil hacia la izquierda */
+}
+
+.btn-back i {
+    font-size: 0.95rem;
+}
+
+
+/* =====================================================================
+   ANIMACIONES CSS 
+   ===================================================================== */
+@keyframes spin-slow {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-reverse {
+    0% {
+        transform: rotate(360deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes pulse-progress {
+    0% {
+        transform: translateX(-20%);
+        width: 30%;
+    }
+
+    100% {
+        transform: translateX(120%);
+        width: 50%;
+    }
+}

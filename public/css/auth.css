@@ -1,0 +1,180 @@
+/* ==========================================================================
+   📂 /public/css/auth.css
+   Estilos específicos para los recuadros de recuperación (Pantallas 3 y 4)
+   ========================================================================== */
+
+/* Tarjeta flotante centralizada */
+.auth-card {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--tarjeta-azul, #112240);
+  border: 1px solid var(--borde-input, #233554);
+  border-radius: 12px;
+  padding: 40px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Encabezado interno */
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-header h2 {
+  font-size: 1.6rem;
+  color: var(--texto-blanco, #e6f1ff);
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.auth-header p {
+  color: var(--texto-gris, #8892b0);
+  font-size: 0.95rem;
+  margin: 15px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Círculo con el ícono azul de las maquetas */
+.auth-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.auth-icon-circle i {
+  color: #38bdf8;
+  font-size: 1.5rem;
+}
+
+/* Grupos de formularios */
+.auth-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.auth-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--dorado-sires, #fbbf24);
+  letter-spacing: 0.5px;
+}
+
+/* Inputs oscuros integrados */
+.auth-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  background-color: #151f32;
+  border: 1px solid var(--borde-input, #233554);
+  border-radius: 8px;
+  color: var(--texto-blanco, #e6f1ff);
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: all 0.25s ease-in-out;
+}
+
+.auth-input:focus {
+  outline: none;
+  background-color: #1a263d;
+  border-color: var(--dorado-sires, #fbbf24);
+  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.15);
+}
+
+/* Contenedor especial para el ojito de las claves */
+.auth-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.auth-password-wrapper i {
+  position: absolute;
+  right: 16px;
+  color: var(--texto-gris, #8892b0);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.auth-password-wrapper i:hover {
+  color: var(--dorado-sires, #fbbf24);
+}
+
+/* Botón Azul de confirmación */
+.auth-btn-submit {
+  width: 100%;
+  height: 48px;
+  background-color: #1d4ed8; /* Azul firme de tus capturas */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin-top: 10px;
+}
+
+.auth-btn-submit:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+.auth-btn-submit:active {
+  transform: translateY(0);
+}
+
+/* Enlaces del pie */
+.auth-footer-link {
+  text-align: center;
+  margin-top: 25px;
+}
+
+.auth-footer-link a {
+  color: #38bdf8;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link a:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   🚨 CAJA DE ALERTA DE ERRORES (Modo Oscuro SIRES)
+   ========================================================================== */
+.alert-error {
+  background-color: rgba(239, 68, 68, 0.12); /* Rojo suave traslúcido */
+  border: 1px solid #ef4444;                 /* Borde rojo sólido */
+  color: #fca5a5;                            /* Texto pastel legible en fondo oscuro */
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 12px;                                 /* Separación perfecta entre el ícono y el texto */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  line-height: 1.4;
+}
+
+/* Color y tamaño específico para el ícono de FontAwesome integrado */
+.alert-error i {
+  color: #f87171;
+  font-size: 16px;
+  flex-shrink: 0;                            /* Evita que el ícono se achique si el texto es largo */
+}

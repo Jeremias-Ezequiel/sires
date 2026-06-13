@@ -1,0 +1,179 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Administración de Empleados</h1>
+        <p>Gestión de personal, roles y accesos al sistema SIRES</p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= APP_PREFIX ?>/dashboard/employees/add" class="btn-add">
+            <i class="fas fa-plus"></i> Registrar Empleado
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?> <!-- no se si dejarlo, es un mensaje de que no tiene permiso para hacer cosas-->
+    <div class="alert-error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert-<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section filter-section">
+    <form action="<?= APP_PREFIX ?>/dashboard/employees" method="GET" class="filter-form">
+
+        <div class="form-group-search">
+            <label class="label-input">Buscar por Nombre</label>
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group-role">
+            <label class="label-input">Filtrar por Rol</label>
+            <select name="role_filter" class="select-role">
+                <option value="">Todos los Roles</option>
+                <?php if (!empty($roles)): ?>
+                    <?php foreach ($roles as $rol): ?>
+                        <option value="<?= $rol->getId() ?>" <?= ($_GET['role_filter'] ?? '') === (string)$rol->getId() ? 'selected' : '' ?>><?= htmlspecialchars($rol->getDescripcion()) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <div class="form-group-role">
+            <label class="label-input">Filtrar por estatus</label>
+            <select name="status_filter" class="select-status">
+                <option value="">Todos los estatus</option>
+
+                <option value="<?= $userModel::ACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::ACTIVE ? 'selected' : '' ?>>
+                    Activo
+                </option>
+
+                <option value="<?= $userModel::INACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::INACTIVE ? 'selected' : '' ?>>
+                    Inactivo
+                </option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-primary btn-filter">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <?php
+        if ($hasSearch || $hasRole || $hasStatus):
+        ?>
+            <a href="<?= APP_PREFIX ?>/dashboard/employees" class="btn-clear-filters">
+                <i class="fas fa-undo"></i>Limpiar Filtros
+            </a>
+        <?php endif; ?>
+    </form>
+</section>
+
+<?php if (!empty($listaEmpleados) && is_array($listaEmpleados)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estatus</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($listaEmpleados as $emp): ?>
+                        <tr>
+                            <td><strong>#<?= $emp->getId() ?></strong></td>
+                            <td><?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?></td>
+                            <td><?= htmlspecialchars($emp->getEmail()) ?></td>
+                            <td>
+                                <?php
+                                switch ($emp->getIdRol()) {
+                                    case $rolModel::ADMINISTRADOR:
+                                        echo '<span class="status-badge status-disponible">Admin</span>';
+                                        break;
+                                    case $rolModel::RECEPCIONISTA:
+                                        echo '<span class="status-badge status-recepcionista">Recepcionista</span>';
+                                        break;
+                                    case $rolModel::GERENTE:
+                                        echo '<span class="status-badge status-gerente">Gerente</span>';
+                                        break;
+                                    case $rolModel::AUDITOR:
+                                        echo '<span class="status-badge status-auditor">Auditor</span>';
+                                        break;
+                                    default:
+                                        echo '<span class="status-badge status-desconocido">Desconocido</span>';
+                                        break;
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <?php
+                                switch ($emp->getIsActive()) {
+                                    case $emp::ACTIVE:
+                                        echo '<span>Activo</span>';
+                                        break;
+                                    case $emp::INACTIVE:
+                                        echo '<span>Inactivo</span>';
+                                        break;
+                                    default:
+                                        echo '<span class="status-badge status-desconocido">Desconocido</span>';
+                                        break;
+                                }
+                                ?>
+                            </td>
+
+                            <td class="cell-actions">
+                                <div class="actions-group-container">
+
+                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/edit?id=<?= $emp->getId() ?>"
+                                        class="emp-action-btn btn-edit-hover" title="Modificar Datos">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/reset-password?id=<?= $emp->getId() ?>"
+                                        class="emp-action-btn btn-pass-hover" title="Cambiar Contraseña">
+                                        <i class="fas fa-key"></i>
+                                    </a>
+
+                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/delete?id=<?= $emp->getId() ?>"
+                                        class="emp-action-btn btn-delete-hover" title="Dar de Baja"
+                                        onclick="return confirm('¿Está seguro de que desea dar de baja al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
+                                        <i class="fas fa-user-minus"></i>
+                                    </a>
+
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <h3>No se encontraron empleados</h3>
+            <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
+
+            <?php if (!empty($_GET['search']) || !empty($_GET['role_filter'])): ?>
+                <a href="<?= APP_PREFIX ?>/dashboard/employees" class="btn-clear-filters">
+                    <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
+                </a>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>

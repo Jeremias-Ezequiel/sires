@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema en Mantenimiento | SIRES</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/maintenance.css">
+</head>
+
+<body>
+
+    <div class="maintenance-wrapper">
+        <main class="maintenance-card">
+
+            <div class="icon-container">
+                <i class="fa-solid fa-gears icon-main"></i>
+            </div>
+
+            <h1>Sitio en Mantenimiento</h1>
+
+            <p>
+                Estamos realizando mejoras programadas en los servidores de <strong>SIRES</strong> para ofrecerte una
+                experiencia más rápida y segura. Volveremos a estar en línea en unos minutos.
+            </p>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill"></div>
+            </div>
+
+            <span class="badge-503">
+                <i class="fa-solid fa-server"></i> Estado: HTTP 503 (Servicio Temporalmente No Disponible)
+            </span>
+
+            <div class="btn-back-container">
+                <a href="<?= APP_PREFIX ?>/dashboard" class="btn-back"
+                    onclick="event.preventDefault(); history.back();">
+                    <i class="fa-solid fa-arrow-left"></i> Volver atrás
+                </a>
+            </div>
+
+        </main>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIRES - Dashboard Hotelero</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+     <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
+     <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/dashboard.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <aside class="sidebar">
+            <div class="logo-container">
+               <img src="<?= APP_PREFIX ?>/public/img/logo.png" alt="Logo SIRES" class="logo-img" style="max-width: 210px; height: auto; display: block; margin: 20px auto 15px auto; padding: 0 10px;">
+            </div>
+           <nav>
+                <ul class="nav-links">
+                    <li><a href="<?= APP_PREFIX ?>/dashboard" class="nav-link active"><i class="fas fa-home"></i>Inicio</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-users"></i>Clientes</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-calendar-alt"></i>Reservas</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/register" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
+                    <li><a href="<?= APP_PREFIX ?>/logout" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+
+                <div class="dashboard-date-container" style="
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1e293b; /* Fondo slate oscuro de tu paleta */
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        ">
+            <i class="far fa-calendar-alt" style="color: #38bdf8; font-size: 16px;"></i>
+            <span style="
+                color: #f8fafc; 
+                font-size: 14px; 
+                font-weight: 600;
+                letter-spacing: 0.3px;
+            ">
+            <?= $fecha_formateada ?>
+        </span>
+        </div>
+            <header class="main-header">
+                <h1>Inicio</h1>
+                <p>Resumen general del hotel</p>
+            </header>
+
+            <section class="summary-grid">
+                <article class="summary-card">
+                    <i class="fas fa-bed card-icon"></i>
+                    <div class="card-info">
+                        <p><?= $disponibles ?></p>
+                        <h3>Disponibles Habitaciones</h3>
+                    </div>
+                </article>
+
+                <article class="summary-card">
+                    <i class="fas fa-user-friends card-icon"></i>
+                    <div class="card-info">
+                        <p><?= $ocupadas ?></p>
+                        <h3>Ocupadas Habitaciones</h3>
+                    </div>
+                </article>
+
+                <article class="summary-card">
+                    <i class="fas fa-calendar-day card-icon"></i>
+                    <div class="card-info">
+                        <p><?= $reservadas ?></p>
+                        <h3>Reservas hoy</h3>
+                    </div>
+                </article>
+
+                <article class="summary-card">
+                    <i class="fas fa-dollar-sign card-icon"></i>
+                    <div class="card-info">
+                        <p>$<?= number_format($ingresos_hoy, 0, ',', '.') ?></p>
+                        <h3>Ingresos hoy</h3>
+                    </div>
+                </article>
+            </section>
+
+            <section class="capacity-filter-grid">
+                <div class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="location.href='?capacidad=2'">
+                    <div class="capacity-card-header">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <span>Habitaciones</span>
+                            <h4>2 personas</h4>
+                        </div>
+                    </div>
+                    <div class="capacity-card-body">
+                        <strong><?= $disp_2_personas ?></strong>
+                        <p>Disponibles</p>
+                    </div>
+                </div>
+
+                <div class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="location.href='?capacidad=3'">
+                    <div class="capacity-card-header">
+                        <i class="fas fa-users-cog"></i>
+                        <div>
+                            <span>Habitaciones</span>
+                            <h4>3 personas</h4>
+                        </div>
+                    </div>
+                    <div class="capacity-card-body">
+                        <strong><?= $disp_3_personas ?></strong>
+                        <p>Disponibles</p>
+                    </div>
+                </div>
+
+                <div class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="location.href='?capacidad=4'">
+                    <div class="capacity-card-header">
+                        <i class="fas fa-user-friends"></i>
+                        <div>
+                            <span>Habitaciones</span>
+                            <h4>4 personas</h4>
+                        </div>
+                    </div>
+                    <div class="capacity-card-body">
+                        <strong><?= $disp_4_personas ?></strong>
+                        <p>Disponibles</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="details-section">
+                <div class="details-header">
+                    <h2>Habitaciones - <span style="color: #38bdf8;"><?= $capacidad_filtrada === 2 ? '2 personas' : ($capacidad_filtrada === 3 ? '3 personas' : '4 personas') ?></span></h2>
+                </div>
+
+                <div class="details-table-wrapper">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>N° Habitaciones</th>
+                                <th>Piso</th>
+                                <th>Estado</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($habitaciones) > 0): ?>
+                                <?php foreach ($habitaciones as $hab): 
+                                    $estadoLower = strtolower($hab['estado']);
+                                    $claseEstado = 'status-disponible';
+                                    if (strpos($estadoLower, 'ocupad') !== false) {
+                                        $claseEstado = 'status-ocupada';
+                                    } elseif (strpos($estadoLower, 'mantenimient') !== false || strpos($estadoLower, 'bloquead') !== false) {
+                                        $claseEstado = 'status-reservada';
+                                    }
+                                ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($hab['numero']) ?></td>
+                                    <td><?= htmlspecialchars($hab['piso']) ?></td>
+                                    <td>
+                                        <span class="status-badge <?= $claseEstado ?>">
+                                            <?= htmlspecialchars($hab['estado']) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= htmlspecialchars($hab['tipo']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--texto-gris); padding: 30px;">
+                                        No se encontraron habitaciones registradas de este tipo.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-banner">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Si está dentro del lapso de 24 horas aparece como no disponible. Las habitaciones reservadas dentro de las próximas 24 horas no se muestran como disponibles.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+</body>
+</html>

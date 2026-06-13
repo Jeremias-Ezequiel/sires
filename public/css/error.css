@@ -1,0 +1,76 @@
+/* =====================================================================
+   SIRES - ESTILOS PARA PÁGINAS DE ERROR (error.css)
+   ===================================================================== */
+
+/* Contenedor principal centrado de forma absoluta */
+.error-page-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* El número gigante del error */
+.error-code {
+    font-size: 120pt;
+    font-weight: 600;
+    color: var(--dorado-sires);
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -2px;
+}
+
+/* Tarjeta contenedora del mensaje */
+.error-card {
+    background-color: var(--tarjeta-azul);
+    border: 1px solid var(--borde-input);
+    border-radius: 8px;
+    padding: 40px 30px;
+    margin-top: -10px; /* Acercamiento estético al número */
+    box-shadow: 0 10px 30px rgba(2, 12, 27, 0.7);
+}
+
+.error-card h2 {
+    color: var(--texto-blanco);
+    font-size: 18pt;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.error-card p {
+    color: var(--texto-gris);
+    font-size: 11pt;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Botón de retorno estilizado */
+.btn-back {
+    display: inline-block;
+    background-color: transparent;
+    color: var(--dorado-sires);
+    border: 2px solid var(--dorado-sires);
+    padding: 12px 28px;
+    font-size: 10pt;
+    font-weight: 600;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+/* Efecto Hover profesional para el botón */
+.btn-back:hover {
+    background-color: rgba(251, 191, 36, 0.1); /* Destello sutil dorado */
+    transform: translateY(-2px);
+}
+
+.btn-back i {
+    margin-right: 8px;
+}

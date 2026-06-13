@@ -1,0 +1,173 @@
+<header class="main-header header-flex">
+    <div>
+        <h1>Inicio</h1>
+        <p>Resumen general del hotel</p>
+    </div>
+    <div class="dashboard-date-container">
+        <i class="fas fa-calendar-alt date-icon"></i>
+        <span id="fecha-actual" class="date-text"><?= isset($fecha_formateada) ? $fecha_formateada : date('d/m/Y') ?></span>
+    </div>
+</header>
+
+<section class="summary-grid">
+    <article class="summary-card">
+        <i class="fas fa-bed card-icon"></i>
+        <div class="card-info">
+            <p><?= $disponibles ?></p>
+            <h3>Habitaciones Disponibles</h3>
+        </div>
+    </article>
+    <article class="summary-card">
+        <i class="fas fa-user-friends card-icon"></i>
+        <div class="card-info">
+            <p><?= $ocupadas ?></p>
+            <h3>Habitaciones Ocupadas</h3>
+        </div>
+    </article>
+    <article class="summary-card">
+        <i class="fas fa-calendar-day card-icon"></i>
+        <div class="card-info">
+            <p><?= $reservadas ?></p>
+            <h3>Reservas hoy</h3>
+        </div>
+    </article>
+    <article class="summary-card">
+        <i class="fas fa-dollar-sign card-icon"></i>
+        <div class="card-info">
+            <p>$<?= number_format($ingresos_hoy, 0, ',', '.') ?></p>
+            <h3>Ingresos hoy</h3>
+        </div>
+    </article>
+</section>
+
+<section class="capacity-filter-grid">
+    <div id="btn-cap-2" class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="filtrarHabitaciones(2)">
+        <div class="capacity-card-header">
+            <i class="fas fa-users"></i>
+            <div>
+                <span>Habitaciones</span>
+                <h4>2 personas</h4>
+            </div>
+        </div>
+        <div class="capacity-card-body">
+            <strong><?= $disp_2_personas ?></strong>
+            <p>Disponibles</p>
+        </div>
+    </div>
+
+    <div id="btn-cap-3" class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="filtrarHabitaciones(3)">
+        <div class="capacity-card-header">
+            <i class="fas fa-users-cog"></i>
+            <div>
+                <span>Habitaciones</span>
+                <h4>3 personas</h4>
+            </div>
+        </div>
+        <div class="capacity-card-body">
+            <strong><?= $disp_3_personas ?></strong>
+            <p>Disponibles</p>
+        </div>
+    </div>
+
+    <div id="btn-cap-4" class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="filtrarHabitaciones(4)">
+        <div class="capacity-card-header">
+            <i class="fas fa-user-friends"></i>
+            <div>
+                <span>Habitaciones</span>
+                <h4>4 personas</h4>
+            </div>
+        </div>
+        <div class="capacity-card-body">
+            <strong><?= $disp_4_personas ?></strong>
+            <p>Disponibles</p>
+        </div>
+    </div>
+</section>
+
+<section class="details-section">
+    <div class="details-header">
+        <h2>Habitaciones - <span id="tabla-titulo-capacidad" class="room-type-highlight"><?= $capacidad_filtrada === 3 ? '3 personas' : ($capacidad_filtrada === 4 ? '4 personas' : '2 personas') ?></span></h2>
+    </div>
+
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <thead>
+                <tr>
+                    <th>N° Habitaciones</th>
+                    <th>Piso</th>
+                    <th>Estado</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-habitaciones-body">
+                <?php if (count($habitaciones) > 0): ?>
+                    <?php foreach ($habitaciones as $room):
+                        $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'status-ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'status-reservada' : 'status-disponible');
+                    ?>
+                        <tr>
+                            <td><?= htmlspecialchars((string)$room['numero']) ?></td>
+                            <td><?= htmlspecialchars((string)$room['piso']) ?></td>
+                            <td><span class="status-badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><?= htmlspecialchars($room['tipo']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="4" class="table-empty-message">No se encontraron habitaciones.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    function filtrarHabitaciones(capacidad) {
+        document.querySelectorAll('.capacity-card').forEach(card => card.classList.remove('active'));
+        document.getElementById('btn-cap-' + capacidad).classList.add('active');
+        document.getElementById('tabla-titulo-capacidad').innerText = capacidad + ' personas';
+
+        fetch('?capacidad=' + capacidad, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('tabla-habitaciones-body');
+                tbody.innerHTML = '';
+
+                if (data.fecha) {
+                    document.getElementById('fecha-actual').innerText = data.fecha;
+                }
+
+                if (data.success && data.habitaciones.length > 0) {
+                    data.habitaciones.forEach(room => {
+                        const statusLower = room.estado.toLowerCase();
+                        let statusClass = 'status-disponible';
+
+                        if (statusLower.includes('ocupad')) {
+                            statusClass = 'status-ocupada';
+                        } else if (statusLower.includes('mantenimient') || statusLower.includes('bloquead')) {
+                            statusClass = 'status-reservada';
+                        }
+
+                        const fila = `
+                    <tr>
+                        <td>${room.numero}</td>
+                        <td>${room.piso}</td>
+                        <td><span class="status-badge ${statusClass}">${room.estado}</span></td>
+                        <td>${room.tipo}</td>
+                    </tr>
+                `;
+                        tbody.innerHTML += fila;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="table-empty-message">No se encontraron habitaciones registradas para esta capacidad.</td></tr>`;
+                }
+            })
+            .catch(error => console.error('Error AJAX:', error));
+    }
+</script>

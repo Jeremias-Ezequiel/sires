@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error 405 - Método No Permitido | SIRES</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
+    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/error.css">
+</head>
+
+<body>
+
+    <div class="error-page-container">
+
+        <h1 class="error-code" style="color: #ef4444;">405</h1>
+
+        <div class="error-card">
+            <h2>Método no permitido</h2>
+            <p>
+                La petición HTTP realizada no está permitida para la ruta solicitada. El servidor de **SIRES** rechazó
+                la acción por razones de seguridad de la infraestructura.
+            </p>
+
+            <a href="<?= APP_PREFIX ?>/dashboard" class="btn-back" onclick="event.preventDefault(); history.back();">
+                <i class=" fa-solid fa-arrow-left"></i> Volver al inicio
+            </a>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
