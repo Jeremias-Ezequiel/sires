@@ -6,7 +6,8 @@ use FastRoute\RouteCollector;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EmployeeController;
-use App\Controllers\RecoveryController; 
+use App\Controllers\RecoveryController;
+use App\Controllers\RoomController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\SanitizeLoginMiddleware;
@@ -90,6 +91,25 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/employees/add/process', [
         'action' => [EmployeeController::class, 'addEmployee'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    // Habitaciones
+    $r->addRoute('GET', '/dashboard/habitaciones', [
+        'action' => [RoomController::class, 'showRooms'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/habitaciones/add', [
+        'action' => [RoomController::class, 'showNewRoomForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/habitaciones/add/process', [
+        'action' => [RoomController::class, 'addRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);

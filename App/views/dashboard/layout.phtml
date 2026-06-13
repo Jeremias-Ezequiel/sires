@@ -58,7 +58,7 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= APP_PREFIX ?>/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= APP_PREFIX ?>/dashboard/habitaciones" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-bed"></i>Habitaciones
                             </a>
                         </li>
