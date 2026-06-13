@@ -41,9 +41,9 @@ class DashboardController
                 $disponibles = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1")->fetchColumn();
                 $ocupadas    = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 2")->fetchColumn();
 
-                $disp_2_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND id_tipo_habitacion IN (1, 4)")->fetchColumn();
-                $disp_3_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND id_tipo_habitacion = 2")->fetchColumn();
-                $disp_4_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND id_tipo_habitacion = 3")->fetchColumn();
+                $disp_2_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND tipo_habitacion IN (1, 4)")->fetchColumn();
+                $disp_3_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND tipo_habitacion = 2")->fetchColumn();
+                $disp_4_personas = (int)$pdo->query("SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = 1 AND tipo_habitacion = 3")->fetchColumn();
 
                 // 2. Filtrado de la tabla según la capacidad requerida
                 $tipos_ids = ($capacidad_filtrada === 3) ? [2] : (($capacidad_filtrada === 4) ? [3] : [1, 4]);
@@ -51,9 +51,9 @@ class DashboardController
 
                 $sqlTable = "SELECT h.numero, h.piso, th.descripcion AS tipo, eh.descripcion AS estado
                              FROM Habitaciones h
-                             JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                             JOIN Tipos_Habitacion th ON h.tipo_habitacion = th.id
                              JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
-                             WHERE h.id_tipo_habitacion IN ($placeholders)
+                             WHERE h.tipo_habitacion IN ($placeholders)
                              ORDER BY h.numero ASC";
 
                 $stmtTable = $pdo->prepare($sqlTable);
