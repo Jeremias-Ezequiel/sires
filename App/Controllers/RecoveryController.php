@@ -14,7 +14,9 @@ class RecoveryController
      */
     public function showRecoveryForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
         $errorMessage = $_SESSION['error_message'] ?? null;
         unset($_SESSION['error_message']);
@@ -28,14 +30,15 @@ class RecoveryController
      */
     public function processRecovery(): void
     {
-        if (session_status() === PHP_SESSION_NONE) { session_start(); }
-        
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         $email = $_POST['email'] ?? '';
-        $prefix = $_ENV['APP_PREFIX'] ?? '';
 
         if (empty($email)) {
             $_SESSION['error_message'] = "Por favor, ingresá tu correo electrónico.";
-            header('Location: ' . $prefix . '/password/recovery');
+            header('Location: /sires/password/recovery');
             exit;
         }
 
@@ -46,7 +49,7 @@ class RecoveryController
             // Si el mail no existe en la base de datos
             if (!$usuario) {
                 $_SESSION['error_message'] = "El correo electrónico ingresado no pertenece a ningún usuario registrado.";
-                header('Location: ' . $prefix . '/password/recovery');
+                header('Location: /sires/password/recovery');
                 exit;
             }
 
@@ -74,15 +77,15 @@ class RecoveryController
 
             // Remitente del sistema y destinatario dinámico mapeado del objeto Usuario
             $mail->setFrom('no-reply@sires.com', 'Sistema SIRES');
-            $mail->addAddress($usuario->getEmail(), $usuario->getNombre()); 
+            $mail->addAddress($usuario->getEmail(), $usuario->getNombre());
 
             // Cuerpo en formato HTML
             $mail->isHTML(true);
             $mail->Subject = 'Recuperación de Contraseña - SIRES';
-            
+
             // Construimos el enlace dinámico apuntando a la IP de tu servidor Apache
-            $linkReal = "http://" . $_SERVER['HTTP_HOST'] . $prefix . "/password/reset/" . $token;
-            
+            $linkReal = "http://" . $_SERVER['HTTP_HOST'] . "/sires/password/reset/" . $token;
+
             // Maquetado del correo electrónico
             $mail->Body = "
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;'>
@@ -106,13 +109,12 @@ class RecoveryController
 
             // 🟢 3. Redirigimos al Login informando el éxito del envío
             $_SESSION['flash_success'] = "¡Solicitud procesada! Te enviamos un correo electrónico con las instrucciones para restablecer tu contraseña.";
-            header('Location: ' . $prefix . '/login');
+            header('Location: /sires/login');
             exit;
-
         } catch (Exception $e) {
             // Atrapamos cualquier error de PHPMailer o Base de datos y lo mostramos en el formulario
             $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Detalle: " . $mail->ErrorInfo;
-            header('Location: ' . $prefix . '/password/recovery');
+            header('Location: /sires/password/recovery');
             exit;
         }
     }
@@ -122,7 +124,9 @@ class RecoveryController
      */
     public function showResetForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
         $token = $vars['token'] ?? '';
         $errorMessage = $_SESSION['error_message'] ?? null;
@@ -137,23 +141,24 @@ class RecoveryController
      */
     public function processReset(): void
     {
-        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
         $token           = $_POST['token'] ?? '';
         $password        = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        $prefix          = $_ENV['APP_PREFIX'] ?? '';
 
         // 1. Validaciones básicas de la interfaz de usuario
         if (empty($password) || empty($confirmPassword)) {
             $_SESSION['error_message'] = "Todos los campos de contraseña son obligatorios.";
-            header('Location: ' . $prefix . '/password/reset/' . $token);
+            header('Location: /sires/password/reset/' . $token);
             exit;
         }
 
         if ($password !== $confirmPassword) {
             $_SESSION['error_message'] = "Las contraseñas ingresadas no coinciden.";
-            header('Location: ' . $prefix . '/password/reset/' . $token);
+            header('Location: /sires/password/reset/' . $token);
             exit;
         }
 
@@ -165,7 +170,7 @@ class RecoveryController
 
             if (!$usuario) {
                 $_SESSION['error_message'] = "El enlace de recuperación ha expirado, ya fue utilizado o es inválido. Por favor, solicitá uno nuevo.";
-                header('Location: ' . $prefix . '/password/recovery');
+                header('Location: /sires/password/recovery');
                 exit;
             }
 
@@ -173,7 +178,7 @@ class RecoveryController
             // Usamos password_verify pasándole la clave nueva del POST y el hash viejo que recuperó el modelo
             if (password_verify($password, $usuario->getPassword())) {
                 $_SESSION['error_message'] = "La nueva contraseña no puede ser igual a tu contraseña actual. Por favor, elegí una diferente.";
-                header('Location: ' . $prefix . '/password/reset/' . $token);
+                header('Location: /sires/password/reset/' . $token);
                 exit;
             }
 
@@ -182,14 +187,14 @@ class RecoveryController
 
             // Redirección exitosa al Login con confirmación visual
             $_SESSION['flash_success'] = "¡Contraseña actualizada con éxito! Ya podés iniciar sesión con tu nueva clave.";
-            header('Location: ' . $prefix . '/login');
+            header('Location: /sires/login');
             exit;
-
         } catch (Exception $e) {
             // Atrapamos las excepciones controladas del modelo (ej: longitud menor a 5 letras)
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ' . $prefix . '/password/reset/' . $token);
+            header('Location: /sires/password/reset/' . $token);
             exit;
         }
     }
 }
+

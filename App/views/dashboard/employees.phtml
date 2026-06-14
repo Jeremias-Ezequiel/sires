@@ -5,7 +5,7 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="<?= APP_PREFIX ?>/dashboard/employees/add" class="btn-add">
+        <a href="/sires/dashboard/employees/add" class="btn-add">
             <i class="fas fa-plus"></i> Registrar Empleado
         </a>
     </div>
@@ -26,7 +26,7 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <form action="<?= APP_PREFIX ?>/dashboard/employees" method="GET" class="filter-form">
+    <form action="/sires/dashboard/employees" method="GET" class="filter-form">
 
         <div class="form-group-search">
             <label class="label-input">Buscar por Nombre</label>
@@ -69,7 +69,7 @@
         <?php
         if ($hasSearch || $hasRole || $hasStatus):
         ?>
-            <a href="<?= APP_PREFIX ?>/dashboard/employees" class="btn-clear-filters">
+            <a href="/sires/dashboard/employees" class="btn-clear-filters">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -136,17 +136,17 @@
                             <td class="cell-actions">
                                 <div class="actions-group-container">
 
-                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/edit?id=<?= $emp->getId() ?>"
+                                    <a href="/sires/dashboard/employees/edit?id=<?= $emp->getId() ?>"
                                         class="emp-action-btn btn-edit-hover" title="Modificar Datos">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
-                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/reset-password?id=<?= $emp->getId() ?>"
+                                    <a href="/sires/dashboard/employees/reset-password?id=<?= $emp->getId() ?>"
                                         class="emp-action-btn btn-pass-hover" title="Cambiar Contraseña">
                                         <i class="fas fa-key"></i>
                                     </a>
 
-                                    <a href="<?= APP_PREFIX ?>/dashboard/employees/delete?id=<?= $emp->getId() ?>"
+                                    <a href="/sires/dashboard/employees/delete?id=<?= $emp->getId() ?>"
                                         class="emp-action-btn btn-delete-hover" title="Dar de Baja"
                                         onclick="return confirm('¿Está seguro de que desea dar de baja al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-minus"></i>
@@ -170,7 +170,7 @@
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
             <?php if (!empty($_GET['search']) || !empty($_GET['role_filter'])): ?>
-                <a href="<?= APP_PREFIX ?>/dashboard/employees" class="btn-clear-filters">
+                <a href="/sires/dashboard/employees" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

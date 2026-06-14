@@ -7,8 +7,8 @@
     <title>SIRES - Registro de Usuario</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
-    <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/register.css">
+    <link rel="stylesheet" href="/sires/public/css/global.css">
+    <link rel="stylesheet" href="/sires/public/css/register.css">
 </head>
 
 <body>
@@ -16,7 +16,7 @@
     <div class="main-container">
 
         <div class="logo-side">
-            <img src="<?= APP_PREFIX ?>/public/img/logo.png" alt="Logo SIRES" class="logo-formulario">
+            <img src="/sires/public/img/logo.png" alt="Logo SIRES" class="logo-formulario">
         </div>
 
         <div class="register-card">
@@ -45,7 +45,7 @@
                 <?php unset($_SESSION['registro_error']); ?>
             <?php endif; ?>
 
-            <form action="<?= APP_PREFIX ?>/register/process" method="POST" autocomplete="off">
+            <form action="/sires/register/process" method="POST" autocomplete="off">
 
                 <div class="form-row">
                     <div class="form-group">
@@ -89,7 +89,7 @@
                 <div class="action-buttons">
                     <button type="submit" class="btn-register">REGISTRARSE</button>
 
-                    <a href="<?= APP_PREFIX ?>/dashboard" class="btn-back-dashboard">
+                    <a href="/sires/dashboard" class="btn-back-dashboard">
                         <i class="fas fa-arrow-left"></i> Volver al Inicio
                     </a>
                 </div>
