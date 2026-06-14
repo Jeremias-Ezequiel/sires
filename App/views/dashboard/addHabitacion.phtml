@@ -4,7 +4,7 @@
         <p>Alta de habitaciones en el inventario del hotel</p>
     </div>
 
-    <a href="<?= APP_PREFIX ?>/dashboard/habitaciones" class="btn-clear-filters">
+    <a href="/sires/dashboard/habitaciones" class="btn-clear-filters">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -19,7 +19,7 @@
 </div>
 
 <section class="details-section form-container-section">
-    <form action="<?= APP_PREFIX ?>/dashboard/habitaciones/add/process" method="POST" class="employee-form" id="room-form">
+    <form action="/sires/dashboard/habitaciones/add/process" method="POST" class="employee-form" id="room-form">
 
         <div class="form-section-title">
             <i class="fas fa-door-open"></i> Ubicación de la Habitación
@@ -106,7 +106,10 @@
                             Solo se permiten números enteros en el número de habitación.
                         </div>
                     `;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 }
             });
         }
@@ -128,7 +131,10 @@
                             Solo se permiten números enteros en el piso.
                         </div>
                     `;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 }
             });
         }
@@ -150,7 +156,10 @@
                             Solo se permiten valores numéricos en el precio (ej: 15000 o 15000.50).
                         </div>
                     `;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 }
             });
         }

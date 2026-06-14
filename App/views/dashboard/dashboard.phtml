@@ -1,37 +1,39 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIRES - Dashboard Hotelero</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-     <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/global.css">
-     <link rel="stylesheet" href="<?= APP_PREFIX ?>/public/css/dashboard.css">
+    <link rel="stylesheet" href="/sires/public/css/global.css">
+    <link rel="stylesheet" href="/sires/public/css/dashboard.css">
 </head>
+
 <body>
 
     <div class="dashboard-container">
 
         <aside class="sidebar">
             <div class="logo-container">
-               <img src="<?= APP_PREFIX ?>/public/img/logo.png" alt="Logo SIRES" class="logo-img" style="max-width: 210px; height: auto; display: block; margin: 20px auto 15px auto; padding: 0 10px;">
+                <img src="/sires/public/img/logo.png" alt="Logo SIRES" class="logo-img" style="max-width: 210px; height: auto; display: block; margin: 20px auto 15px auto; padding: 0 10px;">
             </div>
-           <nav>
+            <nav>
                 <ul class="nav-links">
-                    <li><a href="<?= APP_PREFIX ?>/dashboard" class="nav-link active"><i class="fas fa-home"></i>Inicio</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-users"></i>Clientes</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-calendar-alt"></i>Reservas</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/maintenance" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/register" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
-                    <li><a href="<?= APP_PREFIX ?>/logout" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
+                    <li><a href="/sires/dashboard" class="nav-link active"><i class="fas fa-home"></i>Inicio</a></li>
+                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-users"></i>Clientes</a></li>
+                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-calendar-alt"></i>Reservas</a></li>
+                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
+                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
+                    <li><a href="/sires/register" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
+                    <li><a href="/sires/logout" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
 
-                <div class="dashboard-date-container" style="
+            <div class="dashboard-date-container" style="
             position: absolute;
             top: 20px;
             right: 30px;
@@ -44,16 +46,16 @@
             border: 1px solid #334155;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         ">
-            <i class="far fa-calendar-alt" style="color: #38bdf8; font-size: 16px;"></i>
-            <span style="
+                <i class="far fa-calendar-alt" style="color: #38bdf8; font-size: 16px;"></i>
+                <span style="
                 color: #f8fafc; 
                 font-size: 14px; 
                 font-weight: 600;
                 letter-spacing: 0.3px;
             ">
-            <?= $fecha_formateada ?>
-        </span>
-        </div>
+                    <?= $fecha_formateada ?>
+                </span>
+            </div>
             <header class="main-header">
                 <h1>Inicio</h1>
                 <p>Resumen general del hotel</p>
@@ -154,7 +156,7 @@
                         </thead>
                         <tbody>
                             <?php if (count($habitaciones) > 0): ?>
-                                <?php foreach ($habitaciones as $hab): 
+                                <?php foreach ($habitaciones as $hab):
                                     $estadoLower = strtolower($hab['estado']);
                                     $claseEstado = 'status-disponible';
                                     if (strpos($estadoLower, 'ocupad') !== false) {
@@ -163,16 +165,16 @@
                                         $claseEstado = 'status-reservada';
                                     }
                                 ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($hab['numero']) ?></td>
-                                    <td><?= htmlspecialchars($hab['piso']) ?></td>
-                                    <td>
-                                        <span class="status-badge <?= $claseEstado ?>">
-                                            <?= htmlspecialchars($hab['estado']) ?>
-                                        </span>
-                                    </td>
-                                    <td><?= htmlspecialchars($hab['tipo']) ?></td>
-                                </tr>
+                                    <tr>
+                                        <td><?= htmlspecialchars($hab['numero']) ?></td>
+                                        <td><?= htmlspecialchars($hab['piso']) ?></td>
+                                        <td>
+                                            <span class="status-badge <?= $claseEstado ?>">
+                                                <?= htmlspecialchars($hab['estado']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= htmlspecialchars($hab['tipo']) ?></td>
+                                    </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
@@ -195,4 +197,5 @@
     </div>
 
 </body>
+
 </html>

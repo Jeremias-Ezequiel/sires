@@ -4,7 +4,7 @@
         <p>Alta de personal y configuración de accesos al sistema SIRES</p>
     </div>
 
-    <a href="<?= APP_PREFIX ?>/dashboard/employees" class="btn-clear-filters">
+    <a href="/sires/dashboard/employees" class="btn-clear-filters">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -20,7 +20,7 @@
 </div>
 
 <section class="details-section form-container-section">
-    <form action="<?= APP_PREFIX ?>/dashboard/employees/add/process" method="POST" class="employee-form">
+    <form action="/sires/dashboard/employees/add/process" method="POST" class="employee-form">
 
         <div class="form-section-title">
             <i class="fas fa-user"></i> Datos Personales
@@ -30,15 +30,15 @@
             <div class="form-field-group">
                 <label class="label-input" for="nombre">Nombre</label>
                 <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['nombre'] ?? $old['nombre'] ?? '') ?>"
-                       pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
-                       title="El nombre solo puede contener letras y espacios.">
+                    pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                    title="El nombre solo puede contener letras y espacios.">
             </div>
 
             <div class="form-field-group">
                 <label class="label-input" for="apellido">Apellido</label>
                 <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['apellido'] ?? $old['apellido'] ?? '') ?>"
-                       pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
-                       title="El apellido solo puede contener letras y espacios.">
+                    pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                    title="El apellido solo puede contener letras y espacios.">
             </div>
         </div>
 
@@ -110,7 +110,7 @@
                     <?php endif; ?>
                 </select>
             </div>
-            
+
             <div></div>
         </div>
 
@@ -123,7 +123,7 @@
                     <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--texto-gris);"></i>
                 </div>
             </div>
-            
+
             <div class="form-field-group">
                 <label class="label-input" for="confirm_password">Confirmar Contraseña</label>
                 <div class="password-wrapper" style="position: relative; width: 100%;">
@@ -171,7 +171,7 @@
             formulario.addEventListener('submit', function(e) {
                 if (pass.value !== confirmPass.value) {
                     e.preventDefault(); // Frena el envío del formulario
-                    
+
                     // Inyectamos dinámicamente la estructura idéntica a tus flashes del Backend
                     alertContainer.innerHTML = `
                         <div class="alert alert-error">
@@ -179,10 +179,13 @@
                             Las contraseñas ingresadas no coinciden. Por favor, verificalas.
                         </div>
                     `;
-                    
+
                     // Hacemos scroll hacia arriba de forma fluida para que el operador vea el cartel de inmediato
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+
                     confirmPass.focus();
                 }
             });
@@ -207,17 +210,22 @@
                     const regexGeneral = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
                     if (!regexGeneral.test(dataPegada)) {
                         e.preventDefault();
-                        
+
                         alertContainer.innerHTML = `
                             <div class="alert alert-error">
                                 <i class="fa-solid fa-triangle-exclamation"></i>
                                 No podés pegar números o símbolos en los campos de nombre o apellido.
                             </div>
                         `;
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
                     }
                 });
-                input.addEventListener('drop', function(e) { e.preventDefault(); });
+                input.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                });
             });
         }
 

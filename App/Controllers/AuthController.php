@@ -56,7 +56,7 @@ class AuthController
             $_SESSION['user_id'] = $user->getId();
             $_SESSION['user_role'] = $user->getIdRol();
 
-            header('Location: ' . APP_PREFIX . '/dashboard');
+            header('Location: /sires/dashboard');
             exit;
         } catch (Exception $e) {
             // Cualquier excepción (campos vacíos, formato de mail roto o clave inválida)
@@ -66,7 +66,7 @@ class AuthController
             }
 
             $_SESSION['auth_error'] = $e->getMessage();
-            header('Location: ' . APP_PREFIX . '/login');
+            header('Location: /sires/login');
             exit;
         }
     }

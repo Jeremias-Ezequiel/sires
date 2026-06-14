@@ -11,21 +11,8 @@ use FastRoute\Dispatcher;
 use function FastRoute\simpleDispatcher;
 use App\Middleware\AuthMiddleware;
 
-// =====================================================================
-// ⚡ DETECCIÓN AUTOMÁTICA DEL PREFIJO
-// =====================================================================
-$scriptFolder = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-define('APP_PREFIX', ($scriptFolder === '/') ? '' : $scriptFolder);
-
 // Capturamos el path limpio de la barra de direcciones
-$route = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-
-// =====================================================================
-// ✂️ RECORTE DEL PREFIJO PARA FASTROUTE
-// =====================================================================
-if (!empty(APP_PREFIX) && strpos($route, APP_PREFIX) === 0) {
-    $route = substr($route, strlen(APP_PREFIX));
-}
+$route = parse_url($_SERVER['REQUEST_URI'] ?? '/sires/', PHP_URL_PATH);
 
 if (empty($route) || $route === '') {
     $route = '/';

@@ -24,45 +24,49 @@ return function (RouteCollector $r) {
         'action' => [AuthController::class, 'showLogin']
     ]);
 
+    $r->addRoute('GET', '/sires/', [
+        'action' => [AuthController::class, 'showLogin']
+    ]);
+
     // Pantalla de Login explícita
-    $r->addRoute('GET', '/login', [
+    $r->addRoute('GET', '/sires/login', [
         'action' => [AuthController::class, 'showLogin'],
     ]);
 
     // Procesamiento del formulario de Login (POST)
-    $r->addRoute('POST', '/login/process', [
+    $r->addRoute('POST', '/sires/login/process', [
         'action' => [AuthController::class, 'login']
     ]);
 
     // Cerrar sesión
-    $r->addRoute('GET', '/logout', [
+    $r->addRoute('GET', '/sires/logout', [
         'action' => [AuthController::class, 'logout']
     ]);
 
     // 🔑 SISTEMA DE RECUPERACIÓN DE CONTRASEÑA
-    
+
     // Pantalla 3: Formulario para ingresar el mail
-    $r->addRoute('GET', '/password/recovery', [
+    $r->addRoute('GET', '/sires/password/recovery', [
         'action' => [RecoveryController::class, 'showRecoveryForm']
     ]);
 
     // Procesamiento de Pantalla 3: Envío de mail real con PHPMailer
-    $r->addRoute('POST', '/password/recovery/process', [
+    $r->addRoute('POST', '/sires/password/recovery/process', [
         'action' => [RecoveryController::class, 'processRecovery']
     ]);
 
     // Pantalla 4: Formulario para ingresar la nueva contraseña usando el token dinámico
-    $r->addRoute('GET', '/password/reset/{token}', [
+    $r->addRoute('GET', '/sires/password/reset/{token}', [
         'action' => [RecoveryController::class, 'showResetForm']
     ]);
 
     // Procesamiento de Pantalla 4: Validación y cambio de clave en la BD
-    $r->addRoute('POST', '/password/reset/process', [
+    $r->addRoute('POST', '/sires/password/reset/process', [
         'action' => [RecoveryController::class, 'processReset']
     ]);
 
     // Botones en mantenimiento
-    $r->addRoute('GET', '/maintenance', [
+    $r->addRoute('GET', '/sires/maintenance', [
         'middlewares' => [[MaintenanceMiddleware::class, 'check']]
     ]);
 
@@ -71,46 +75,47 @@ return function (RouteCollector $r) {
     // =====================================================================
 
     // Panel Principal - Dashboard de SIRES
-    $r->addRoute('GET', '/dashboard', [
+    $r->addRoute('GET', '/sires/dashboard', [
         'action' => [DashboardController::class, 'showHome'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']]
     ]);
 
     // Employees
-    $r->addRoute('GET', '/dashboard/employees', [
+    $r->addRoute('GET', '/sires/dashboard/employees', [
         'action' => [EmployeeController::class, 'showEmployees'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/add', [
+    $r->addRoute('GET', '/sires/dashboard/employees/add', [
         'action' => [EmployeeController::class, 'showNewEmployeeForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('POST', '/dashboard/employees/add/process', [
+    $r->addRoute('POST', '/sires/dashboard/employees/add/process', [
         'action' => [EmployeeController::class, 'addEmployee'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
     // Habitaciones
-    $r->addRoute('GET', '/dashboard/habitaciones', [
+    $r->addRoute('GET', '/sires/dashboard/habitaciones', [
         'action' => [RoomController::class, 'showRooms'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/habitaciones/add', [
+    $r->addRoute('GET', '/sires/dashboard/habitaciones/add', [
         'action' => [RoomController::class, 'showNewRoomForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('POST', '/dashboard/habitaciones/add/process', [
+    $r->addRoute('POST', '/sires/dashboard/habitaciones/add/process', [
         'action' => [RoomController::class, 'addRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 };
+

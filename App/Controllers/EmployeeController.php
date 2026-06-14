@@ -26,8 +26,8 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $search = $_GET['search'] ?? "";       
-        $role      = $_GET['role_filter'] ?? "";  
+        $search = $_GET['search'] ?? "";
+        $role      = $_GET['role_filter'] ?? "";
         $is_active = $_GET['status_filter'] ?? "";
 
         $hasSearch = !empty($_GET['search']);
@@ -54,14 +54,14 @@ class EmployeeController
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
-        $flashMessage = $_SESSION['flash_message'] ?? ''; 
+        $flashMessage = $_SESSION['flash_message'] ?? '';
         unset($_SESSION['flash_message']);
 
-        $flashStatus = $_SESSION['flash_status'] ?? '';  
+        $flashStatus = $_SESSION['flash_status'] ?? '';
         unset($_SESSION['flash_status']);
 
         $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']); 
+        unset($_SESSION['old_inputs']);
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -121,7 +121,8 @@ class EmployeeController
             $_SESSION['flash_status']  = "error";
         }
 
-        header('Location: ' . APP_PREFIX . '/dashboard/employees/add');
+        header('Location: /sires/dashboard/employees/add');
         exit;
     }
 }
+

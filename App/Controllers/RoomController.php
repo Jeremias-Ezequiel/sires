@@ -125,14 +125,14 @@ class RoomController
             $_SESSION['flash_message'] = "Habitación registrada exitosamente.";
             $_SESSION['flash_status']  = "success";
 
-            header('Location: ' . APP_PREFIX . '/dashboard/habitaciones');
+            header('Location: /sires/dashboard/habitaciones');
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: ' . APP_PREFIX . '/dashboard/habitaciones/add');
+            header('Location: /sires/dashboard/habitaciones/add');
             exit;
         }
     }
