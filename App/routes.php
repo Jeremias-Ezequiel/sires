@@ -99,6 +99,18 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    $r->addRoute('GET', '/sires/dashboard/employees/edit', [
+        'action' => [EmployeeController::class, 'showEditEmployeeForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/sires/dashboard/employees/edit/process', [
+        'action' => [EmployeeController::class, 'editEmployee'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     $r->addRoute('GET', '/sires/dashboard/employees/deactivate', [
         'action' => [EmployeeController::class, 'deactivateEmployee'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],

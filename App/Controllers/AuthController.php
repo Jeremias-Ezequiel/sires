@@ -48,7 +48,12 @@ class AuthController
                 throw new Exception("Las credenciales ingresadas son incorrectas.");
             }
 
-            // 7. Iniciar sesión exitosa si todo salió bien
+            // 7. Verificación de cuenta activa
+            if (!$user->getIsActive()) {
+                throw new Exception("Su cuenta se encuentra desactivada. Contacte a un administrador.");
+            }
+
+            // 8. Iniciar sesión exitosa si todo salió bien
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }

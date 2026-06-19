@@ -32,7 +32,7 @@
             <label class="label-input">Buscar por Nombre</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" id="search" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
             </div>
         </div>
 
@@ -182,3 +182,29 @@
         </div>
     </section>
 <?php endif; ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputSearch = document.getElementById('search');
+
+        if (inputSearch) {
+            inputSearch.addEventListener('keypress', function(e) {
+                const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/;
+                if (!regex.test(e.key)) e.preventDefault();
+            });
+            inputSearch.addEventListener('input', function() {
+                this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            });
+            inputSearch.addEventListener('paste', function(e) {
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                const regexGeneral = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+                if (!regexGeneral.test(dataPegada)) {
+                    e.preventDefault();
+                }
+            });
+            inputSearch.addEventListener('drop', function(e) {
+                e.preventDefault();
+            });
+        }
+    });
+</script>
