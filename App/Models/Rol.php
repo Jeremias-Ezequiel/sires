@@ -20,8 +20,8 @@ class Rol extends Model
     // Constantes de negocio de SIRES (Se mantienen idénticas y firmes)
     public const ADMINISTRADOR = 1;
     public const RECEPCIONISTA = 2;
-    public const GERENTE       = 3;
-    public const AUDITOR       = 4;
+    public const GERENTE = 3;
+    public const AUDITOR = 4;
 
     // =====================================================================
     // MÉTODOS DE NEGOCIO
@@ -31,20 +31,22 @@ class Rol extends Model
      * Recupera los roles del sistema.
      * @param bool $onlyActive Si es true, filtra solo los roles habilitados para nuevos usuarios.
      */
-   public function getAll(bool $onlyActive = true): ?array
+    public function getAll(bool $onlyActive = true): ?array
     {
         try {
-            // ✨ CORREGIDO: Usamos GROUP BY para garantizar que no se dupliquen descripciones
             $sql = "SELECT id, descripcion, is_active FROM Roles";
             if ($onlyActive) {
                 $sql .= " WHERE is_active = 1";
             }
-            $sql .= " GROUP BY descripcion ORDER BY id ASC"; 
+            $sql .= " ORDER BY id ASC";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
 
-            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Rol::class);
+            $stmt->setFetchMode(
+                PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE,
+                Rol::class,
+            );
             $roles = $stmt->fetchAll();
 
             return $roles ?: null;
@@ -73,7 +75,7 @@ class Rol extends Model
     }
     public function setDescripcion(string $descripcion): void
     {
-        $cleanDesc = htmlspecialchars(trim($descripcion), ENT_QUOTES, 'UTF-8');
+        $cleanDesc = htmlspecialchars(trim($descripcion), ENT_QUOTES, "UTF-8");
         if (empty($cleanDesc)) {
             throw new Exception("La descripción del rol no puede estar vacía.");
         }
