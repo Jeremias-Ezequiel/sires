@@ -145,6 +145,60 @@ class Usuario extends Model
         }
     }
 
+    public function findById(int $id): ?Usuario
+    {
+        try {
+            $sql = "SELECT * FROM Usuarios WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Usuario::class);
+            $user = $stmt->fetch();
+            return $user ?: null;
+        } catch (PDOException $e) {
+            error_log("Error en findById: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al buscar el usuario.");
+        }
+    }
+
+    public function update(Usuario $usuario): bool
+    {
+        try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE email = :email AND id != :id");
+            $check->execute([':email' => $usuario->getEmail(), ':id' => $usuario->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El correo electrónico ya está en uso por otro usuario.");
+            }
+
+            $sql = "UPDATE Usuarios SET 
+                        id_rol = :id_rol,
+                        id_localidad = :id_localidad,
+                        id_nacionalidad = :id_nacionalidad,
+                        id_provincia = :id_provincia,
+                        nombre = :nombre,
+                        apellido = :apellido,
+                        email = :email
+                    WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id_rol'          => $usuario->getIdRol(),
+                ':id_localidad'    => $usuario->getIdLocalidad(),
+                ':id_nacionalidad' => $usuario->getIdNacionalidad(),
+                ':id_provincia'    => $usuario->getIdProvincia(),
+                ':nombre'          => $usuario->getNombre(),
+                ':apellido'        => $usuario->getApellido(),
+                ':email'           => $usuario->getEmail(),
+                ':id'              => $usuario->getId()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en Usuario::update: " . $e->getMessage());
+            if ($e->getCode() === '23000') {
+                throw new Exception("El correo electrónico ya se encuentra registrado.");
+            }
+            throw new Exception("Error interno al actualizar el empleado.");
+        }
+    }
+
     // =====================================================================
     // ⚙️ MÉTODOS PARA LA RECUPERACIÓN DE CONTRASEÑA (Recuperados)
     // =====================================================================
