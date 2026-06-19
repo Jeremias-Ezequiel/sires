@@ -124,5 +124,87 @@ class EmployeeController
         header('Location: /sires/dashboard/employees/add');
         exit;
     }
+
+/**
+     * Procesa la baja lógica de un empleado (Inactivación)
+     */
+    public function deactivateEmployee(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $idToDeactivate = $_GET['id'] ?? '';
+            
+            if (empty($idToDeactivate)) {
+                throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
+            }
+
+            if (filter_var($idToDeactivate, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("El ID tiene que ser estrictamente un número entero.");
+            }
+            $userModel = new Usuario();            
+            // Si ya estaba inactivo o no existe, el modelo devuelve false usando rowCount()
+            if (!$userModel->deactivate((int)$idToDeactivate)) {
+                throw new Exception("El empleado no existe o ya se encuentra inactivo en el sistema.");
+            }
+
+            $_SESSION['flash_message'] = "Empleado desactivado exitosamente.";
+            $_SESSION['flash_status']  = "success";
+            
+            header('Location: /sires/dashboard/employees');
+            exit;
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: /sires/dashboard/employees');
+            exit;
+        }
+    }
+
+    /**
+     * Procesa la reactivación del acceso de un empleado (Activación)
+     */
+    public function activateEmployee(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $idToActivate = $_GET['id'] ?? '';
+            
+            if (empty($idToActivate)) {
+                throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
+            }
+
+            if (filter_var($idToActivate, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("El ID tiene que ser estrictamente un número entero.");
+            }
+            
+            $userModel = new Usuario();            
+            // Si ya estaba activo o no existe, el modelo devuelve false usando rowCount()
+            if (!$userModel->activate((int)$idToActivate)) {
+                throw new Exception("El empleado no existe o ya se encuentra activo en el sistema.");
+            }
+
+            $_SESSION['flash_message'] = "Empleado reactivado exitosamente.";
+            $_SESSION['flash_status']  = "success";
+            
+            header('Location: /sires/dashboard/employees');
+            exit;
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: /sires/dashboard/employees');
+            exit;
+        }
+    }
+
 }
 

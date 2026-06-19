@@ -146,12 +146,17 @@
                                         <i class="fas fa-key"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/delete?id=<?= $emp->getId() ?>"
-                                        class="emp-action-btn btn-delete-hover" title="Dar de Baja"
+                                    <a href="/sires/dashboard/employees/deactivate?id=<?= $emp->getId() ?>"
+                                        class="emp-action-btn btn-deactivate-hover" title="Dar de Baja Empleado"
                                         onclick="return confirm('¿Está seguro de que desea dar de baja al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-minus"></i>
                                     </a>
 
+                                    <a href="/sires/dashboard/employees/activate?id=<?= $emp->getId() ?>"
+                                        class="emp-action-btn btn-activate-hover" title="Reactivar Empleado"
+                                        onclick="return confirm('¿Está seguro de que desea reactivar al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
+                                        <i class="fas fa-user-plus"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>

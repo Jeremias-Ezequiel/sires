@@ -213,6 +213,53 @@ class Usuario extends Model
         }
     }
 
+// =====================================================================
+    // 🛡️ MÉTODOS DE CAMBIO DE ESTADO (BAJA LÓGICA Y REACTIVACIÓN)
+    // =====================================================================
+
+    public function deactivate(int $id): bool
+    {
+        try {
+            // Solo actualiza si coincide el ID y además sigue activo
+            $sql = "UPDATE Usuarios 
+                    SET is_active = :is_inactive, fecha_baja = NOW() 
+                    WHERE id = :id AND is_active = :current_active";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':is_inactive'    => self::INACTIVE, // 0
+                ':id'             => $id,
+                ':current_active' => self::ACTIVE     // 1
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en deactivate: " . $e->getMessage());
+            throw new Exception("Error interno en la base de datos.");
+        }
+    }
+
+    public function activate(int $id): bool
+    {
+        try {
+            // Solo actualiza si coincide el ID y además estaba dado de baja
+            $sql = "UPDATE Usuarios 
+                    SET is_active = :is_active, fecha_baja = NULL 
+                    WHERE id = :id AND is_active = :current_inactive";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':is_active'        => self::ACTIVE,   // 1
+                ':id'               => $id,
+                ':current_inactive' => self::INACTIVE // 0
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en activate: " . $e->getMessage());
+            throw new Exception("Error interno en la base de datos.");
+        }
+    }
     // =====================================================================
     // GETTERS Y SETTERS CON LÓGICA DE NEGOCIO Y SANITIZACIÓN STRICT
     // =====================================================================
