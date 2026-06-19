@@ -28,7 +28,7 @@ class Localidad extends Model
     {
         try {
             // ✨ CORREGIDO: Agrupamos estrictamente por el nombre de la localidad borrando duplicados reales de la BD
-            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(descripcion) AS descripcion, is_active 
+            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(descripcion) AS descripcion, MAX(is_active) AS is_active 
                     FROM Localidades 
                     WHERE is_active = 1 
                     GROUP BY TRIM(descripcion) 
