@@ -42,7 +42,8 @@ class Usuario extends Model
     public function findByEmail(string $email): ?Usuario
     {
         try {
-            $cleanEmail = filter_var(trim($email), FILTER_SANITIZE_EMAIL);
+            $cleanEmail = mb_strtolower(trim($email), 'UTF-8');
+            $cleanEmail = filter_var($cleanEmail, FILTER_SANITIZE_EMAIL);
 
             $sql = "SELECT * FROM Usuarios WHERE email = :email";
             $stmt = $this->db->prepare($sql);
@@ -327,12 +328,14 @@ class Usuario extends Model
     }
     public function setNombre(string $nombre): void
     {
-        $cleanNombre = htmlspecialchars(trim($nombre), ENT_QUOTES, 'UTF-8');
+        $cleanNombre = trim($nombre);
         if (empty($cleanNombre)) {
             throw new Exception("El nombre no puede estar vacío.");
         }
-        
-        // 🔒 Filtro estricto anti-números en backend
+
+        $cleanNombre = mb_convert_case($cleanNombre, MB_CASE_TITLE, 'UTF-8');
+        $cleanNombre = htmlspecialchars($cleanNombre, ENT_QUOTES, 'UTF-8');
+
         if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $cleanNombre)) {
             throw new Exception("El nombre solo puede contener letras y espacios.");
         }
@@ -346,12 +349,14 @@ class Usuario extends Model
     }
     public function setApellido(string $apellido): void
     {
-        $cleanApellido = htmlspecialchars(trim($apellido), ENT_QUOTES, 'UTF-8');
+        $cleanApellido = trim($apellido);
         if (empty($cleanApellido)) {
             throw new Exception("El apellido no puede estar vacío.");
         }
-        
-        // 🔒 Filtro estricto anti-números en backend
+
+        $cleanApellido = mb_convert_case($cleanApellido, MB_CASE_TITLE, 'UTF-8');
+        $cleanApellido = htmlspecialchars($cleanApellido, ENT_QUOTES, 'UTF-8');
+
         if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $cleanApellido)) {
             throw new Exception("El apellido solo puede contener letras y espacios.");
         }
@@ -365,7 +370,8 @@ class Usuario extends Model
     }
     public function setEmail(string $email): void
     {
-        $cleanEmail = filter_var(trim($email), FILTER_SANITIZE_EMAIL);
+        $cleanEmail = mb_strtolower(trim($email), 'UTF-8');
+        $cleanEmail = filter_var($cleanEmail, FILTER_SANITIZE_EMAIL);
         if (!filter_var($cleanEmail, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("El formato del correo electrónico no es válido.");
         }

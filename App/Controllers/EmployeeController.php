@@ -83,29 +83,64 @@ class EmployeeController
         }
 
         try {
-            // 🔒 VALIDACIÓN DE CONTRASEÑAS EN EL CONTROLADOR
-            $password = $_POST['password'] ?? '';
+            $nombre        = trim($_POST['nombre'] ?? '');
+            $apellido      = trim($_POST['apellido'] ?? '');
+            $email         = trim($_POST['email'] ?? '');
+            $password      = $_POST['password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
+            $idRol         = (int)($_POST['id_rol'] ?? 0);
+            $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
+            $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
+            $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
 
+            if (empty($nombre)) {
+                throw new Exception("El nombre es obligatorio.");
+            }
+            if (empty($apellido)) {
+                throw new Exception("El apellido es obligatorio.");
+            }
+            if (empty($email)) {
+                throw new Exception("El correo electrónico es obligatorio.");
+            }
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("El formato del correo electrónico no es válido.");
+            }
             if (empty($password)) {
-                throw new Exception("La contraseña inicial es obligatoria.");
+                throw new Exception("La contraseña es obligatoria.");
+            }
+            if (strlen($password) < 5) {
+                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+            }
+            if ($idRol <= 0) {
+                throw new Exception("Debe seleccionar un rol para el empleado.");
+            }
+            if ($idProvincia <= 0) {
+                throw new Exception("Debe seleccionar una provincia.");
+            }
+            if ($idLocalidad <= 0) {
+                throw new Exception("Debe seleccionar una localidad.");
+            }
+            if ($idNacionalidad <= 0) {
+                throw new Exception("Debe seleccionar una nacionalidad.");
             }
 
-            if ($password !== $confirmPassword) {
-                throw new Exception("Las contraseñas ingresadas no coinciden.");
+            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
+                throw new Exception("El nombre solo puede contener letras y espacios.");
+            }
+            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $apellido)) {
+                throw new Exception("El apellido solo puede contener letras y espacios.");
             }
 
             $usuario = new Usuario();
+            $usuario->setNombre($nombre);
+            $usuario->setApellido($apellido);
+            $usuario->setEmail($email);
+            $usuario->setPassword($password);
 
-            $usuario->setNombre($_POST['nombre'] ?? '');
-            $usuario->setApellido($_POST['apellido'] ?? '');
-            $usuario->setEmail($_POST['email'] ?? '');
-            $usuario->setPassword($password); // Ejecuta automáticamente password_hash() interno
-
-            $usuario->setIdRol((int)($_POST['id_rol'] ?? 0));
-            $usuario->setIdProvincia((int)($_POST['id_provincia'] ?? 0));
-            $usuario->setIdLocalidad((int)($_POST['id_localidad'] ?? 0));
-            $usuario->setIdNacionalidad((int)($_POST['id_nacionalidad'] ?? 0));
+            $usuario->setIdRol($idRol);
+            $usuario->setIdProvincia($idProvincia);
+            $usuario->setIdLocalidad($idLocalidad);
+            $usuario->setIdNacionalidad($idNacionalidad);
 
             $success = $usuario->save($usuario);
 

@@ -146,6 +146,28 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const formulario = document.querySelector('.employee-form');
+        const alertContainer = document.getElementById('alert-container');
+        const inputNombre = document.getElementById('nombre');
+        const inputApellido = document.getElementById('apellido');
+        const inputEmail = document.getElementById('email');
+        const inputPass = document.getElementById('password');
+        const inputConfirmPass = document.getElementById('confirm_password');
+        const selectRol = document.getElementById('id_rol');
+        const selectNacionalidad = document.getElementById('id_nacionalidad');
+        const selectProvincia = document.getElementById('id_provincia');
+        const selectLocalidad = document.getElementById('id_localidad');
+
+        function mostrarError(mensaje) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-error">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    ${mensaje}
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         // --- 👁️ Lógica Ocultar/Mostrar Contraseñas ---
         const setupTogglePassword = (toggleId, inputId) => {
             const toggle = document.querySelector(toggleId);
@@ -161,40 +183,122 @@
         setupTogglePassword('#togglePassword', '#password');
         setupTogglePassword('#toggleConfirmPassword', '#confirm_password');
 
-        // --- 🚫 Validar Coincidencia de Contraseñas e Inyección de Alerta HTML ---
-        const formulario = document.querySelector('.employee-form');
-        const pass = document.getElementById('password');
-        const confirmPass = document.getElementById('confirm_password');
-        const alertContainer = document.getElementById('alert-container');
-
-        if (formulario && pass && confirmPass && alertContainer) {
+        // --- 🚫 Validación integral del formulario al enviar ---
+        if (formulario && alertContainer) {
             formulario.addEventListener('submit', function(e) {
-                if (pass.value !== confirmPass.value) {
-                    e.preventDefault(); // Frena el envío del formulario
+                alertContainer.innerHTML = '';
 
-                    // Inyectamos dinámicamente la estructura idéntica a tus flashes del Backend
-                    alertContainer.innerHTML = `
-                        <div class="alert alert-error">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Las contraseñas ingresadas no coinciden. Por favor, verificalas.
-                        </div>
-                    `;
+                // 1. Nombre
+                const nombreVal = inputNombre?.value.trim() ?? '';
+                if (nombreVal === '') {
+                    e.preventDefault();
+                    mostrarError('El nombre es obligatorio.');
+                    inputNombre?.focus();
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreVal)) {
+                    e.preventDefault();
+                    mostrarError('El nombre solo puede contener letras y espacios.');
+                    inputNombre?.focus();
+                    return;
+                }
 
-                    // Hacemos scroll hacia arriba de forma fluida para que el operador vea el cartel de inmediato
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+                // 2. Apellido
+                const apellidoVal = inputApellido?.value.trim() ?? '';
+                if (apellidoVal === '') {
+                    e.preventDefault();
+                    mostrarError('El apellido es obligatorio.');
+                    inputApellido?.focus();
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellidoVal)) {
+                    e.preventDefault();
+                    mostrarError('El apellido solo puede contener letras y espacios.');
+                    inputApellido?.focus();
+                    return;
+                }
 
-                    confirmPass.focus();
+                // 3. Nacionalidad
+                if (!selectNacionalidad || selectNacionalidad.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una nacionalidad.');
+                    selectNacionalidad?.focus();
+                    return;
+                }
+
+                // 4. Provincia
+                if (!selectProvincia || selectProvincia.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una provincia.');
+                    selectProvincia?.focus();
+                    return;
+                }
+
+                // 5. Localidad
+                if (!selectLocalidad || selectLocalidad.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una localidad.');
+                    selectLocalidad?.focus();
+                    return;
+                }
+
+                // 6. Correo Electrónico
+                const emailVal = inputEmail?.value.trim() ?? '';
+                if (emailVal === '') {
+                    e.preventDefault();
+                    mostrarError('El correo electrónico es obligatorio.');
+                    inputEmail?.focus();
+                    return;
+                }
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+                if (!emailRegex.test(emailVal)) {
+                    e.preventDefault();
+                    mostrarError('El formato del correo electrónico no es válido (ej: nombre@dominio.com).');
+                    inputEmail?.focus();
+                    return;
+                }
+
+                // 7. Rol
+                if (!selectRol || selectRol.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar un rol para el empleado.');
+                    selectRol?.focus();
+                    return;
+                }
+
+                // 8. Contraseña
+                const passVal = inputPass?.value ?? '';
+                if (passVal === '') {
+                    e.preventDefault();
+                    mostrarError('La contraseña es obligatoria.');
+                    inputPass?.focus();
+                    return;
+                }
+                if (passVal.length < 5) {
+                    e.preventDefault();
+                    mostrarError('La contraseña debe tener al menos 5 caracteres.');
+                    inputPass?.focus();
+                    return;
+                }
+
+                // 9. Confirmar Contraseña
+                const confirmVal = inputConfirmPass?.value ?? '';
+                if (confirmVal === '') {
+                    e.preventDefault();
+                    mostrarError('Debe confirmar la contraseña.');
+                    inputConfirmPass?.focus();
+                    return;
+                }
+                if (passVal !== confirmVal) {
+                    e.preventDefault();
+                    mostrarError('Las contraseñas ingresadas no coinciden. Por favor, verificalas.');
+                    inputConfirmPass?.focus();
+                    return;
                 }
             });
         }
 
         // --- 🚫 Bloqueo absoluto de números y símbolos en Nombre/Apellido ---
-        const inputNombre = document.getElementById('nombre');
-        const inputApellido = document.getElementById('apellido');
-
         if (inputNombre && inputApellido) {
             const inputsLetras = [inputNombre, inputApellido];
             inputsLetras.forEach(input => {
@@ -210,30 +314,14 @@
                     const regexGeneral = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
                     if (!regexGeneral.test(dataPegada)) {
                         e.preventDefault();
-
-                        alertContainer.innerHTML = `
-                            <div class="alert alert-error">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                No podés pegar números o símbolos en los campos de nombre o apellido.
-                            </div>
-                        `;
-                        window.scrollTo({
-                            top: 0,
-                            behavior: 'smooth'
-                        });
+                        mostrarError('No se permite pegar números o símbolos en los campos de nombre o apellido.');
                     }
                 });
-                input.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                });
+                input.addEventListener('drop', function(e) { e.preventDefault(); });
             });
         }
 
         // --- 🌍 Lógica de Dependencia Escalonada de Ubicación ---
-        const selectNacionalidad = document.getElementById('id_nacionalidad');
-        const selectProvincia = document.getElementById('id_provincia');
-        const selectLocalidad = document.getElementById('id_localidad');
-
         if (selectNacionalidad && selectProvincia && selectLocalidad) {
             selectNacionalidad.addEventListener('change', function() {
                 if (this.value !== "") {
