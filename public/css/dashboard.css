@@ -372,13 +372,25 @@
   transform: translateY(-1px);
 }
 
-.emp-action-btn.btn-delete-hover { color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
-.emp-action-btn.btn-delete-hover:hover {
+.emp-action-btn.btn-deactivate-hover { color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+.emp-action-btn.btn-deactivate-hover:hover {
   background: rgba(239, 68, 68, 0.12);
   border-color: #ef4444;
   transform: translateY(-1px);
 }
 
+/* Estado base del botón de activar (Estilo minimalista igual a deactivate) */
+.emp-action-btn.btn-activate-hover { 
+    color: #22c55e; 
+    border-color: rgba(34, 197, 94, 0.2); 
+}
+
+/* Efecto Hover: Cuando pasás el mouse por arriba */
+.emp-action-btn.btn-activate-hover:hover {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: #22c55e;
+    transform: translateY(-1px);
+}
 /* --- Alertas de Mensajes Flash (Éxito, Error, Advertencia) --- */
 .alert {
   padding: 15px 20px;

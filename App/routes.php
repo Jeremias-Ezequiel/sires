@@ -99,6 +99,18 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    $r->addRoute('GET', '/sires/dashboard/employees/deactivate', [
+        'action' => [EmployeeController::class, 'deactivateEmployee'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/sires/dashboard/employees/activate', [
+        'action' => [EmployeeController::class, 'activateEmployee'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     // Habitaciones
     $r->addRoute('GET', '/sires/dashboard/habitaciones', [
         'action' => [RoomController::class, 'showRooms'],
