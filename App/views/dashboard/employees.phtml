@@ -27,14 +27,14 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <!-- Adaptado con url() para el envío de filtros por GET -->
-    <form action="<?= url('/dashboard/employees') ?>" method="GET" class="filter-form">
+    <!-- 🌟 Apertura del formulario automatizada: Inyecta el action físico y el parámetro de ruta oculto automáticamente -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
             <label class="label-input">Buscar por Nombre</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="search" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" id="search" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($search ?? '') ?>" class="input-search" autocomplete="off">
             </div>
         </div>
 
@@ -44,7 +44,7 @@
                 <option value="">Todos los Roles</option>
                 <?php if (!empty($roles)): ?>
                     <?php foreach ($roles as $rol): ?>
-                        <option value="<?= $rol->getId() ?>" <?= ($_GET['role_filter'] ?? '') === (string)$rol->getId() ? 'selected' : '' ?>><?= htmlspecialchars($rol->getDescripcion()) ?></option>
+                        <option value="<?= $rol->getId() ?>" <?= ($role ?? '') === (string)$rol->getId() ? 'selected' : '' ?>><?= htmlspecialchars($rol->getDescripcion()) ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -55,11 +55,11 @@
             <select name="status_filter" class="select-status">
                 <option value="">Todos los estatus</option>
 
-                <option value="<?= $userModel::ACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::ACTIVE ? 'selected' : '' ?>>
+                <option value="<?= $userModel::ACTIVE ?>" <?= ($is_active ?? '') === (string)$userModel::ACTIVE ? 'selected' : '' ?>>
                     Activo
                 </option>
 
-                <option value="<?= $userModel::INACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::INACTIVE ? 'selected' : '' ?>>
+                <option value="<?= $userModel::INACTIVE ?>" <?= ($is_active ?? '') === (string)$userModel::INACTIVE ? 'selected' : '' ?>>
                     Inactivo
                 </option>
             </select>
@@ -138,7 +138,6 @@
 
                             <td class="cell-actions">
                                 <div class="actions-group-container">
-
                                     <!-- Acciones de la tabla adaptadas con la función url() -->
                                     <a href="<?= url('/dashboard/employees/edit?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-edit-hover" title="Modificar Datos">
@@ -178,7 +177,7 @@
             <h3>No se encontraron empleados</h3>
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
-            <?php if (!empty($_GET['search']) || !empty($_GET['role_filter'])): ?>
+            <?php if ($hasSearch || $hasRole || $hasStatus): ?>
                 <!-- Limpieza alternativa de filtros adaptada con url() -->
                 <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
