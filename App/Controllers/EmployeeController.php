@@ -9,7 +9,7 @@ use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinám
 
 class EmployeeController
 {
-    public function showEmployees(): void
+    public function showEmployees(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -27,13 +27,13 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $search = $_GET['search'] ?? "";
-        $role      = $_GET['role_filter'] ?? "";
-        $is_active = $_GET['status_filter'] ?? "";
+        $search = $vars['search'] ?? "";
+        $role      = $vars['role_filter'] ?? "";
+        $is_active = $vars['status_filter'] ?? "";
 
-        $hasSearch = !empty($_GET['search']);
+        $hasSearch = !empty($vars['search']);
         $hasRole = !empty($role);
-        $hasStatus = isset($_GET['status_filter']) && $_GET['status_filter'] !== '';
+        $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
 
         $rolModel = new Rol();
         $roles = $rolModel->getAll();
@@ -162,7 +162,7 @@ class EmployeeController
         exit;
     }
 
-    public function showEditEmployeeForm(): void
+    public function showEditEmployeeForm(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -183,7 +183,7 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $id = $_GET['id'] ?? '';
+        $id = $vars['id'] ?? '';
         if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
             $_SESSION['flash_message'] = "ID de empleado inválido.";
             $_SESSION['flash_status']  = "error";
@@ -298,14 +298,14 @@ class EmployeeController
     /**
      * Procesa la baja lógica de un empleado (Inactivación)
      */
-    public function deactivateEmployee(): void
+    public function deactivateEmployee(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
         try {
-            $idToDeactivate = $_GET['id'] ?? '';
+            $idToDeactivate = $vars['id'] ?? '';
             
             if (empty($idToDeactivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
@@ -338,14 +338,14 @@ class EmployeeController
     /**
      * Procesa la reactivación del acceso de un empleado (Activación)
      */
-    public function activateEmployee(): void
+    public function activateEmployee(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
         try {
-            $idToActivate = $_GET['id'] ?? '';
+            $idToActivate = $vars['id'] ?? '';
             
             if (empty($idToActivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
