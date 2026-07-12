@@ -11,13 +11,15 @@ use FastRoute\Dispatcher;
 use function FastRoute\simpleDispatcher;
 use App\Middleware\AuthMiddleware;
 
-// 1. Capturamos el path limpio de la barra de direcciones
-$route = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if (isset($_GET['route'])){
+    $route = $_GET['route'];
+}else{
+    $route = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-// 2. PARCHE ENTORNO DEFAULT: Borramos '/index.php' y el subdirectorio '/sires' si existieran en la URL
-$route = str_replace(['/index.php', '/sires'], '', $route);
+    $route = str_replace(['/index.php', '/sires'], '', $route);
+}
 
-if (empty($route) || $route === '') {
+if(empty($route) || $route === ''){
     $route = '/';
 }
 
@@ -48,6 +50,12 @@ try {
         case Dispatcher::FOUND:
             $routeData = $routeInfo[1];
             $vars = $routeInfo[2];
+
+            foreach ($_GET as $key => $value) {
+                if ($key !== 'route') {
+                    $vars[$key] = $value;
+                }
+            }
 
             // =====================================================================
             // 🛑 1° PASO: TUBERÍA DE MIDDLEWARES DINÁMICOS
