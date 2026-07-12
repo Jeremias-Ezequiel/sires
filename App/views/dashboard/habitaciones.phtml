@@ -5,7 +5,8 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="/sires/dashboard/habitaciones/add" class="btn-add">
+        <!-- Redirección adaptada con url() para el formulario de registro -->
+        <a href="<?= url('/dashboard/habitaciones/add') ?>" class="btn-add">
             <i class="fas fa-plus"></i> Registrar Habitación
         </a>
     </div>
@@ -26,7 +27,8 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <form action="/sires/dashboard/habitaciones" method="GET" class="filter-form">
+    <!-- Envío de los filtros GET adaptado con url() -->
+    <form action="<?= url('/dashboard/habitaciones') ?>" method="GET" class="filter-form">
 
         <div class="form-group-search">
             <label class="label-input">Buscar por N° Habitación</label>
@@ -76,7 +78,8 @@
             <i class="fas fa-filter"></i> Filtrar
         </button>
         <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
-            <a href="/sires/dashboard/habitaciones" class="btn-clear-filters">
+            <!-- Limpieza de filtros configurada con url() -->
+            <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -110,10 +113,11 @@
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
-                                    <a href="/sires/maintenance" class="emp-action-btn btn-edit-hover" title="Editar Habitación">
+                                    <!-- Botones de acción redirigidos dinámicamente -->
+                                    <a href="<?= url('/maintenance') ?>" class="emp-action-btn btn-edit-hover" title="Editar Habitación">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="/sires/maintenance" class="emp-action-btn btn-pass-hover" title="Ver Detalle">
+                                    <a href="<?= url('/maintenance') ?>" class="emp-action-btn btn-pass-hover" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </div>
@@ -134,7 +138,8 @@
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
             <?php if (!empty($_GET['search']) || !empty($_GET['type_filter']) || !empty($_GET['status_filter']) || !empty($_GET['floor_filter'])): ?>
-                <a href="/sires/dashboard/habitaciones" class="btn-clear-filters">
+                <!-- Limpieza de búsqueda alternativa con url() -->
+                <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

@@ -11,9 +11,11 @@ use App\Models\Rol;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIRES - Dashboard Hotelero</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/login.css">
-    <link rel="stylesheet" href="/sires/public/css/dashboard.css?v=1.1">
+    
+    <!-- Cargando los estilos usando la función global asset() -->
+    <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/login.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/dashboard.css?v=1.1') ?>">
 </head>
 
 <body>
@@ -22,19 +24,21 @@ use App\Models\Rol;
 
         <aside class="sidebar">
             <div class="logo-container">
-                <img src="/sires/public/img/login/logo.png" alt="Logo SIRES" class="logo-sires">
+                <!-- Cargando el logo mediante la función global asset() -->
+                <img src="<?= asset('img/login/logo.png') ?>" alt="Logo SIRES" class="logo-sires">
             </div>
             <nav>
                 <ul class="nav-links">
                     <li>
-                        <a href="/sires/dashboard" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'home.phtml')) ? 'active' : '' ?>">
+                        <!-- Rutas adaptadas con la función global url() -->
+                        <a href="<?= url('/dashboard') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'home.phtml')) ? 'active' : '' ?>">
                             <i class="fas fa-home"></i>Inicio
                         </a>
                     </li>
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-users"></i>Clientes
                             </a>
                         </li>
@@ -42,7 +46,7 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE])): ?>
                         <li>
-                            <a href="/sires/dashboard/employees" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'employees.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/employees') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'employees.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-user-tie"></i>Empleados
                             </a>
                         </li>
@@ -50,7 +54,7 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'reservas.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'reservas.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-calendar-alt"></i>Reservas
                             </a>
                         </li>
@@ -58,7 +62,7 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="/sires/dashboard/habitaciones" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/habitaciones') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-bed"></i>Habitaciones
                             </a>
                         </li>
@@ -66,14 +70,14 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE])): ?>
                         <li>
-                            <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-money-bill-wave"></i>Pagos
                             </a>
                         </li>
                     <?php endif; ?>
 
                     <li>
-                        <a href="/sires/logout" class="nav-link" style="color: #ef4444;">
+                        <a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;">
                             <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
                         </a>
                     </li>
@@ -83,7 +87,7 @@ use App\Models\Rol;
 
         <main class="main-content">
             <?php
-            // Acá se va a renderizar la vista específica que le mande el controlador
+            // Acá se va a renderizar la vista específica que le mande el controlador (Se mantienen las rutas nativas en disco)
             if (isset($contentView) && file_exists($contentView)) {
                 require_once $contentView;
             }

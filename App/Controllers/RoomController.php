@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use Exception;
 use App\Models\Habitacion;
+use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinámicas
 
 class RoomController
 {
@@ -125,14 +126,16 @@ class RoomController
             $_SESSION['flash_message'] = "Habitación registrada exitosamente.";
             $_SESSION['flash_status']  = "success";
 
-            header('Location: /sires/dashboard/habitaciones');
+            // Redirección adaptada dinámicamente con UrlHelper
+            header('Location: ' . UrlHelper::to('/dashboard/habitaciones'));
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/habitaciones/add');
+            // Redirección adaptada dinámicamente con UrlHelper
+            header('Location: ' . UrlHelper::to('/dashboard/habitaciones/add'));
             exit;
         }
     }

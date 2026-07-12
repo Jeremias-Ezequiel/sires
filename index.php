@@ -11,15 +11,15 @@ use FastRoute\Dispatcher;
 use function FastRoute\simpleDispatcher;
 use App\Middleware\AuthMiddleware;
 
-// Capturamos el path limpio de la barra de direcciones
-$route = parse_url($_SERVER['REQUEST_URI'] ?? '/sires/', PHP_URL_PATH);
+// 1. Capturamos el path limpio de la barra de direcciones
+$route = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+// 2. PARCHE ENTORNO DEFAULT: Borramos '/index.php' y el subdirectorio '/sires' si existieran en la URL
+$route = str_replace(['/index.php', '/sires'], '', $route);
 
 if (empty($route) || $route === '') {
     $route = '/';
 }
-
-// ⚡ REMOVIDO: El "if ($route === '/')" se elimina. 
-// Ahora FastRoute decidirá qué hacer con la raíz de manera centralizada.
 
 // 1. IMPORTAMOS TU ARCHIVO DE RUTAS EXTERNO
 $dispatcher = simpleDispatcher(require __DIR__ . '/App/routes.php');

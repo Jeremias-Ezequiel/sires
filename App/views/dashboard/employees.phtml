@@ -5,13 +5,14 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="/sires/dashboard/employees/add" class="btn-add">
+        <!-- Adaptado con url() para redirigir al formulario de alta -->
+        <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
             <i class="fas fa-plus"></i> Registrar Empleado
         </a>
     </div>
 </header>
 
-<?php if (!empty($errorMessage)): ?> <!-- no se si dejarlo, es un mensaje de que no tiene permiso para hacer cosas-->
+<?php if (!empty($errorMessage)): ?> 
     <div class="alert-error">
         <i class="fa-solid fa-triangle-exclamation"></i>
         <?= htmlspecialchars($errorMessage) ?>
@@ -26,7 +27,8 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <form action="/sires/dashboard/employees" method="GET" class="filter-form">
+    <!-- Adaptado con url() para el envío de filtros por GET -->
+    <form action="<?= url('/dashboard/employees') ?>" method="GET" class="filter-form">
 
         <div class="form-group-search">
             <label class="label-input">Buscar por Nombre</label>
@@ -69,7 +71,8 @@
         <?php
         if ($hasSearch || $hasRole || $hasStatus):
         ?>
-            <a href="/sires/dashboard/employees" class="btn-clear-filters">
+            <!-- Botón de limpieza de filtros adaptado con url() -->
+            <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -136,23 +139,24 @@
                             <td class="cell-actions">
                                 <div class="actions-group-container">
 
-                                    <a href="/sires/dashboard/employees/edit?id=<?= $emp->getId() ?>"
+                                    <!-- Acciones de la tabla adaptadas con la función url() -->
+                                    <a href="<?= url('/dashboard/employees/edit?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-edit-hover" title="Modificar Datos">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/reset-password?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/reset-password?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-pass-hover" title="Cambiar Contraseña">
                                         <i class="fas fa-key"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/deactivate?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-deactivate-hover" title="Dar de Baja Empleado"
                                         onclick="return confirm('¿Está seguro de que desea dar de baja al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-minus"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/activate?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-activate-hover" title="Reactivar Empleado"
                                         onclick="return confirm('¿Está seguro de que desea reactivar al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-plus"></i>
@@ -175,7 +179,8 @@
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
             <?php if (!empty($_GET['search']) || !empty($_GET['role_filter'])): ?>
-                <a href="/sires/dashboard/employees" class="btn-clear-filters">
+                <!-- Limpieza alternativa de filtros adaptada con url() -->
+                <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

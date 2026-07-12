@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Models\Rol;
+use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinámicas
 
 class EmployeeController
 {
@@ -156,7 +157,8 @@ class EmployeeController
             $_SESSION['flash_status']  = "error";
         }
 
-        header('Location: /sires/dashboard/employees/add');
+        // Redirección adaptada dinámicamente con UrlHelper
+        header('Location: ' . UrlHelper::to('/dashboard/employees/add'));
         exit;
     }
 
@@ -185,7 +187,7 @@ class EmployeeController
         if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
             $_SESSION['flash_message'] = "ID de empleado inválido.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
@@ -195,7 +197,7 @@ class EmployeeController
         if (!$employee) {
             $_SESSION['flash_message'] = "El empleado solicitado no existe.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
@@ -280,7 +282,7 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado actualizado exitosamente.";
             $_SESSION['flash_status']  = "success";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
@@ -288,12 +290,12 @@ class EmployeeController
             $_SESSION['flash_status']  = "error";
 
             $redirectId = $_POST['id'] ?? '';
-            header('Location: /sires/dashboard/employees/edit?id=' . urlencode((string)$redirectId));
+            header('Location: ' . UrlHelper::to('/dashboard/employees/edit?id=' . urlencode((string)$redirectId)));
             exit;
         }
     }
 
-/**
+    /**
      * Procesa la baja lógica de un empleado (Inactivación)
      */
     public function deactivateEmployee(): void
@@ -321,14 +323,14 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado desactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
             
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
 
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
     }
@@ -362,17 +364,15 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado reactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
             
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
 
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
     }
-
 }
-

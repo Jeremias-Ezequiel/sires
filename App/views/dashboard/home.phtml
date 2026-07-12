@@ -128,7 +128,8 @@
         document.getElementById('btn-cap-' + capacidad).classList.add('active');
         document.getElementById('tabla-titulo-capacidad').innerText = capacidad + ' personas';
 
-        fetch('?capacidad=' + capacidad, {
+        // Modificado inyectando url() dinámicamente para la petición AJAX
+        fetch('<?= url("/dashboard") ?>?capacidad=' + capacidad, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'

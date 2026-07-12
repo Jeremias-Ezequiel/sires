@@ -4,7 +4,8 @@
         <p>Modificación de datos del empleado</p>
     </div>
 
-    <a href="/sires/dashboard/employees" class="btn-clear-filters">
+    <!-- Modificado con la función global url() -->
+    <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -19,7 +20,8 @@
 </div>
 
 <section class="details-section form-container-section">
-    <form action="/sires/dashboard/employees/edit/process" method="POST" class="employee-form">
+    <!-- Modificado con la función global url() para el proceso de actualización -->
+    <form action="<?= url('/dashboard/employees/edit/process') ?>" method="POST" class="employee-form">
         <input type="hidden" name="id" value="<?= htmlspecialchars((string)($old['id'] ?? $employee->getId() ?? '')) ?>">
 
         <div class="form-section-title">

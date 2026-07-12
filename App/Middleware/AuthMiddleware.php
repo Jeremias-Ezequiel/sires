@@ -20,7 +20,7 @@ class AuthMiddleware
             session_start();
             $_SESSION['auth_error'] = "Acceso denegado. Por favor, inicie sesión.";
 
-            header('Location: /sires/login');
+            header('Location:' . UrlHelper::to('/login'));
             exit;
         }
 
@@ -32,7 +32,7 @@ class AuthMiddleware
             session_start();
             $_SESSION['auth_error'] = "Su sesión ha expirado por inactividad.";
 
-            header('Location: /sires/login');
+            header('Location:' . UrlHelper::to('/login'));
             exit;
         }
 
@@ -48,7 +48,8 @@ class AuthMiddleware
         // 3. Verificación estricta: Si no estás en la lista, vas para afuera
         if (!in_array($userRole, $allowedRoles, true)) {
             $_SESSION['auth_error'] = "No tiene permisos suficientes para acceder a esta sección.";
-            header('Location: /sires/dashboard');
+
+            header('Location:' . UrlHelper::to('/dashboard'));
             exit;
         }
     }
