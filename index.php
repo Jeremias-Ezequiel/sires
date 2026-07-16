@@ -11,15 +11,17 @@ use FastRoute\Dispatcher;
 use function FastRoute\simpleDispatcher;
 use App\Middleware\AuthMiddleware;
 
-// Capturamos el path limpio de la barra de direcciones
-$route = parse_url($_SERVER['REQUEST_URI'] ?? '/sires/', PHP_URL_PATH);
+if (isset($_GET['route'])){
+    $route = $_GET['route'];
+}else{
+    $route = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-if (empty($route) || $route === '') {
-    $route = '/';
+    $route = str_replace(['/index.php', '/sires'], '', $route);
 }
 
-// ⚡ REMOVIDO: El "if ($route === '/')" se elimina. 
-// Ahora FastRoute decidirá qué hacer con la raíz de manera centralizada.
+if(empty($route) || $route === ''){
+    $route = '/';
+}
 
 // 1. IMPORTAMOS TU ARCHIVO DE RUTAS EXTERNO
 $dispatcher = simpleDispatcher(require __DIR__ . '/App/routes.php');
@@ -48,6 +50,12 @@ try {
         case Dispatcher::FOUND:
             $routeData = $routeInfo[1];
             $vars = $routeInfo[2];
+
+            foreach ($_GET as $key => $value) {
+                if ($key !== 'route') {
+                    $vars[$key] = $value;
+                }
+            }
 
             // =====================================================================
             // 🛑 1° PASO: TUBERÍA DE MIDDLEWARES DINÁMICOS

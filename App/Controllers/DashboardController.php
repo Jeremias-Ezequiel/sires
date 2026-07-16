@@ -7,7 +7,7 @@ use Exception;
 
 class DashboardController
 {
-    public function showHome(): void
+    public function showHome(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -23,7 +23,7 @@ class DashboardController
         $reservadas         = 0;
         $ingresos_hoy       = 0;
 
-        $capacidad_filtrada = isset($_GET['capacidad']) ? (int)$_GET['capacidad'] : 2;
+        $capacidad_filtrada = isset($vars['capacidad']) ? (int)$vars['capacidad'] : 2;
         $disp_2_personas    = 0;
         $disp_3_personas    = 0;
         $disp_4_personas    = 0;
@@ -78,11 +78,11 @@ class DashboardController
 
         // Renderizado normal de la página entera si no es AJAX
         $fecha_formateada = date('d/m/Y');
-        try {
+        /*try {
             $formatter = new \IntlDateFormatter('es_AR', \IntlDateFormatter::FULL, \IntlDateFormatter::NONE, 'America/Argentina/Buenos_Aires');
             if ($formatter) $fecha_formateada = ucfirst($formatter->format(new \DateTime()));
         } catch (Exception $e) {
-        }
+        }*/
 
         $contentView = __DIR__ . '/../views/dashboard/home.phtml';
         require_once __DIR__ . '/../views/dashboard/layout.phtml';

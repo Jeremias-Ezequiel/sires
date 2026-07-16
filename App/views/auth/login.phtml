@@ -9,36 +9,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/login.css">
+    <!-- Cargando los estilos usando la función global asset() -->
+    <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/login.css') ?>">
 </head>
 
 <body>
     <header class="encabezado-fotos">
         <div class="carrusel-container">
             <div class="carrusel-track">
-                <img src="/sires/public/img/login/hotel-img1.webp" alt="Hotel 1">
-                <img src="/sires/public/img/login/hotel-img2.webp" alt="Hotel 2">
-                <img src="/sires/public/img/login/hotel-img3.webp" alt="Hotel 3">
-                <img src="/sires/public/img/login/hotel-img4.webp" alt="Hotel 4">
-                <img src="/sires/public/img/login/hotel-img5.webp" alt="Hotel 5">
-                <img src="/sires/public/img/login/hotel-img6.webp" alt="Hotel 6">
-                <img src="/sires/public/img/login/hotel-img7.webp" alt="Hotel 7">
-                <img src="/sires/public/img/login/hotel-img8.webp" alt="Hotel 8">
+                <!-- Cargando las imágenes usando la función global asset() -->
+                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="Hotel 1">
+                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="Hotel 2">
+                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="Hotel 3">
+                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="Hotel 4">
+                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="Hotel 5">
+                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="Hotel 6">
+                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="Hotel 7">
+                <img src="<?= asset('img/login/hotel-img8.webp') ?>" alt="Hotel 8">
 
-                <img src="/sires/public/img/login/hotel-img1.webp" alt="Hotel 1 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img2.webp" alt="Hotel 2 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img3.webp" alt="Hotel 3 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img4.webp" alt="Hotel 4 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img5.webp" alt="Hotel 5 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img6.webp" alt="Hotel 6 (Repetida)">
-                <img src="/sires/public/img/login/hotel-img7.webp" alt="Hotel 7 (Repetira)">
+                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="Hotel 1 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="Hotel 2 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="Hotel 3 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="Hotel 4 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="Hotel 5 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="Hotel 6 (Repetida)">
+                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="Hotel 7 (Repetira)">
             </div>
         </div>
     </header>
     <div class="main-container">
         <div class="logo-side">
-            <img src="/sires/public/img/login/logo.png" alt="Logo SIRES" class="logo-formulario">
+            <!-- Cargando el logo mediante la función global asset() -->
+            <img src="<?= asset('img/login/logo.png') ?>" alt="Logo SIRES" class="logo-formulario">
         </div>
 
         <div class="login-container">
@@ -66,7 +69,8 @@
                 ?>
             <?php endif; ?>
 
-            <form action="/sires/login/process" method="post" novalidate autocomplete="off">
+            <!-- Pasando la ruta de procesamiento del formulario por la función global url() -->
+            <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
 
                 <label class="label-input">EMAIL</label>
                 <input type="email" name="email" placeholder="usuario@hotel.com" autocomplete="off">
@@ -78,7 +82,8 @@
                 </div>
 
                 <div class="forgot-password-box">
-                    <a href="/sires/password/recovery" class="link-yellow">¿Olvidaste tu contraseña?</a>
+                    <!-- Pasando el enlace de recuperación por la función global url() -->
+                    <a href="<?= url('/password/recovery') ?>" class="link-yellow">¿Olvidaste tu contraseña?</a>
                 </div>
 
                 <button type="submit" class="btn-primary">Iniciar sesión</button>

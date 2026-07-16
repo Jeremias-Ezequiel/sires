@@ -5,7 +5,8 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="/sires/dashboard/habitaciones/add" class="btn-add">
+        <!-- Redirección adaptada con url() para el formulario de registro -->
+        <a href="<?= url('/dashboard/habitaciones/add') ?>" class="btn-add">
             <i class="fas fa-plus"></i> Registrar Habitación
         </a>
     </div>
@@ -26,13 +27,14 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <form action="/sires/dashboard/habitaciones" method="GET" class="filter-form">
+    <!-- 🌟 Apertura del formulario automatizada para GET: previene la pérdida de la Query String de la sección -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
             <label class="label-input">Buscar por N° Habitación</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="input-search" autocomplete="off">
             </div>
         </div>
 
@@ -42,7 +44,7 @@
                 <option value="">Todos los Tipos</option>
                 <?php if (!empty($tipos)): ?>
                     <?php foreach ($tipos as $tipo): ?>
-                        <option value="<?= $tipo['id'] ?>" <?= ($_GET['type_filter'] ?? '') === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
+                        <option value="<?= $tipo['id'] ?>" <?= ($type ?? '') === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -54,7 +56,7 @@
                 <option value="">Todos los Estados</option>
                 <?php if (!empty($estados)): ?>
                     <?php foreach ($estados as $estado): ?>
-                        <option value="<?= $estado['id'] ?>" <?= ($_GET['status_filter'] ?? '') === (string)$estado['id'] ? 'selected' : '' ?>><?= htmlspecialchars($estado['descripcion']) ?></option>
+                        <option value="<?= $estado['id'] ?>" <?= ($status ?? '') === (string)$estado['id'] ? 'selected' : '' ?>><?= htmlspecialchars($estado['descripcion']) ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -66,7 +68,7 @@
                 <option value="">Todos los Pisos</option>
                 <?php if (!empty($pisos)): ?>
                     <?php foreach ($pisos as $piso): ?>
-                        <option value="<?= $piso ?>" <?= ($_GET['floor_filter'] ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= $piso ?></option>
+                        <option value="<?= $piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= $piso ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -76,7 +78,8 @@
             <i class="fas fa-filter"></i> Filtrar
         </button>
         <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
-            <a href="/sires/dashboard/habitaciones" class="btn-clear-filters">
+            <!-- Limpieza de filtros configurada con url() -->
+            <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -110,10 +113,11 @@
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
-                                    <a href="/sires/maintenance" class="emp-action-btn btn-edit-hover" title="Editar Habitación">
+                                    <!-- 🎯 Corregido: links apuntando al ruteo dinámico con su ID correspondiente -->
+                                    <a href="<?= url('/dashboard/habitaciones/edit?id=' . $room['id']) ?>" class="emp-action-btn btn-edit-hover" title="Editar Habitación">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="/sires/maintenance" class="emp-action-btn btn-pass-hover" title="Ver Detalle">
+                                    <a href="<?= url('/dashboard/habitaciones/detail?id=' . $room['id']) ?>" class="emp-action-btn btn-pass-hover" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </div>
@@ -133,8 +137,9 @@
             <h3>No se encontraron habitaciones</h3>
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
-            <?php if (!empty($_GET['search']) || !empty($_GET['type_filter']) || !empty($_GET['status_filter']) || !empty($_GET['floor_filter'])): ?>
-                <a href="/sires/dashboard/habitaciones" class="btn-clear-filters">
+            <?php if ($hasSearch || $hasType || $hasStatus || $hasFloor): ?>
+                <!-- Limpieza de búsqueda alternativa con url() -->
+                <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

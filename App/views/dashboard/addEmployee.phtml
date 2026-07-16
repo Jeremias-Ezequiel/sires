@@ -4,7 +4,8 @@
         <p>Alta de personal y configuración de accesos al sistema SIRES</p>
     </div>
 
-    <a href="/sires/dashboard/employees" class="btn-clear-filters">
+    <!-- Modificado con la función global url() -->
+    <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -20,7 +21,8 @@
 </div>
 
 <section class="details-section form-container-section">
-    <form action="/sires/dashboard/employees/add/process" method="POST" class="employee-form">
+    <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees/add/process', 'POST', 'employee-form') ?>
 
         <div class="form-section-title">
             <i class="fas fa-user"></i> Datos Personales
@@ -162,7 +164,7 @@
             alertContainer.innerHTML = `
                 <div class="alert alert-error">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    ${mensaje}
+                    \${mensaje}
                 </div>
             `;
             window.scrollTo({ top: 0, behavior: 'smooth' });

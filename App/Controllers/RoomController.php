@@ -4,10 +4,11 @@ namespace App\Controllers;
 
 use Exception;
 use App\Models\Habitacion;
+use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinámicas
 
 class RoomController
 {
-    public function showRooms(): void
+    public function showRooms(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -25,15 +26,15 @@ class RoomController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $search = $_GET['search'] ?? "";
-        $status = $_GET['status_filter'] ?? "";
-        $type   = $_GET['type_filter'] ?? "";
-        $floor  = $_GET['floor_filter'] ?? "";
+        $search = $vars['search'] ?? "";
+        $status = $vars['status_filter'] ?? "";
+        $type   = $vars['type_filter'] ?? "";
+        $floor  = $vars['floor_filter'] ?? "";
 
-        $hasSearch = !empty($_GET['search']);
-        $hasStatus = isset($_GET['status_filter']) && $_GET['status_filter'] !== '';
-        $hasType   = isset($_GET['type_filter']) && $_GET['type_filter'] !== '';
-        $hasFloor  = isset($_GET['floor_filter']) && $_GET['floor_filter'] !== '';
+        $hasSearch = !empty($vars['search']);
+        $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
+        $hasType   = isset($vars['type_filter']) && $vars['type_filter'] !== '';
+        $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
 
         $roomModel = new Habitacion();
         $habitaciones = $roomModel->getAllWithFilters($search, $status, $type, $floor);
@@ -125,14 +126,16 @@ class RoomController
             $_SESSION['flash_message'] = "Habitación registrada exitosamente.";
             $_SESSION['flash_status']  = "success";
 
-            header('Location: /sires/dashboard/habitaciones');
+            // Redirección adaptada dinámicamente con UrlHelper
+            header('Location: ' . UrlHelper::to('/dashboard/habitaciones'));
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/habitaciones/add');
+            // Redirección adaptada dinámicamente con UrlHelper
+            header('Location: ' . UrlHelper::to('/dashboard/habitaciones/add'));
             exit;
         }
     }

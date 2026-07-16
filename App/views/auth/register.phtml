@@ -7,8 +7,9 @@
     <title>SIRES - Registro de Usuario</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/register.css">
+    <!-- Cargando los estilos con la función global asset() -->
+    <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/register.css') ?>">
 </head>
 
 <body>
@@ -16,7 +17,8 @@
     <div class="main-container">
 
         <div class="logo-side">
-            <img src="/sires/public/img/logo.png" alt="Logo SIRES" class="logo-formulario">
+            <!-- Cargando el logo mediante la función global asset() -->
+            <img src="<?= asset('img/logo.png') ?>" alt="Logo SIRES" class="logo-formulario">
         </div>
 
         <div class="register-card">
@@ -45,7 +47,8 @@
                 <?php unset($_SESSION['registro_error']); ?>
             <?php endif; ?>
 
-            <form action="/sires/register/process" method="POST" autocomplete="off">
+            <!-- Pasando la ruta de procesamiento por la función global url() -->
+            <form action="<?= url('/register/process') ?>" method="POST" autocomplete="off">
 
                 <div class="form-row">
                     <div class="form-group">
@@ -89,7 +92,8 @@
                 <div class="action-buttons">
                     <button type="submit" class="btn-register">REGISTRARSE</button>
 
-                    <a href="/sires/dashboard" class="btn-back-dashboard">
+                    <!-- Pasando el retorno al inicio por la función global url() -->
+                    <a href="<?= url('/dashboard') ?>" class="btn-back-dashboard">
                         <i class="fas fa-arrow-left"></i> Volver al Inicio
                     </a>
                 </div>

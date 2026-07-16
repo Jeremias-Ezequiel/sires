@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Middleware\AuthMiddleware;
+use App\Helpers\UrlHelper;
 
 class AuthController
 {
@@ -61,7 +62,7 @@ class AuthController
             $_SESSION['user_id'] = $user->getId();
             $_SESSION['user_role'] = $user->getIdRol();
 
-            header('Location: /sires/dashboard');
+            header('Location:' . UrlHelper::to('/dashboard'));
             exit;
         } catch (Exception $e) {
             // Cualquier excepción (campos vacíos, formato de mail roto o clave inválida)
@@ -71,7 +72,7 @@ class AuthController
             }
 
             $_SESSION['auth_error'] = $e->getMessage();
-            header('Location: /sires/login');
+            header('Location:' . UrlHelper::to('/login'));
             exit;
         }
     }

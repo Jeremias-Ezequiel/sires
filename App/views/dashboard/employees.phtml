@@ -5,13 +5,14 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="/sires/dashboard/employees/add" class="btn-add">
+        <!-- Adaptado con url() para redirigir al formulario de alta -->
+        <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
             <i class="fas fa-plus"></i> Registrar Empleado
         </a>
     </div>
 </header>
 
-<?php if (!empty($errorMessage)): ?> <!-- no se si dejarlo, es un mensaje de que no tiene permiso para hacer cosas-->
+<?php if (!empty($errorMessage)): ?> 
     <div class="alert-error">
         <i class="fa-solid fa-triangle-exclamation"></i>
         <?= htmlspecialchars($errorMessage) ?>
@@ -26,13 +27,14 @@
 <?php endif; ?>
 
 <section class="details-section filter-section">
-    <form action="/sires/dashboard/employees" method="GET" class="filter-form">
+    <!-- 🌟 Apertura del formulario automatizada: Inyecta el action físico y el parámetro de ruta oculto automáticamente -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
             <label class="label-input">Buscar por Nombre</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="search" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" id="search" name="search" placeholder="Ej: Juan..." value="<?= htmlspecialchars($search ?? '') ?>" class="input-search" autocomplete="off">
             </div>
         </div>
 
@@ -42,7 +44,7 @@
                 <option value="">Todos los Roles</option>
                 <?php if (!empty($roles)): ?>
                     <?php foreach ($roles as $rol): ?>
-                        <option value="<?= $rol->getId() ?>" <?= ($_GET['role_filter'] ?? '') === (string)$rol->getId() ? 'selected' : '' ?>><?= htmlspecialchars($rol->getDescripcion()) ?></option>
+                        <option value="<?= $rol->getId() ?>" <?= ($role ?? '') === (string)$rol->getId() ? 'selected' : '' ?>><?= htmlspecialchars($rol->getDescripcion()) ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -53,11 +55,11 @@
             <select name="status_filter" class="select-status">
                 <option value="">Todos los estatus</option>
 
-                <option value="<?= $userModel::ACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::ACTIVE ? 'selected' : '' ?>>
+                <option value="<?= $userModel::ACTIVE ?>" <?= ($is_active ?? '') === (string)$userModel::ACTIVE ? 'selected' : '' ?>>
                     Activo
                 </option>
 
-                <option value="<?= $userModel::INACTIVE ?>" <?= ($_GET['status_filter'] ?? '') === (string)$userModel::INACTIVE ? 'selected' : '' ?>>
+                <option value="<?= $userModel::INACTIVE ?>" <?= ($is_active ?? '') === (string)$userModel::INACTIVE ? 'selected' : '' ?>>
                     Inactivo
                 </option>
             </select>
@@ -69,7 +71,8 @@
         <?php
         if ($hasSearch || $hasRole || $hasStatus):
         ?>
-            <a href="/sires/dashboard/employees" class="btn-clear-filters">
+            <!-- Botón de limpieza de filtros adaptado con url() -->
+            <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -135,24 +138,24 @@
 
                             <td class="cell-actions">
                                 <div class="actions-group-container">
-
-                                    <a href="/sires/dashboard/employees/edit?id=<?= $emp->getId() ?>"
+                                    <!-- Acciones de la tabla adaptadas con la función url() -->
+                                    <a href="<?= url('/dashboard/employees/edit?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-edit-hover" title="Modificar Datos">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/reset-password?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/reset-password?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-pass-hover" title="Cambiar Contraseña">
                                         <i class="fas fa-key"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/deactivate?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-deactivate-hover" title="Dar de Baja Empleado"
                                         onclick="return confirm('¿Está seguro de que desea dar de baja al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-minus"></i>
                                     </a>
 
-                                    <a href="/sires/dashboard/employees/activate?id=<?= $emp->getId() ?>"
+                                    <a href="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
                                         class="emp-action-btn btn-activate-hover" title="Reactivar Empleado"
                                         onclick="return confirm('¿Está seguro de que desea reactivar al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-plus"></i>
@@ -174,8 +177,9 @@
             <h3>No se encontraron empleados</h3>
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
-            <?php if (!empty($_GET['search']) || !empty($_GET['role_filter'])): ?>
-                <a href="/sires/dashboard/employees" class="btn-clear-filters">
+            <?php if ($hasSearch || $hasRole || $hasStatus): ?>
+                <!-- Limpieza alternativa de filtros adaptada con url() -->
+                <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

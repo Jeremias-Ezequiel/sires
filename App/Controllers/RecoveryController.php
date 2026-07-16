@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Models\Usuario;
 use Exception;
+use App\Helpers\UrlHelper; // Importamos el helper para el ruteo dinámico
 
 class RecoveryController
 {
@@ -21,7 +22,7 @@ class RecoveryController
         $errorMessage = $_SESSION['error_message'] ?? null;
         unset($_SESSION['error_message']);
 
-        // Renderiza la vista de solicitud
+        // Renderiza la vista de solicitud (Ruta nativa en disco)
         require_once __DIR__ . '/../views/auth/forgot_password.phtml';
     }
 
@@ -38,7 +39,7 @@ class RecoveryController
 
         if (empty($email)) {
             $_SESSION['error_message'] = "Por favor, ingresá tu correo electrónico.";
-            header('Location: /sires/password/recovery');
+            header('Location: ' . UrlHelper::to('/password/recovery'));
             exit;
         }
 
@@ -49,7 +50,7 @@ class RecoveryController
             // Si el mail no existe en la base de datos
             if (!$usuario) {
                 $_SESSION['error_message'] = "El correo electrónico ingresado no pertenece a ningún usuario registrado.";
-                header('Location: /sires/password/recovery');
+                header('Location: ' . UrlHelper::to('/password/recovery'));
                 exit;
             }
 
@@ -83,8 +84,8 @@ class RecoveryController
             $mail->isHTML(true);
             $mail->Subject = 'Recuperación de Contraseña - SIRES';
 
-            // Construimos el enlace dinámico apuntando a la IP de tu servidor Apache
-            $linkReal = "http://" . $_SERVER['HTTP_HOST'] . "/sires/password/reset/" . $token;
+            // Construimos el enlace dinámico absoluto inyectando el UrlHelper para que mantenga el index.php en el mail
+            $linkReal = "http://" . $_SERVER['HTTP_HOST'] . UrlHelper::to('/password/reset/' . $token);
 
             // Maquetado del correo electrónico
             $mail->Body = "
@@ -109,12 +110,12 @@ class RecoveryController
 
             // 🟢 3. Redirigimos al Login informando el éxito del envío
             $_SESSION['flash_success'] = "¡Solicitud procesada! Te enviamos un correo electrónico con las instrucciones para restablecer tu contraseña.";
-            header('Location: /sires/login');
+            header('Location: ' . UrlHelper::to('/login'));
             exit;
         } catch (Exception $e) {
             // Atrapamos cualquier error de PHPMailer o Base de datos y lo mostramos en el formulario
             $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Detalle: " . $mail->ErrorInfo;
-            header('Location: /sires/password/recovery');
+            header('Location: ' . UrlHelper::to('/password/recovery'));
             exit;
         }
     }
@@ -132,7 +133,7 @@ class RecoveryController
         $errorMessage = $_SESSION['error_message'] ?? null;
         unset($_SESSION['error_message']);
 
-        // Renderiza la vista de reseteo
+        // Renderiza la vista de reseteo (Ruta nativa en disco)
         require_once __DIR__ . '/../views/auth/reset_password.phtml';
     }
 
@@ -152,13 +153,13 @@ class RecoveryController
         // 1. Validaciones básicas de la interfaz de usuario
         if (empty($password) || empty($confirmPassword)) {
             $_SESSION['error_message'] = "Todos los campos de contraseña son obligatorios.";
-            header('Location: /sires/password/reset/' . $token);
+            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
             exit;
         }
 
         if ($password !== $confirmPassword) {
             $_SESSION['error_message'] = "Las contraseñas ingresadas no coinciden.";
-            header('Location: /sires/password/reset/' . $token);
+            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
             exit;
         }
 
@@ -170,15 +171,14 @@ class RecoveryController
 
             if (!$usuario) {
                 $_SESSION['error_message'] = "El enlace de recuperación ha expirado, ya fue utilizado o es inválido. Por favor, solicitá uno nuevo.";
-                header('Location: /sires/password/recovery');
+                header('Location: ' . UrlHelper::to('/password/recovery'));
                 exit;
             }
 
             // 🛑 NUEVA VALIDACIÓN: Bloquear si la clave nueva es idéntica a la que ya tiene registrada
-            // Usamos password_verify pasándole la clave nueva del POST y el hash viejo que recuperó el modelo
             if (password_verify($password, $usuario->getPassword())) {
                 $_SESSION['error_message'] = "La nueva contraseña no puede ser igual a tu contraseña actual. Por favor, elegí una diferente.";
-                header('Location: /sires/password/reset/' . $token);
+                header('Location: ' . UrlHelper::to('/password/reset/' . $token));
                 exit;
             }
 
@@ -187,14 +187,13 @@ class RecoveryController
 
             // Redirección exitosa al Login con confirmación visual
             $_SESSION['flash_success'] = "¡Contraseña actualizada con éxito! Ya podés iniciar sesión con tu nueva clave.";
-            header('Location: /sires/login');
+            header('Location: ' . UrlHelper::to('/login'));
             exit;
         } catch (Exception $e) {
-            // Atrapamos las excepciones controladas del modelo (ej: longitud menor a 5 letras)
+            // Atrapamos las excepciones controladas del modelo
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: /sires/password/reset/' . $token);
+            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
             exit;
         }
     }
 }
-
