@@ -98,6 +98,18 @@ return function (RouteCollector $r) {
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
+    // Restablecer contraseña de empleados desde el Dashboard
+    $r->addRoute('GET', '/sires/dashboard/employees/reset-password', [
+        'action' => [EmployeeController::class, 'showResetPasswordForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/sires/dashboard/employees/reset-password/process', [
+        'action' => [EmployeeController::class, 'resetPassword'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
 
     $r->addRoute('GET', '/sires/dashboard/employees/edit', [
         'action' => [EmployeeController::class, 'showEditEmployeeForm'],

@@ -59,7 +59,7 @@ class Usuario extends Model
         }
     }
 
-    public function listEmployees(?string $query, $is_active, $role): array
+    public function listEmployees(?string $query, $is_active, $role, int $limit = 10, int $offset = 0): array
     {
         $conditions = [];
         $params = [];
@@ -71,7 +71,6 @@ class Usuario extends Model
         if ($query !== null) {
             $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
             $search = "%" . $cleanQuery . "%";
-
             $conditions[] = "(nombre LIKE :search OR apellido LIKE :search_apellido)";
             $params['search'] = $search;
             $params['search_apellido'] = $search;
@@ -87,8 +86,65 @@ class Usuario extends Model
             $params['role'] = (int)$role;
         }
 
+        // Construcción de la SQL con límites de paginación
         $sql = "SELECT * FROM Usuarios";
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+        
+        $sql .= " ORDER BY is_active DESC, id ASC LIMIT :limit OFFSET :offset";
 
+        try {
+            $stmt = $this->db->prepare($sql);
+            
+            // Mapeamos los filtros comunes
+            foreach ($params as $key => $val) {
+                $stmt->bindValue(':' . $key, $val);
+            }
+            // Bind estricto como enteros para LIMIT y OFFSET
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Usuario::class);
+
+            return $stmt->fetchAll() ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en listEmployees con paginación: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al buscar empleados.");
+        }
+    }
+
+    /**
+     * Cuenta la cantidad total de empleados según los filtros activos
+     */
+    public function countEmployees(?string $query, $is_active, $role): int
+    {
+        $conditions = [];
+        $params = [];
+
+        $query = ($query === "") ? null : $query;
+        $is_active = ($is_active === "") ? null : $is_active;
+        $role = ($role === "") ? null : $role;
+
+        if ($query !== null) {
+            $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
+            $search = "%" . $cleanQuery . "%";
+            $conditions[] = "(nombre LIKE :search OR apellido LIKE :search_apellido)";
+            $params['search'] = $search;
+            $params['search_apellido'] = $search;
+        }
+
+        if ($is_active !== null) {
+            $conditions[] = "is_active = :is_active";
+            $params['is_active'] = (int)$is_active;
+        }
+
+        if ($role !== null) {
+            $conditions[] = "id_rol = :role";
+            $params['role'] = (int)$role;
+        }
+
+        $sql = "SELECT COUNT(*) FROM Usuarios";
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
@@ -96,16 +152,12 @@ class Usuario extends Model
         try {
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
-
-            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Usuario::class);
-
-            return $stmt->fetchAll() ?: [];
+            return (int)$stmt->fetchColumn();
         } catch (PDOException $e) {
-            error_log("Error en findEmployees: " . $e->getMessage());
-            throw new Exception("Error en la base de datos al buscar empleados.");
+            error_log("Error en countEmployees: " . $e->getMessage());
+            return 0;
         }
     }
-
     /**
      * 🔑 METODO REQUERIDO POR AUTHCONTROLLER (Recuperado)
      */
@@ -265,6 +317,31 @@ class Usuario extends Model
         } catch (PDOException $e) {
             error_log("Error en updatePasswordAfterReset: " . $e->getMessage());
             throw new Exception("Error interno al actualizar la clave.");
+        }
+    }
+    /**
+     * Permite cambiar la clave a un usuario directamente por base de datos (Uso de Dashboard)
+     */
+    public function changePasswordAdmin(string $newPassword): bool
+    {
+        try {
+            if (strlen($newPassword) < 5) {
+                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+            }
+
+            // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
+            $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+            
+            $sql = "UPDATE Usuarios SET password = :password WHERE id = :id";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':password' => $hashedPassword,
+                ':id'       => $this->id
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en changePasswordAdmin: " . $e->getMessage());
+            throw new Exception("Error interno en la base de datos al guardar la nueva contraseña.");
         }
     }
 

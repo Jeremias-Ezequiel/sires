@@ -108,7 +108,7 @@
                         <tr>
                             <td><?= htmlspecialchars((string)$room['numero']) ?></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
-                            <td><span class="status-badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><span class="<?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -158,7 +158,7 @@
                     <tr>
                         <td>${room.numero}</td>
                         <td>${room.piso}</td>
-                        <td><span class="status-badge ${statusClass}">${room.estado}</span></td>
+                        <td><span class="${statusClass}">${room.estado}</span></td>
                         <td>${room.tipo}</td>
                     </tr>
                 `;
