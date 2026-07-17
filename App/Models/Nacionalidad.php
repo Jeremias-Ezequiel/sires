@@ -7,33 +7,26 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
+use App\Helpers\LanguageHelper;
 
 class Nacionalidad extends Model
 {
-    // =====================================================================
-    // ATRIBUTOS PRIVADOS (Actualizados con la nueva base de datos)
-    // =====================================================================
     private int $id;
     private string $descripcion;
+    private ?string $traducciones = null;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    // =====================================================================
-    // MÉTODOS DE NEGOCIO
-    // =====================================================================
-
-  public function getAll(): ?array
+    public function getAll(): ?array
     {
         try {
-            // ✨ SOLUCIÓN ULTRA ESTRICTA: Filtramos con DISTINCT combinando un subquery limpio
-            $sql = "SELECT DISTINCT n1.id, TRIM(n1.descripcion) AS descripcion, n1.is_active, '' AS fecha_alta, NULL AS fecha_baja
+            $sql = "SELECT DISTINCT n1.id, TRIM(n1.nombre) AS descripcion, n1.traducciones
                     FROM Nacionalidades n1
-                    WHERE n1.is_active = 1
-                    AND n1.id = (
+                    WHERE n1.id = (
                         SELECT MIN(n2.id) 
                         FROM Nacionalidades n2 
-                        WHERE TRIM(n2.descripcion) = TRIM(n1.descripcion)
+                        WHERE TRIM(n2.nombre) = TRIM(n1.nombre)
                     )
                     ORDER BY descripcion ASC";
                     
@@ -50,10 +43,6 @@ class Nacionalidad extends Model
         }
     }
 
-    // =====================================================================
-    // GETTERS Y SETTERS
-    // =====================================================================
-
     public function getId(): int
     {
         return $this->id;
@@ -65,7 +54,7 @@ class Nacionalidad extends Model
 
     public function getDescripcion(): string
     {
-        return $this->descripcion;
+        return LanguageHelper::translate($this->traducciones, $this->descripcion);
     }
     public function setDescripcion(string $descripcion): void
     {
@@ -74,6 +63,15 @@ class Nacionalidad extends Model
             throw new Exception("La descripción de la nacionalidad no puede estar vacía.");
         }
         $this->descripcion = $cleanDesc;
+    }
+
+    public function getTraducciones(): ?string
+    {
+        return $this->traducciones;
+    }
+    public function setTraducciones(?string $traducciones): void
+    {
+        $this->traducciones = $traducciones;
     }
 
     public function getIsActive(): int

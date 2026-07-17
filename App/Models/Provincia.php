@@ -7,34 +7,27 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
+use App\Helpers\LanguageHelper;
 
 class Provincia extends Model
 {
-    // =====================================================================
-    // ATRIBUTOS PRIVADOS (Actualizados con la nueva base de datos)
-    // =====================================================================
     private int $id;
-    private int $id_nacionalidad; // 🔗 Relación jerárquica con Nacionalidades
+    private int $id_pais;
     private string $descripcion;
+    private ?string $traducciones = null;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    // =====================================================================
-    // MÉTODOS DE NEGOCIO
-    // =====================================================================
-
    public function getAll(): ?array
     {
         try {
-            // ✨ SOLUCIÓN ULTRA ESTRICTA: Filtramos provincias duplicadas por texto vinculando solo el primer ID que encuentre
-            $sql = "SELECT DISTINCT p1.id, p1.id_nacionalidad, TRIM(p1.descripcion) AS descripcion, p1.is_active, '' AS fecha_alta, NULL AS fecha_baja
+            $sql = "SELECT DISTINCT p1.id, p1.id_pais, TRIM(p1.nombre) AS descripcion, p1.traducciones
                     FROM Provincias p1
-                    WHERE p1.is_active = 1
-                    AND p1.id = (
+                    WHERE p1.id = (
                         SELECT MIN(p2.id) 
                         FROM Provincias p2 
-                        WHERE TRIM(p2.descripcion) = TRIM(p1.descripcion)
+                        WHERE TRIM(p2.nombre) = TRIM(p1.nombre)
                     )
                     ORDER BY descripcion ASC";
                     
@@ -51,29 +44,25 @@ class Provincia extends Model
         }
     }
 
-    /**
-     * ⚡ NUEVO MÉTODO: Filtra provincias según la nacionalidad (país) seleccionada
-     */
-    public function getByNacionalidad(int $id_nacionalidad): ?array
+    public function getByPais(int $id_pais): ?array
     {
         try {
-            $sql = "SELECT * FROM Provincias WHERE id_nacionalidad = :id_nacionalidad ORDER BY descripcion ASC";
+            $sql = "SELECT id, id_pais, TRIM(nombre) AS descripcion, traducciones
+                    FROM Provincias 
+                    WHERE id_pais = :id_pais 
+                    ORDER BY descripcion ASC";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id_nacionalidad' => $id_nacionalidad]);
+            $stmt->execute([':id_pais' => $id_pais]);
 
             $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Provincia::class);
             $provinces = $stmt->fetchAll();
 
             return $provinces ?: null;
         } catch (PDOException $e) {
-            error_log("Error in getByNacionalidad provinces: " . $e->getMessage());
+            error_log("Error in getByPais provinces: " . $e->getMessage());
             throw new Exception("Database error during provinces filtering.");
         }
     }
-
-    // =====================================================================
-    // GETTERS Y SETTERS
-    // =====================================================================
 
     public function getId(): int
     {
@@ -84,21 +73,21 @@ class Provincia extends Model
         $this->id = $id;
     }
 
-    public function getIdNacionalidad(): int
+    public function getIdPais(): int
     {
-        return $this->id_nacionalidad;
+        return $this->id_pais;
     }
-    public function setIdNacionalidad(int $id_nacionalidad): void
+    public function setIdPais(int $id_pais): void
     {
-        if ($id_nacionalidad <= 0) {
-            throw new Exception("La nacionalidad vinculada no es válida.");
+        if ($id_pais <= 0) {
+            throw new Exception("El país vinculado no es válido.");
         }
-        $this->id_nacionalidad = $id_nacionalidad;
+        $this->id_pais = $id_pais;
     }
 
     public function getDescripcion(): string
     {
-        return $this->descripcion;
+        return LanguageHelper::translate($this->traducciones, $this->descripcion);
     }
     public function setDescripcion(string $descripcion): void
     {
@@ -107,6 +96,15 @@ class Provincia extends Model
             throw new Exception("La descripción de la provincia no puede estar vacía.");
         }
         $this->descripcion = $cleanDesc;
+    }
+
+    public function getTraducciones(): ?string
+    {
+        return $this->traducciones;
+    }
+    public function setTraducciones(?string $traducciones): void
+    {
+        $this->traducciones = $traducciones;
     }
 
     public function getIsActive(): int
