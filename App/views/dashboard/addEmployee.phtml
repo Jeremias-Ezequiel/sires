@@ -45,6 +45,40 @@
         </div>
 
         <div class="form-section-title">
+            <i class="fas fa-id-card"></i> Documentación y Contacto
+        </div>
+
+        <div class="form-grid-layout grid-three-columns">
+            <div class="form-field-group">
+                <label class="label-input" for="dni">DNI / Documento</label>
+                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['dni'] ?? $old['dni'] ?? '') ?>">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="cuil">CUIL</label>
+                <input type="text" id="cuil" name="cuil" placeholder="Ej: 20-12345678-9" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['cuil'] ?? $old['cuil'] ?? '') ?>"
+                    pattern="[0-9\-]{11,14}" title="Formato CUIL: XX-XXXXXXXX-X">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['telefono'] ?? $old['telefono'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-grid-layout">
+            <div class="form-field-group">
+                <label class="label-input" for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. San Martín 1234, Piso 2" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['direccion'] ?? $old['direccion'] ?? '') ?>">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="fecha_nacimiento">Fecha de Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="input-form-field" value="<?= htmlspecialchars($_POST['fecha_nacimiento'] ?? $old['fecha_nacimiento'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-section-title">
             <i class="fas fa-map-marker-alt"></i> Ubicación y Procedencia
         </div>
 
@@ -64,27 +98,15 @@
 
             <div class="form-field-group">
                 <label class="label-input" for="id_provincia">Provincia</label>
-                <select id="id_provincia" name="id_provincia" required class="select-form-field" <?= !isset($_POST['id_nacionalidad']) && !isset($old['id_nacionalidad']) ? 'disabled' : '' ?>>
-                    <option value="" disabled <?= !isset($_POST['id_provincia']) && !isset($old['id_provincia']) ? 'selected' : '' ?>>Seleccione...</option>
-                    <?php if (!empty($provinces)): ?>
-                        <?php foreach ($provinces as $prov): ?>
-                            <?php $current_prov_id = $_POST['id_provincia'] ?? $old['id_provincia'] ?? ''; ?>
-                            <option value="<?= $prov->getId() ?>" <?= (string)$current_prov_id === (string)$prov->getId() ? 'selected' : '' ?>><?= htmlspecialchars($prov->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <select id="id_provincia" name="id_provincia" required class="select-form-field" disabled>
+                    <option value="" disabled selected>Seleccione una Nacionalidad primero...</option>
                 </select>
             </div>
 
             <div class="form-field-group">
                 <label class="label-input" for="id_localidad">Localidad</label>
-                <select id="id_localidad" name="id_localidad" required class="select-form-field" <?= !isset($_POST['id_provincia']) && !isset($old['id_provincia']) ? 'disabled' : '' ?>>
-                    <option value="" disabled <?= !isset($_POST['id_localidad']) && !isset($old['id_localidad']) ? 'selected' : '' ?>>Seleccione...</option>
-                    <?php if (!empty($cities)): ?>
-                        <?php foreach ($cities as $cit): ?>
-                            <?php $current_cit_id = $_POST['id_localidad'] ?? $old['id_localidad'] ?? ''; ?>
-                            <option value="<?= $cit->getId() ?>" <?= (string)$current_cit_id === (string)$cit->getId() ? 'selected' : '' ?>><?= htmlspecialchars($cit->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <select id="id_localidad" name="id_localidad" required class="select-form-field" disabled>
+                    <option value="" disabled selected>Seleccione una Provincia primero...</option>
                 </select>
             </div>
         </div>
@@ -323,26 +345,73 @@
             });
         }
 
-        // --- 🌍 Lógica de Dependencia Escalonada de Ubicación ---
+        // --- 🌍 Lógica de Dependencia Escalonada de Ubicación (AJAX) ---
+        const baseProvincias  = '<?= \App\Helpers\UrlHelper::to('/api/provincias') ?>';
+        const baseLocalidades = '<?= \App\Helpers\UrlHelper::to('/api/localidades') ?>';
+
+        function poblarSelect(select, items, textoDefault) {
+            select.innerHTML = '<option value="" disabled selected>' + textoDefault + '</option>';
+            items.forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.descripcion;
+                select.appendChild(opt);
+            });
+            select.disabled = false;
+        }
+
+        function resetSelect(select, texto) {
+            select.innerHTML = '<option value="" disabled selected>' + texto + '</option>';
+            select.disabled = true;
+        }
+
         if (selectNacionalidad && selectProvincia && selectLocalidad) {
             selectNacionalidad.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectProvincia.disabled = false;
-                } else {
-                    selectProvincia.disabled = true;
-                    selectLocalidad.disabled = true;
-                    selectProvincia.value = "";
-                    selectLocalidad.value = "";
+                const nacionalidadId = this.value;
+                if (nacionalidadId === "") {
+                    resetSelect(selectProvincia, 'Seleccione una Nacionalidad primero...');
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                selectProvincia.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectProvincia.disabled = true;
+
+                fetch(baseProvincias + '&nacionalidadId=' + encodeURIComponent(nacionalidadId))
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (data.length > 0) {
+                            poblarSelect(selectProvincia, data, 'Seleccione...');
+                        } else {
+                            resetSelect(selectProvincia, 'Sin resultados');
+                        }
+                    })
+                    .catch(function() {
+                        resetSelect(selectProvincia, 'Error al cargar');
+                    });
             });
 
             selectProvincia.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectLocalidad.disabled = false;
-                } else {
-                    selectLocalidad.disabled = true;
-                    selectLocalidad.value = "";
+                const provinciaId = this.value;
+                if (provinciaId === "") {
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectLocalidad.disabled = true;
+
+                fetch(baseLocalidades + '&provinciaId=' + encodeURIComponent(provinciaId))
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (data.length > 0) {
+                            poblarSelect(selectLocalidad, data, 'Seleccione...');
+                        } else {
+                            resetSelect(selectLocalidad, 'Sin resultados');
+                        }
+                    })
+                    .catch(function() {
+                        resetSelect(selectLocalidad, 'Error al cargar');
+                    });
             });
         }
     });
