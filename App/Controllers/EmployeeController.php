@@ -27,6 +27,14 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
+        // --- LÓGICA DE PAGINACIÓN --//
+        // --- LÓGICA DE PAGINACIÓN ---
+        $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        if ($currentPage < 1) { $currentPage = 1; }
+        
+        $limit = 5; // Cambiá este número para definir cuántos empleados ver por página
+        $offset = ($currentPage - 1) * $limit;
+
         $search = $vars['search'] ?? "";
         $role      = $vars['role_filter'] ?? "";
         $is_active = $vars['status_filter'] ?? "";
@@ -39,13 +47,20 @@ class EmployeeController
         $roles = $rolModel->getAll();
 
         $userModel = new Usuario();
-        $listaEmpleados = $userModel->listEmployees($search, $is_active, $role);
+        
+        // 1. Contamos el total bajo esos filtros
+        $totalEmployees = $userModel->countEmployees($search, $is_active, $role);
+        $totalPages = (int)ceil($totalEmployees / $limit);
+        if ($totalPages < 1) { $totalPages = 1; }
+        if ($currentPage > $totalPages) { $currentPage = $totalPages; $offset = ($currentPage - 1) * $limit; }
+
+        // 2. Traemos solo el segmento correspondiente de la página actual
+        $listaEmpleados = $userModel->listEmployees($search, $is_active, $role, $limit, $offset);
 
         $contentView = __DIR__ . '/../views/dashboard/employees.phtml';
 
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }
-
     public function showNewEmployeeForm(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -393,4 +408,107 @@ class EmployeeController
             exit;
         }
     }
+    /**
+     * Muestra el formulario para cambiarle la contraseña a un empleado desde el Dashboard
+     */
+    public function showResetPasswordForm(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
+
+        $id = $_GET['id'] ?? '';
+        if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+            $_SESSION['flash_message'] = "ID de empleado inválido.";
+            $_SESSION['flash_status']  = "error";
+            header('Location: /sires/dashboard/employees');
+            exit;
+        }
+
+        $userModel = new Usuario();
+        $employee = $userModel->findById((int)$id);
+
+        if (!$employee) {
+            $_SESSION['flash_message'] = "El empleado solicitado no existe.";
+            $_SESSION['flash_status']  = "error";
+            header('Location: /sires/dashboard/employees');
+            exit;
+        }
+
+        // Definimos la vista intermedia
+        $contentView = __DIR__ . '/../views/dashboard/resetPassword.phtml';
+
+        // Cargamos el layout principal de tu dashboard
+        require_once __DIR__ . '/../views/dashboard/layout.phtml';
+    }
+
+    /**
+     * Procesa el cambio de contraseña ejecutado por el administrador
+     */
+    public function resetPassword(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $id = $_POST['id'] ?? '';
+
+        try {
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de empleado inválido.");
+            }
+
+            $password = $_POST['password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+
+            if (empty($password)) {
+                throw new Exception("La contraseña es obligatoria.");
+            }
+            if (strlen($password) < 5) {
+                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+            }
+            if ($password !== $confirmPassword) {
+                throw new Exception("Las contraseñas ingresadas no coinciden.");
+            }
+
+            $userModel = new Usuario();
+            $employee = $userModel->findById((int)$id);
+
+            if (!$employee) {
+                throw new Exception("El empleado no existe en el sistema.");
+            }
+
+            // Cambiamos la clave utilizando el método que ya tiene tu Modelo Usuario
+            // Nota: changePasswordAdmin es el método que agregamos en el Paso 3
+            $success = $employee->changePasswordAdmin($password);
+
+            if (!$success) {
+                throw new Exception("No se pudo actualizar la contraseña. Intente nuevamente.");
+            }
+
+            $_SESSION['flash_message'] = "Contraseña de " . $employee->getNombre() . " actualizada con éxito.";
+            $_SESSION['flash_status']  = "success";
+
+            // Redireccionamos a la lista general de empleados
+            header('Location: /sires/dashboard/employees');
+            exit;
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: /sires/dashboard/employees/reset-password?id=' . urlencode((string)$id));
+            exit;
+        }
+    }
+
 }
