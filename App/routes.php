@@ -8,6 +8,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\EmployeeController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
+use App\Controllers\ApiController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\SanitizeLoginMiddleware;
@@ -64,6 +65,18 @@ return function (RouteCollector $r) {
     // Botones en mantenimiento
     $r->addRoute('GET', '/maintenance', [
         'middlewares' => [[MaintenanceMiddleware::class, 'check']]
+    ]);
+
+    // =====================================================================
+    // 🌍 API PÚBLICA (Datos geográficos para cascading dropdowns)
+    // =====================================================================
+
+    $r->addRoute('GET', '/api/provincias', [
+        'action' => [ApiController::class, 'getProvinces']
+    ]);
+
+    $r->addRoute('GET', '/api/localidades', [
+        'action' => [ApiController::class, 'getCities']
     ]);
 
     // =====================================================================

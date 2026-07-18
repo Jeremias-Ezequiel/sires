@@ -67,8 +67,6 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $provinces = (new \App\Models\Provincia())->getAll();
-        $cities    = (new \App\Models\Localidad())->getAll();
         $countries = (new \App\Models\Nacionalidad())->getAll();
         $roles     = (new \App\Models\Rol())->getAll();
 
@@ -87,6 +85,11 @@ class EmployeeController
             $nombre        = trim($_POST['nombre'] ?? '');
             $apellido      = trim($_POST['apellido'] ?? '');
             $email         = trim($_POST['email'] ?? '');
+            $telefono      = trim($_POST['telefono'] ?? '');
+            $dni           = trim($_POST['dni'] ?? '');
+            $cuil          = trim($_POST['cuil'] ?? '');
+            $direccion     = trim($_POST['direccion'] ?? '');
+            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
             $password      = $_POST['password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
             $idRol         = (int)($_POST['id_rol'] ?? 0);
@@ -142,6 +145,12 @@ class EmployeeController
             $usuario->setIdProvincia($idProvincia);
             $usuario->setIdLocalidad($idLocalidad);
             $usuario->setIdNacionalidad($idNacionalidad);
+
+            $usuario->setTelefono($telefono);
+            $usuario->setDni($dni);
+            $usuario->setCuil($cuil);
+            $usuario->setDireccion($direccion);
+            $usuario->setFechaNacimiento($fechaNacimiento);
 
             $success = $usuario->save($usuario);
 
@@ -201,8 +210,6 @@ class EmployeeController
             exit;
         }
 
-        $provinces = (new \App\Models\Provincia())->getAll();
-        $cities    = (new \App\Models\Localidad())->getAll();
         $countries = (new \App\Models\Nacionalidad())->getAll();
         $roles     = (new \App\Models\Rol())->getAll();
 
@@ -226,6 +233,11 @@ class EmployeeController
             $nombre        = trim($_POST['nombre'] ?? '');
             $apellido      = trim($_POST['apellido'] ?? '');
             $email         = trim($_POST['email'] ?? '');
+            $telefono      = trim($_POST['telefono'] ?? '');
+            $dni           = trim($_POST['dni'] ?? '');
+            $cuil          = trim($_POST['cuil'] ?? '');
+            $direccion     = trim($_POST['direccion'] ?? '');
+            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
             $idRol         = (int)($_POST['id_rol'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
             $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
@@ -272,6 +284,12 @@ class EmployeeController
             $usuario->setIdProvincia($idProvincia);
             $usuario->setIdLocalidad($idLocalidad);
             $usuario->setIdNacionalidad($idNacionalidad);
+
+            $usuario->setTelefono($telefono);
+            $usuario->setDni($dni);
+            $usuario->setCuil($cuil);
+            $usuario->setDireccion($direccion);
+            $usuario->setFechaNacimiento($fechaNacimiento);
 
             $success = $usuario->update($usuario);
 

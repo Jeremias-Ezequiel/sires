@@ -43,6 +43,40 @@
         </div>
 
         <div class="form-section-title">
+            <i class="fas fa-id-card"></i> Documentación y Contacto
+        </div>
+
+        <div class="form-grid-layout grid-three-columns">
+            <div class="form-field-group">
+                <label class="label-input" for="dni">DNI / Documento</label>
+                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['dni'] ?? $employee->getDni() ?? '') ?>">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="cuil">CUIL</label>
+                <input type="text" id="cuil" name="cuil" placeholder="Ej: 20-12345678-9" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['cuil'] ?? $employee->getCuil() ?? '') ?>"
+                    pattern="[0-9\-]{11,14}" title="Formato CUIL: XX-XXXXXXXX-X">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $employee->getTelefono() ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-grid-layout">
+            <div class="form-field-group">
+                <label class="label-input" for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. San Martín 1234, Piso 2" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['direccion'] ?? $employee->getDireccion() ?? '') ?>">
+            </div>
+
+            <div class="form-field-group">
+                <label class="label-input" for="fecha_nacimiento">Fecha de Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="input-form-field" value="<?= htmlspecialchars($old['fecha_nacimiento'] ?? $employee->getFechaNacimiento() ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form-section-title">
             <i class="fas fa-map-marker-alt"></i> Ubicación y Procedencia
         </div>
 
@@ -64,31 +98,15 @@
 
             <div class="form-field-group">
                 <label class="label-input" for="id_provincia">Provincia</label>
-                <select id="id_provincia" name="id_provincia" required class="select-form-field">
-                    <option value="" disabled>Seleccione...</option>
-                    <?php if (!empty($provinces)): ?>
-                        <?php foreach ($provinces as $prov): ?>
-                            <?php
-                                $selectedId = $old['id_provincia'] ?? $employee->getIdProvincia() ?? '';
-                            ?>
-                            <option value="<?= $prov->getId() ?>" <?= (string)$selectedId === (string)$prov->getId() ? 'selected' : '' ?>><?= htmlspecialchars($prov->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <select id="id_provincia" name="id_provincia" required class="select-form-field" disabled>
+                    <option value="" disabled>Cargando...</option>
                 </select>
             </div>
 
             <div class="form-field-group">
                 <label class="label-input" for="id_localidad">Localidad</label>
-                <select id="id_localidad" name="id_localidad" required class="select-form-field">
-                    <option value="" disabled>Seleccione...</option>
-                    <?php if (!empty($cities)): ?>
-                        <?php foreach ($cities as $cit): ?>
-                            <?php
-                                $selectedId = $old['id_localidad'] ?? $employee->getIdLocalidad() ?? '';
-                            ?>
-                            <option value="<?= $cit->getId() ?>" <?= (string)$selectedId === (string)$cit->getId() ? 'selected' : '' ?>><?= htmlspecialchars($cit->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <select id="id_localidad" name="id_localidad" required class="select-form-field" disabled>
+                    <option value="" disabled>Cargando...</option>
                 </select>
             </div>
         </div>
@@ -251,25 +269,103 @@
             });
         }
 
+        // --- 🌍 Lógica de Dependencia Escalonada de Ubicación (AJAX) ---
+        const baseProvincias  = '<?= \App\Helpers\UrlHelper::to('/api/provincias') ?>';
+        const baseLocalidades = '<?= \App\Helpers\UrlHelper::to('/api/localidades') ?>';
+
+        const preloadedNacionalidad = '<?= $employee->getIdNacionalidad() ?? '' ?>';
+        const preloadedProvincia    = '<?= $employee->getIdProvincia() ?? '' ?>';
+        const preloadedLocalidad    = '<?= $employee->getIdLocalidad() ?? '' ?>';
+
+        function poblarSelect(select, items, textoDefault, selectedId) {
+            select.innerHTML = '<option value="" disabled>' + textoDefault + '</option>';
+            items.forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.descripcion;
+                if (selectedId && String(item.id) === String(selectedId)) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+            select.disabled = false;
+        }
+
+        function resetSelect(select, texto) {
+            select.innerHTML = '<option value="" disabled selected>' + texto + '</option>';
+            select.disabled = true;
+        }
+
+        function cargarProvincias(nacionalidadId, provinciaSeleccionada) {
+            return fetch(baseProvincias + '&nacionalidadId=' + encodeURIComponent(nacionalidadId))
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.length > 0) {
+                        poblarSelect(selectProvincia, data, 'Seleccione...', provinciaSeleccionada);
+                    } else {
+                        resetSelect(selectProvincia, 'Sin resultados');
+                    }
+                    return data;
+                })
+                .catch(function() {
+                    resetSelect(selectProvincia, 'Error al cargar');
+                    return [];
+                });
+        }
+
+        function cargarLocalidades(provinciaId, localidadSeleccionada) {
+            return fetch(baseLocalidades + '&provinciaId=' + encodeURIComponent(provinciaId))
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.length > 0) {
+                        poblarSelect(selectLocalidad, data, 'Seleccione...', localidadSeleccionada);
+                    } else {
+                        resetSelect(selectLocalidad, 'Sin resultados');
+                    }
+                    return data;
+                })
+                .catch(function() {
+                    resetSelect(selectLocalidad, 'Error al cargar');
+                    return [];
+                });
+        }
+
+        // Precarga en modo edición: cargar provincias del país, luego ciudades de la provincia
+        if (preloadedNacionalidad) {
+            cargarProvincias(preloadedNacionalidad, preloadedProvincia)
+                .then(function() {
+                    if (preloadedProvincia) {
+                        cargarLocalidades(preloadedProvincia, preloadedLocalidad);
+                    }
+                });
+        }
+
+        // Eventos de cambio en cascada
         if (selectNacionalidad && selectProvincia && selectLocalidad) {
             selectNacionalidad.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectProvincia.disabled = false;
-                } else {
-                    selectProvincia.disabled = true;
-                    selectLocalidad.disabled = true;
-                    selectProvincia.value = "";
-                    selectLocalidad.value = "";
+                const nacionalidadId = this.value;
+                if (nacionalidadId === "") {
+                    resetSelect(selectProvincia, 'Seleccione una Nacionalidad primero...');
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                selectProvincia.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectProvincia.disabled = true;
+
+                cargarProvincias(nacionalidadId, '');
             });
 
             selectProvincia.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectLocalidad.disabled = false;
-                } else {
-                    selectLocalidad.disabled = true;
-                    selectLocalidad.value = "";
+                const provinciaId = this.value;
+                if (provinciaId === "") {
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectLocalidad.disabled = true;
+
+                cargarLocalidades(provinciaId, '');
             });
         }
     });

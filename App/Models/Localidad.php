@@ -7,31 +7,25 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
+use App\Helpers\LanguageHelper;
 
 class Localidad extends Model
 {
-    // =====================================================================
-    // ATRIBUTOS PRIVADOS (Actualizados con la nueva base de datos)
-    // =====================================================================
     private int $id;
-    private int $id_provincia; // 🔗 Relación jerárquica con Provincias
+    private int $id_provincia;
     private string $descripcion;
+    private ?string $traducciones = null;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    // =====================================================================
-    // MÉTODOS DE NEGOCIO
-    // =====================================================================
-
     public function getAll(): ?array
     {
         try {
-            // ✨ CORREGIDO: Agrupamos estrictamente por el nombre de la localidad borrando duplicados reales de la BD
-            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(descripcion) AS descripcion, MAX(is_active) AS is_active 
-                    FROM Localidades 
-                    WHERE is_active = 1 
-                    GROUP BY TRIM(descripcion) 
+            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(nombre) AS descripcion,
+                           SUBSTRING_INDEX(GROUP_CONCAT(traducciones ORDER BY id DESC), ',', 1) AS traducciones
+                    FROM Localidades
+                    GROUP BY TRIM(nombre) 
                     ORDER BY descripcion ASC";
                     
             $stmt = $this->db->prepare($sql);
@@ -47,13 +41,13 @@ class Localidad extends Model
         }
     }
 
-    /**
-     * ⚡ NUEVOS MÉTODOS: Filtra localidades según la provincia seleccionada
-     */
     public function getByProvincia(int $id_provincia): ?array
     {
         try {
-            $sql = "SELECT * FROM Localidades WHERE id_provincia = :id_provincia ORDER BY descripcion ASC";
+            $sql = "SELECT id, id_provincia, TRIM(nombre) AS descripcion, traducciones
+                    FROM Localidades 
+                    WHERE id_provincia = :id_provincia 
+                    ORDER BY descripcion ASC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id_provincia' => $id_provincia]);
 
@@ -66,10 +60,6 @@ class Localidad extends Model
             throw new Exception("Database error during cities filtering.");
         }
     }
-
-    // =====================================================================
-    // GETTERS Y SETTERS
-    // =====================================================================
 
     public function getId(): int
     {
@@ -94,7 +84,7 @@ class Localidad extends Model
 
     public function getDescripcion(): string
     {
-        return $this->descripcion;
+        return LanguageHelper::translate($this->traducciones, $this->descripcion);
     }
     public function setDescripcion(string $descripcion): void
     {
@@ -103,6 +93,15 @@ class Localidad extends Model
             throw new Exception("La descripción de la localidad no puede estar vacía.");
         }
         $this->descripcion = $cleanDesc;
+    }
+
+    public function getTraducciones(): ?string
+    {
+        return $this->traducciones;
+    }
+    public function setTraducciones(?string $traducciones): void
+    {
+        $this->traducciones = $traducciones;
     }
 
     public function getIsActive(): int

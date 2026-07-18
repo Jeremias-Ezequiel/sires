@@ -23,6 +23,13 @@ class Usuario extends Model
     private string $email;
     private string $password;
 
+    // 📋 ATRIBUTOS PARA REGISTRO DE EMPLEADOS ARGENTINOS
+    private ?string $telefono = null;
+    private ?string $dni = null;
+    private ?string $cuil = null;
+    private ?string $direccion = null;
+    private ?string $fecha_nacimiento = null;
+
     // ⚡ ATRIBUTOS DE BAJA LÓGICA E HISTORIAL
     private int $is_active = 1;
     private string $fecha_alta = '';
@@ -118,23 +125,32 @@ class Usuario extends Model
     {
         try {
             $sql = "INSERT INTO Usuarios (
-                        id_rol, id_localidad, id_nacionalidad, id_provincia, nombre, apellido, email, password, is_active
+                        id_rol, id_localidad, id_nacionalidad, id_provincia,
+                        nombre, apellido, email, telefono, dni, cuil, direccion, fecha_nacimiento,
+                        password, is_active
                     ) VALUES (
-                        :id_rol, :id_localidad, :id_nacionalidad, :id_provincia, :nombre, :apellido, :email, :password, :is_active
+                        :id_rol, :id_localidad, :id_nacionalidad, :id_provincia,
+                        :nombre, :apellido, :email, :telefono, :dni, :cuil, :direccion, :fecha_nacimiento,
+                        :password, :is_active
                     )";
 
             $stmt = $this->db->prepare($sql);
 
             return $stmt->execute([
-                ':id_rol'          => $usuario->getIdRol(),
-                ':id_localidad'    => $usuario->getIdLocalidad(),
-                ':id_nacionalidad' => $usuario->getIdNacionalidad(),
-                ':id_provincia'    => $usuario->getIdProvincia(),
-                ':nombre'          => $usuario->getNombre(),
-                ':apellido'        => $usuario->getApellido(),
-                ':email'           => $usuario->getEmail(),
-                ':password'        => $usuario->getPassword(),
-                ':is_active'       => $usuario->getIsActive()
+                ':id_rol'            => $usuario->getIdRol(),
+                ':id_localidad'      => $usuario->getIdLocalidad(),
+                ':id_nacionalidad'   => $usuario->getIdNacionalidad(),
+                ':id_provincia'      => $usuario->getIdProvincia(),
+                ':nombre'            => $usuario->getNombre(),
+                ':apellido'          => $usuario->getApellido(),
+                ':email'             => $usuario->getEmail(),
+                ':telefono'          => $usuario->getTelefono(),
+                ':dni'               => $usuario->getDni(),
+                ':cuil'              => $usuario->getCuil(),
+                ':direccion'         => $usuario->getDireccion(),
+                ':fecha_nacimiento'  => $usuario->getFechaNacimiento(),
+                ':password'          => $usuario->getPassword(),
+                ':is_active'         => $usuario->getIsActive()
             ]);
         } catch (PDOException $e) {
             error_log("Error in Usuario::save: " . $e->getMessage());
@@ -176,19 +192,29 @@ class Usuario extends Model
                         id_provincia = :id_provincia,
                         nombre = :nombre,
                         apellido = :apellido,
-                        email = :email
+                        email = :email,
+                        telefono = :telefono,
+                        dni = :dni,
+                        cuil = :cuil,
+                        direccion = :direccion,
+                        fecha_nacimiento = :fecha_nacimiento
                     WHERE id = :id";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                ':id_rol'          => $usuario->getIdRol(),
-                ':id_localidad'    => $usuario->getIdLocalidad(),
-                ':id_nacionalidad' => $usuario->getIdNacionalidad(),
-                ':id_provincia'    => $usuario->getIdProvincia(),
-                ':nombre'          => $usuario->getNombre(),
-                ':apellido'        => $usuario->getApellido(),
-                ':email'           => $usuario->getEmail(),
-                ':id'              => $usuario->getId()
+                ':id_rol'            => $usuario->getIdRol(),
+                ':id_localidad'      => $usuario->getIdLocalidad(),
+                ':id_nacionalidad'   => $usuario->getIdNacionalidad(),
+                ':id_provincia'      => $usuario->getIdProvincia(),
+                ':nombre'            => $usuario->getNombre(),
+                ':apellido'          => $usuario->getApellido(),
+                ':email'             => $usuario->getEmail(),
+                ':telefono'          => $usuario->getTelefono(),
+                ':dni'               => $usuario->getDni(),
+                ':cuil'              => $usuario->getCuil(),
+                ':direccion'         => $usuario->getDireccion(),
+                ':fecha_nacimiento'  => $usuario->getFechaNacimiento(),
+                ':id'                => $usuario->getId()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Usuario::update: " . $e->getMessage());
@@ -443,6 +469,75 @@ class Usuario extends Model
         }
 
         $this->password = password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    // =====================================================================
+    // GETTERS Y SETTERS PARA CAMPOS DE EMPLEADOS ARGENTINOS
+    // =====================================================================
+
+    public function getTelefono(): ?string
+    {
+        return $this->telefono;
+    }
+    public function setTelefono(?string $telefono): void
+    {
+        $clean = trim($telefono ?? '');
+        if ($clean !== '' && !preg_match('/^[0-9+\-\s()]{7,50}$/', $clean)) {
+            throw new Exception("El formato del teléfono no es válido.");
+        }
+        $this->telefono = $clean !== '' ? $clean : null;
+    }
+
+    public function getDni(): ?string
+    {
+        return $this->dni;
+    }
+    public function setDni(?string $dni): void
+    {
+        $clean = trim($dni ?? '');
+        if ($clean !== '' && !preg_match('/^[0-9.]{6,20}$/', $clean)) {
+            throw new Exception("El formato del DNI no es válido.");
+        }
+        $this->dni = $clean !== '' ? $clean : null;
+    }
+
+    public function getCuil(): ?string
+    {
+        return $this->cuil;
+    }
+    public function setCuil(?string $cuil): void
+    {
+        $clean = trim($cuil ?? '');
+        if ($clean !== '' && !preg_match('/^[0-9\-]{11,14}$/', $clean)) {
+            throw new Exception("El formato del CUIL no es válido. Ejemplo: 20-12345678-9");
+        }
+        $this->cuil = $clean !== '' ? $clean : null;
+    }
+
+    public function getDireccion(): ?string
+    {
+        return $this->direccion;
+    }
+    public function setDireccion(?string $direccion): void
+    {
+        $clean = trim($direccion ?? '');
+        if ($clean !== '') {
+            $clean = htmlspecialchars($clean, ENT_QUOTES, 'UTF-8');
+        }
+        $this->direccion = $clean !== '' ? $clean : null;
+    }
+
+    public function getFechaNacimiento(): ?string
+    {
+        return $this->fecha_nacimiento;
+    }
+    public function setFechaNacimiento(?string $fecha_nacimiento): void
+    {
+        $clean = trim($fecha_nacimiento ?? '');
+        if ($clean !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
+            throw new Exception("El formato de la fecha de nacimiento no es válido (AAAA-MM-DD).");
+        }
+        $this->fecha_nacimiento = $clean !== '' ? $clean : null;
     }
 
     public function getIsActive(): int
