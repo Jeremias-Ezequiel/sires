@@ -7,7 +7,7 @@
     <div class="header-actions-container">
         <!-- Adaptado con url() para redirigir al formulario de alta -->
         <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
-            <i class="fas fa-plus"></i> Registrar Empleado
+            <i class="fas fa-plus"></i> Añadir
         </a>
     </div>
 </header>
@@ -160,6 +160,28 @@
                                         onclick="return confirm('¿Está seguro de que desea reactivar al empleado <?= htmlspecialchars($emp->getNombre()) ?>?');">
                                         <i class="fas fa-user-plus"></i>
                                     </a>
+                                    <?php if ($emp->getIsActive() === $emp::ACTIVE): ?>
+                                        <!-- Botón para Dar de Baja -->
+                                        <button type="button" 
+                                            class="emp-action-btn btn-deactivate-hover open-sires-modal" 
+                                            data-action="deactivate"
+                                            data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
+                                            data-url="/sires/dashboard/employees/deactivate?id=<?= $emp->getId() ?>"
+                                            title="Dar de Baja Empleado">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <!-- Botón para Reactivar -->
+                                        <button type="button" 
+                                            class="emp-action-btn btn-activate-hover open-sires-modal" 
+                                            data-action="activate"
+                                            data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
+                                            data-url="/sires/dashboard/employees/activate?id=<?= $emp->getId() ?>"
+                                            title="Reactivar Empleado">
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    
                                 </div>
                             </td>
                         </tr>
@@ -167,6 +189,56 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- ─── NUEVO BLOQUE DE PAGINACIÓN SIRES ─── -->
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
+                
+                <!-- Botón Anterior -->
+                <?php if ($currentPage > 1): ?>
+                    <?php 
+                        $queryParams = $_GET; 
+                        $queryParams['page'] = $currentPage - 1; 
+                    ?>
+                    <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+
+                <!-- Numeritos de las páginas -->
+                <div class="pagination-numbers" style="display: flex; gap: 5px;">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <?php 
+                            $queryParams = $_GET; 
+                            $queryParams['page'] = $i; 
+                            $isActivePage = ($i === $currentPage);
+                        ?>
+                        <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" 
+                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
+                                  <?= $isActivePage 
+                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;' 
+                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;' 
+                                  ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+
+                <!-- Botón Siguiente -->
+                <?php if ($currentPage < $totalPages): ?>
+                    <?php 
+                        $queryParams = $_GET; 
+                        $queryParams['page'] = $currentPage + 1; 
+                    ?>
+                    <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+
+            </div>
+        <?php endif; ?>
+        <!-- ────────────────────────────────────── -->
+
     </section>
 <?php else: ?>
     <section class="details-section no-results-container">
@@ -186,11 +258,25 @@
         </div>
     </section>
 <?php endif; ?>
+<!-- MODAL DE CONFIRMACIÓN SIRES -->
+<div id="sires-confirm-modal" class="sires-modal-overlay">
+    <div class="sires-modal-box">
+        <div id="modal-icon-frame" class="sires-modal-icon">
+            <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-title-text">Confirmar Acción</h3>
+        <p id="modal-description-text">¿Estás seguro de que deseas continuar?</p>
+        <div class="sires-modal-actions">
+            <button type="button" id="btn-modal-cancel" class="sires-modal-btn btn-modal-cancel">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="sires-modal-btn">Confirmar</a>
+        </div>
+    </div>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- [ VALIDACIONES DEL BUSCADOR ] ---
         const inputSearch = document.getElementById('search');
-
         if (inputSearch) {
             inputSearch.addEventListener('keypress', function(e) {
                 const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/;
@@ -210,5 +296,60 @@
                 e.preventDefault();
             });
         }
+
+        // --- [ CONTROL DEL MODAL ESTILIZADO DE SIRES ] ---
+        const modal = document.getElementById('sires-confirm-modal');
+        const modalIconFrame = document.getElementById('modal-icon-frame');
+        const modalIcon = document.getElementById('modal-action-icon');
+        const modalTitle = document.getElementById('modal-title-text');
+        const modalText = document.getElementById('modal-description-text');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
+        const btnCancel = document.getElementById('btn-modal-cancel');
+
+        // Escuchamos los clics en los botones de Alta/Baja
+        const buttons = document.querySelectorAll('.open-sires-modal');
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const actionType = this.getAttribute('data-action');
+                const targetUrl = this.getAttribute('data-url');
+                const employeeName = this.getAttribute('data-name');
+
+                // Limpiamos estados de clases previas
+                modalIconFrame.className = 'sires-modal-icon';
+                btnConfirm.className = 'sires-modal-btn';
+
+                if (actionType === 'deactivate') {
+                    modalTitle.innerText = 'Dar de Baja Empleado';
+                    modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${employeeName}</strong>?`;
+                    modalIcon.className = 'fas fa-user-minus';
+                    modalIconFrame.classList.add('icon-deactivate');
+                    btnConfirm.classList.add('btn-proceed-deactivate');
+                } else if (actionType === 'activate') {
+                    modalTitle.innerText = 'Reactivar Empleado';
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${employeeName}</strong>?`;
+                    modalIcon.className = 'fas fa-user-plus';
+                    modalIconFrame.classList.add('icon-activate');
+                    btnConfirm.classList.add('btn-proceed-activate');
+                }
+
+                // Asignamos la URL real del controlador al botón "Confirmar"
+                btnConfirm.setAttribute('href', targetUrl);
+                
+                // Mostramos el modal añadiendo la clase active
+                modal.classList.add('active');
+            });
+        });
+
+        // Cerrar modal al hacer clic en Cancelar
+        btnCancel.addEventListener('click', function() {
+            modal.classList.remove('active');
+        });
+        
+        // Cerrar modal si se hace clic fuera de la caja contenedora
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
     });
 </script>
