@@ -43,8 +43,7 @@ class EmployeeController
         $hasRole = !empty($role);
         $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
 
-        $rolModel = new Rol();
-        $roles = $rolModel->getAll();
+        $roles = (new Rol())->getAll();
 
         $userModel = new Usuario();
         

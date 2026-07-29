@@ -110,38 +110,6 @@ input:focus, select:focus {
     margin-bottom: 25px;
 }
 
-/* Alertas de Feedback generales */
-.alert-success, .alert-danger {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.alert-success {
-    background-color: #065f46;
-    color: #34d399;
-    border: 1px solid #047857;
-}
-
-.alert-success i {
-    font-size: 16px;
-}
-
-.alert-danger {
-    background-color: #7f1d1d;
-    color: #fca5a5;
-    border: 1px solid #991b1b;
-}
-
-.alert-danger i {
-    font-size: 16px;
-}
-
 /* Contenedor de acciones en el pie del formulario */
 .action-buttons {
     display: flex; 

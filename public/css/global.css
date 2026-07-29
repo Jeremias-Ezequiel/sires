@@ -1,18 +1,11 @@
-/* --- VARIABLES GLOBALES SIRES --- */
-:root {
-    --fondo-oscuro: #0a192f;
-    --tarjeta-azul: #112240;
-    --dorado-sires: #fbbf24;
-    --texto-gris: #8892b0;
-    --texto-blanco: #e6f1ff;
-    --borde-input: #233554;
-}
+@import 'variables.css';
+@import 'components/alerts.css';
 
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--fondo-oscuro);
-    color: var(--texto-blanco);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-family: 'Montserrat', sans-serif;
     min-height: 100vh;
 }

@@ -180,15 +180,4 @@
     text-decoration: underline;
 }
 
-/* Contenedor dinámico para errores de login (PHP) */
-.alert-error {
-    background-color: #ff4d4d;
-    color: white;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(255, 77, 77, 0.2);
-    font-weight: 500;
-}
+

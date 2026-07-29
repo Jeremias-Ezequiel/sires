@@ -13,14 +13,14 @@
 </header>
 
 <?php if (!empty($errorMessage)): ?> 
-    <div class="alert-error">
+    <div class="alert alert--error">
         <i class="fa-solid fa-triangle-exclamation"></i>
         <?= htmlspecialchars($errorMessage) ?>
     </div>
 <?php endif; ?>
 
 <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
-    <div class="alert alert-<?= htmlspecialchars($flashStatus) ?>">
+                <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
         <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
         <?= htmlspecialchars($flashMessage) ?>
     </div>
@@ -100,25 +100,7 @@
                             <td><?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?></td>
                             <td><?= htmlspecialchars($emp->getEmail()) ?></td>
                             <td>
-                                <?php
-                                switch ($emp->getIdRol()) {
-                                    case $rolModel::ADMINISTRADOR:
-                                        echo '<span class="status-badge status-disponible">Admin</span>';
-                                        break;
-                                    case $rolModel::RECEPCIONISTA:
-                                        echo '<span class="status-badge status-recepcionista">Recepcionista</span>';
-                                        break;
-                                    case $rolModel::GERENTE:
-                                        echo '<span class="status-badge status-gerente">Gerente</span>';
-                                        break;
-                                    case $rolModel::AUDITOR:
-                                        echo '<span class="status-badge status-auditor">Auditor</span>';
-                                        break;
-                                    default:
-                                        echo '<span class="status-badge status-desconocido">Desconocido</span>';
-                                        break;
-                                }
-                                ?>
+                                        <?= htmlspecialchars($emp->getRolDescripcion() ?? 'Desconocido') ?>
                             </td>
                             <td>
                                 <?php
