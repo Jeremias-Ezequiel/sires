@@ -343,54 +343,6 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-/* Botones de acción dentro de tablas */
-.emp-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--borde-input);
-  text-decoration: none;
-  font-size: 13px;
-  transition: all 0.2s ease-in-out;
-}
-
-.emp-action-btn.btn-edit-hover { color: var(--dorado-sires); }
-.emp-action-btn.btn-edit-hover:hover {
-  background: rgba(205, 164, 52, 0.1);
-  border-color: var(--dorado-sires);
-  transform: translateY(-1px);
-}
-
-.emp-action-btn.btn-pass-hover { color: var(--texto-blanco); }
-.emp-action-btn.btn-pass-hover:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--texto-blanco);
-  transform: translateY(-1px);
-}
-
-.emp-action-btn.btn-deactivate-hover { color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
-.emp-action-btn.btn-deactivate-hover:hover {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: #ef4444;
-  transform: translateY(-1px);
-}
-
-/* Estado base del botón de activar (Estilo minimalista igual a deactivate) */
-.emp-action-btn.btn-activate-hover { 
-    color: #22c55e; 
-    border-color: rgba(34, 197, 94, 0.2); 
-}
-
-/* Efecto Hover: Cuando pasás el mouse por arriba */
-.emp-action-btn.btn-activate-hover:hover {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: #22c55e;
-    transform: translateY(-1px);
-}
 /* --- [6. SECCIONES DE BÚSQUEDA & FILTROS] --- */
 .employees-header {
   display: flex;
@@ -550,65 +502,7 @@
 }
 
 
-/* --- [7. BOTONES, BANNERS & FORMULARIOS] --- */
-.btn-add, .btn-filter {
-  height: 46px;
-  padding: 0 24px;
-  background-color: var(--dorado-sires);
-  color: var(--fondo-principal);
-  border: none;
-  border-radius: 30px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.2s ease-in-out;
-  white-space: nowrap;
-
-  width: fit-content;
-}
-
-.btn-add:hover, .btn-filter:hover {
-  background-color: var(--dorado-sires-hover, #e5b83b);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(205, 164, 52, 0.2);
-}
-
-.btn-add:active, .btn-filter:active {
-  transform: translateY(0);
-}
-
-.btn-add {
-  border-radius: 6px;
-  height: auto;
-  padding: 10px 20px;
-}
-
-.btn-clear-filters {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--borde-input);
-  color: var(--texto-blanco);
-  border-radius: 30px;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-clear-filters:hover {
-  background-color: rgba(205, 164, 52, 0.08);
-  border-color: var(--dorado-sires);
-  color: var(--dorado-sires);
-  transform: translateY(-1px);
-}
-
+/* --- [7. BANNERS & FORMULARIOS] --- */
 .info-banner {
   background-color: rgba(40, 167, 69, 0.1);
   border-left: 4px solid var(--estado-disponible);
@@ -835,42 +729,3 @@
   justify-content: center;
 }
 
-.sires-modal-btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  transition: background-color 0.2s ease;
-}
-
-.btn-modal-cancel {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #94a3b8;
-}
-
-.btn-modal-cancel:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-/* Colores dinámicos del botón Confirmar */
-.btn-proceed-deactivate {
-  background-color: #ef4444;
-  color: #ffffff;
-}
-
-.btn-proceed-deactivate:hover {
-  background-color: #dc2626;
-}
-
-.btn-proceed-activate {
-  background-color: #10b981;
-  color: #ffffff;
-}
-
-.btn-proceed-activate:hover {
-  background-color: #059669;
-}

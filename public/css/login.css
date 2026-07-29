@@ -120,23 +120,6 @@
     color: var(--texto-gris);
 }
 
-.btn-primary {
-    width: 100%;
-    padding: 14px;
-    background: transparent;
-    border: 1px solid var(--texto-blanco);
-    color: var(--texto-blanco);
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: 0.3s;
-}
-
-.btn-primary:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
 .link-yellow {
     color: var(--dorado-sires);
     text-decoration: none;

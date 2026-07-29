@@ -77,19 +77,6 @@ input:focus, select:focus {
     outline: none;
 }
 
-.btn-register {
-    width: 100%;
-    padding: 15px;
-    background: var(--dorado-sires);
-    color: var(--fondo-oscuro);
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 25px;
-}
-
 .back-link {
     display: block;
     text-align: center;
@@ -118,32 +105,3 @@ input:focus, select:focus {
     margin-top: 10px;
 }
 
-/* Forzar que el botón de registro no herede márgenes raros */
-.btn-register {
-    margin-bottom: 0 !important;
-}
-
-/* Botón estilizado para volver al Dashboard principal */
-.btn-back-dashboard {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px;
-    background: #1e293b;
-    color: #f8fafc;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: bold;
-    text-align: center;
-    transition: background 0.2s, color 0.2s;
-    box-sizing: border-box;
-}
-
-.btn-back-dashboard:hover {
-    background: #334155; 
-    color: #38bdf8;
-}

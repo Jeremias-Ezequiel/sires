@@ -6,7 +6,7 @@
 
     <div class="header-actions-container">
         <!-- Adaptado con url() para redirigir al formulario de alta -->
-        <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
+        <a href="<?= url('/dashboard/employees/add') ?>" class="btn btn--primary">
             <i class="fas fa-plus"></i> Añadir
         </a>
     </div>
@@ -65,14 +65,14 @@
             </select>
         </div>
 
-        <button type="submit" class="btn-primary btn-filter">
+        <button type="submit" class="btn btn--primary">
             <i class="fas fa-filter"></i> Filtrar
         </button>
         <?php
         if ($hasSearch || $hasRole || $hasStatus):
         ?>
             <!-- Botón de limpieza de filtros adaptado con url() -->
-            <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
+            <a href="<?= url('/dashboard/employees') ?>" class="btn btn--ghost">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -122,18 +122,18 @@
                                 <div class="actions-group-container">
                                     <!-- Acciones de la tabla adaptadas con la función url() -->
                                     <a href="<?= url('/dashboard/employees/edit?id=' . $emp->getId()) ?>"
-                                        class="emp-action-btn btn-edit-hover" title="Modificar Datos">
+                                        class="btn btn--icon btn--icon-edit" title="Modificar Datos">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
                                     <a href="<?= url('/dashboard/employees/reset-password?id=' . $emp->getId()) ?>"
-                                        class="emp-action-btn btn-pass-hover" title="Cambiar Contraseña">
+                                        class="btn btn--icon btn--icon-pass" title="Cambiar Contraseña">
                                         <i class="fas fa-key"></i>
                                     </a>
                                     <?php if ($emp->getIsActive() === $emp::ACTIVE): ?>
                                         <!-- Botón para Dar de Baja -->
                                         <button type="button" 
-                                            class="emp-action-btn btn-deactivate-hover open-sires-modal" 
+                                            class="btn btn--icon btn--icon-danger open-sires-modal" 
                                             data-action="deactivate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
                                             data-url="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
@@ -143,7 +143,7 @@
                                     <?php else: ?>
                                         <!-- Botón para Reactivar -->
                                         <button type="button" 
-                                            class="emp-action-btn btn-activate-hover open-sires-modal" 
+                                            class="btn btn--icon btn--icon-success open-sires-modal" 
                                             data-action="activate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
                                             data-url="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
@@ -170,7 +170,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage - 1; 
                     ?>
-                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
                         <i class="fas fa-chevron-left"></i> Anterior
                     </a>
                 <?php endif; ?>
@@ -200,7 +200,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage + 1; 
                     ?>
-                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
                         Siguiente <i class="fas fa-chevron-right"></i>
                     </a>
                 <?php endif; ?>
@@ -221,7 +221,7 @@
 
             <?php if ($hasSearch || $hasRole || $hasStatus): ?>
                 <!-- Limpieza alternativa de filtros adaptada con url() -->
-                <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
+                <a href="<?= url('/dashboard/employees') ?>" class="btn btn--ghost">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>
@@ -237,8 +237,8 @@
         <h3 id="modal-title-text">Confirmar Acción</h3>
         <p id="modal-description-text">¿Estás seguro de que deseas continuar?</p>
         <div class="sires-modal-actions">
-            <button type="button" id="btn-modal-cancel" class="sires-modal-btn btn-modal-cancel">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="sires-modal-btn">Confirmar</a>
+            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
         </div>
     </div>
 </div>
@@ -286,20 +286,20 @@
 
                 // Limpiamos estados de clases previas
                 modalIconFrame.className = 'sires-modal-icon';
-                btnConfirm.className = 'sires-modal-btn';
+                btnConfirm.className = 'btn';
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Dar de Baja Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-minus';
                     modalIconFrame.classList.add('icon-deactivate');
-                    btnConfirm.classList.add('btn-proceed-deactivate');
+                    btnConfirm.classList.add('btn--danger');
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-plus';
                     modalIconFrame.classList.add('icon-activate');
-                    btnConfirm.classList.add('btn-proceed-activate');
+                    btnConfirm.classList.add('btn--success');
                 }
 
                 // Asignamos la URL real del controlador al botón "Confirmar"
