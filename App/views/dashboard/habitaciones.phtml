@@ -6,7 +6,7 @@
 
     <div class="header-actions-container">
         <!-- Redirección adaptada con url() para el formulario de registro -->
-        <a href="<?= url('/dashboard/habitaciones/add') ?>" class="btn-add">
+        <a href="<?= url('/dashboard/habitaciones/add') ?>" class="btn btn--primary">
             <i class="fas fa-plus"></i> Registrar Habitación
         </a>
     </div>
@@ -31,16 +31,16 @@
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
-            <label class="label-input">Buscar por N° Habitación</label>
+            <label class="form__label">Buscar por N° Habitación</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="form__search-input" autocomplete="off">
             </div>
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Tipo</label>
-            <select name="type_filter" class="select-role">
+            <label class="form__label">Filtrar por Tipo</label>
+            <select name="type_filter" class="form__select-filter">
                 <option value="">Todos los Tipos</option>
                 <?php if (!empty($tipos)): ?>
                     <?php foreach ($tipos as $tipo): ?>
@@ -51,8 +51,8 @@
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Estado</label>
-            <select name="status_filter" class="select-status">
+            <label class="form__label">Filtrar por Estado</label>
+            <select name="status_filter" class="form__select-filter">
                 <option value="">Todos los Estados</option>
                 <?php if (!empty($estados)): ?>
                     <?php foreach ($estados as $estado): ?>
@@ -63,8 +63,8 @@
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Piso</label>
-            <select name="floor_filter" class="select-role">
+            <label class="form__label">Filtrar por Piso</label>
+            <select name="floor_filter" class="form__select-filter">
                 <option value="">Todos los Pisos</option>
                 <?php if (!empty($pisos)): ?>
                     <?php foreach ($pisos as $piso): ?>
@@ -74,12 +74,12 @@
             </select>
         </div>
 
-        <button type="submit" class="btn-primary btn-filter">
+        <button type="submit" class="btn btn--primary">
             <i class="fas fa-filter"></i> Filtrar
         </button>
         <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
             <!-- Limpieza de filtros configurada con url() -->
-            <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
+            <a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -103,21 +103,21 @@
                 <tbody>
                     <?php foreach ($habitaciones as $room):
                         $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'status-ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'status-reservada' : 'status-disponible');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
                     ?>
                         <tr>
                             <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
-                            <td><span class="status-badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
                                     <!-- 🎯 Corregido: links apuntando al ruteo dinámico con su ID correspondiente -->
-                                    <a href="<?= url('/dashboard/habitaciones/edit?id=' . $room['id']) ?>" class="emp-action-btn btn-edit-hover" title="Editar Habitación">
+                                    <a href="<?= url('/dashboard/habitaciones/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="<?= url('/dashboard/habitaciones/detail?id=' . $room['id']) ?>" class="emp-action-btn btn-pass-hover" title="Ver Detalle">
+                                    <a href="<?= url('/dashboard/habitaciones/detail?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </div>
@@ -139,7 +139,7 @@
 
             <?php if ($hasSearch || $hasType || $hasStatus || $hasFloor): ?>
                 <!-- Limpieza de búsqueda alternativa con url() -->
-                <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
+<a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

@@ -1,0 +1,47 @@
+.badge {
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: inline-block;
+  color: #fff;
+}
+
+.badge--disponible { background-color: var(--estado-disponible); }
+.badge--ocupada { background-color: var(--estado-ocupada); }
+.badge--reservada { background-color: var(--estado-reservada); color: #000; }
+
+.badge--recepcionista {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.badge--gerente {
+  background: rgba(168, 85, 247, 0.1);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.badge--auditor {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge--desconocido {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.badge--503 {
+  display: inline-block;
+  background-color: rgba(205, 164, 52, 0.1);
+  color: var(--dorado-sires);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(205, 164, 52, 0.2);
+}

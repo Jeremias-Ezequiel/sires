@@ -11,7 +11,7 @@
 
     <!-- Cargando los estilos usando la función global asset() -->
     <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/login.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/pages/login.css') ?>">
 </head>
 
 <body>
@@ -72,12 +72,12 @@
             <!-- Pasando la ruta de procesamiento del formulario por la función global url() -->
             <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
 
-                <label class="label-input">EMAIL</label>
-                <input type="email" name="email" placeholder="usuario@hotel.com" autocomplete="off">
+                <label class="form__label">EMAIL</label>
+                <input type="email" name="email" class="form__input" placeholder="usuario@hotel.com" autocomplete="off">
 
-                <label class="label-input">CONTRASEÑA</label>
-                <div class="password-wrapper">
-                    <input type="password" name="password" id="passInput" placeholder="••••••••" autocomplete="new-password">
+                <label class="form__label">CONTRASEÑA</label>
+                <div class="form__password">
+                    <input type="password" name="password" id="passInput" class="form__input" placeholder="••••••••" autocomplete="new-password">
                     <i class="fa-solid fa-eye" id="togglePass"></i>
                 </div>
 
@@ -86,7 +86,7 @@
                     <a href="<?= url('/password/recovery') ?>" class="link-yellow">¿Olvidaste tu contraseña?</a>
                 </div>
 
-                <button type="submit" class="btn-primary">Iniciar sesión</button>
+                <button type="submit" class="btn btn--ghost btn--full">Iniciar sesión</button>
             </form>
         </div>
     </div>

@@ -9,7 +9,7 @@
     
     <!-- Cargando los estilos del layout usando asset() -->
     <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/dashboard.css') ?>">
+    <link rel="stylesheet" href="<?= asset('css/pages/dashboard.css') ?>">
 </head>
 
 <body>
@@ -163,18 +163,18 @@
                             <?php if (count($habitaciones) > 0): ?>
                                 <?php foreach ($habitaciones as $hab):
                                     $estadoLower = strtolower($hab['estado']);
-                                    $claseEstado = 'status-disponible';
+                                    $claseEstado = 'badge--disponible';
                                     if (strpos($estadoLower, 'ocupad') !== false) {
-                                        $claseEstado = 'status-ocupada';
+                                        $claseEstado = 'badge--ocupada';
                                     } elseif (strpos($estadoLower, 'mantenimient') !== false || strpos($estadoLower, 'bloquead') !== false) {
-                                        $claseEstado = 'status-reservada';
+                                        $claseEstado = 'badge--reservada';
                                     }
                                 ?>
                                     <tr>
                                         <td><?= htmlspecialchars($hab['numero']) ?></td>
                                         <td><?= htmlspecialchars($hab['piso']) ?></td>
                                         <td>
-                                            <span class="status-badge <?= $claseEstado ?>">
+                                            <span class="badge <?= $claseEstado ?>">
                                                 <?= htmlspecialchars($hab['estado']) ?>
                                             </span>
                                         </td>

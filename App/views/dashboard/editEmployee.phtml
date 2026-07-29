@@ -4,7 +4,7 @@
         <p>Modificación de datos del empleado</p>
     </div>
 
-    <a href="<?= url('/dashboard/employees') ?>" class="btn-clear-filters">
+    <a href="<?= url('/dashboard/employees') ?>" class="btn btn--ghost">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -22,68 +22,68 @@
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees/edit/process', 'POST', 'employee-form') ?>
         <input type="hidden" name="id" value="<?= htmlspecialchars((string)($old['id'] ?? $employee->getId() ?? '')) ?>">
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-user"></i> Datos Personales
         </div>
 
-        <div class="form-grid-layout">
-            <div class="form-field-group">
-                <label class="label-input" for="nombre">Nombre</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['nombre'] ?? $employee->getNombre() ?? '') ?>"
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['nombre'] ?? $employee->getNombre() ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El nombre solo puede contener letras y espacios.">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="apellido">Apellido</label>
-                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['apellido'] ?? $employee->getApellido() ?? '') ?>"
+            <div class="form__group">
+                <label class="form__label" for="apellido">Apellido</label>
+                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['apellido'] ?? $employee->getApellido() ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El apellido solo puede contener letras y espacios.">
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-id-card"></i> Documentación y Contacto
         </div>
 
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="dni">DNI / Documento</label>
-                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['dni'] ?? $employee->getDni() ?? '') ?>">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="dni">DNI / Documento</label>
+                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni'] ?? $employee->getDni() ?? '') ?>">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="cuil">CUIL</label>
-                <input type="text" id="cuil" name="cuil" placeholder="Ej: 20-12345678-9" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['cuil'] ?? $employee->getCuil() ?? '') ?>"
+            <div class="form__group">
+                <label class="form__label" for="cuil">CUIL</label>
+                <input type="text" id="cuil" name="cuil" placeholder="Ej: 20-12345678-9" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['cuil'] ?? $employee->getCuil() ?? '') ?>"
                     pattern="[0-9\-]{11,14}" title="Formato CUIL: XX-XXXXXXXX-X">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $employee->getTelefono() ?? '') ?>">
+            <div class="form__group">
+                <label class="form__label" for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $employee->getTelefono() ?? '') ?>">
             </div>
         </div>
 
-        <div class="form-grid-layout">
-            <div class="form-field-group">
-                <label class="label-input" for="direccion">Dirección</label>
-                <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. San Martín 1234, Piso 2" class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['direccion'] ?? $employee->getDireccion() ?? '') ?>">
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. San Martín 1234, Piso 2" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['direccion'] ?? $employee->getDireccion() ?? '') ?>">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="fecha_nacimiento">Fecha de Nacimiento</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="input-form-field" value="<?= htmlspecialchars($old['fecha_nacimiento'] ?? $employee->getFechaNacimiento() ?? '') ?>">
+            <div class="form__group">
+                <label class="form__label" for="fecha_nacimiento">Fecha de Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input" value="<?= htmlspecialchars($old['fecha_nacimiento'] ?? $employee->getFechaNacimiento() ?? '') ?>">
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-map-marker-alt"></i> Ubicación y Procedencia
         </div>
 
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="id_nacionalidad">Nacionalidad</label>
-                <select id="id_nacionalidad" name="id_nacionalidad" required class="select-form-field">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="id_nacionalidad">Nacionalidad</label>
+                <select id="id_nacionalidad" name="id_nacionalidad" required class="form__select">
                     <option value="" disabled>Seleccione...</option>
                     <?php if (!empty($countries)): ?>
                         <?php foreach ($countries as $cou): ?>
@@ -96,34 +96,34 @@
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_provincia">Provincia</label>
-                <select id="id_provincia" name="id_provincia" required class="select-form-field" disabled>
+            <div class="form__group">
+                <label class="form__label" for="id_provincia">Provincia</label>
+                <select id="id_provincia" name="id_provincia" required class="form__select" disabled>
                     <option value="" disabled>Cargando...</option>
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_localidad">Localidad</label>
-                <select id="id_localidad" name="id_localidad" required class="select-form-field" disabled>
+            <div class="form__group">
+                <label class="form__label" for="id_localidad">Localidad</label>
+                <select id="id_localidad" name="id_localidad" required class="form__select" disabled>
                     <option value="" disabled>Cargando...</option>
                 </select>
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-shield-alt"></i> Credenciales y Permisos
         </div>
 
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="email">Correo Electrónico</label>
-                <input type="email" id="email" name="email" placeholder="ejemplo@sires.com" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($old['email'] ?? $employee->getEmail() ?? '') ?>">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" placeholder="ejemplo@sires.com" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['email'] ?? $employee->getEmail() ?? '') ?>">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_rol">Rol del Empleado</label>
-                <select id="id_rol" name="id_rol" required class="select-form-field">
+            <div class="form__group">
+                <label class="form__label" for="id_rol">Rol del Empleado</label>
+                <select id="id_rol" name="id_rol" required class="form__select">
                     <option value="" disabled>Seleccione un Rol</option>
                     <?php if (!empty($roles)): ?>
                         <?php foreach ($roles as $rol): ?>
@@ -139,8 +139,8 @@
             <div></div>
         </div>
 
-        <div class="form-actions-footer">
-            <button type="submit" class="btn-filter">
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
                 <i class="fas fa-save"></i> Guardar Cambios
             </button>
         </div>

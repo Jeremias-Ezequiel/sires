@@ -1,11 +1,7 @@
-@import 'variables.css';
+@import 'settings/variables.css';
+@import 'base/base.css';
 @import 'components/alerts.css';
-
-body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100vh;
-}
+@import 'components/buttons.css';
+@import 'components/forms.css';
+@import 'components/badges.css';
+@import 'components/modal.css';

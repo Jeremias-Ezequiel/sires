@@ -5,7 +5,7 @@
     </div>
 
     <!-- Modificado con la función global url() -->
-    <a href="<?= url('/dashboard/habitaciones') ?>" class="btn-clear-filters">
+    <a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -23,30 +23,30 @@
     <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones/add/process', 'POST', 'employee-form') ?>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-door-open"></i> Ubicación de la Habitación
         </div>
 
-        <div class="form-grid-layout">
-            <div class="form-field-group">
-                <label class="label-input" for="numero">Número de Habitación</label>
-                <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="input-form-field" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="numero">Número de Habitación</label>
+                <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="piso">Piso</label>
-                <input type="number" id="piso" name="piso" placeholder="Ej: 1" required class="input-form-field" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? '') ?>">
+            <div class="form__group">
+                <label class="form__label" for="piso">Piso</label>
+                <input type="number" id="piso" name="piso" placeholder="Ej: 1" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? '') ?>">
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-tags"></i> Clasificación
         </div>
 
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="id_tipo_habitacion">Tipo de Habitación</label>
-                <select id="id_tipo_habitacion" name="id_tipo_habitacion" required class="select-form-field">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="id_tipo_habitacion">Tipo de Habitación</label>
+                <select id="id_tipo_habitacion" name="id_tipo_habitacion" required class="form__select">
                     <option value="" disabled <?= !isset($_POST['id_tipo_habitacion']) && !isset($old['id_tipo_habitacion']) ? 'selected' : '' ?>>Seleccione un Tipo</option>
                     <?php if (!empty($tipos)): ?>
                         <?php foreach ($tipos as $tipo): ?>
@@ -57,9 +57,9 @@
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_estado_habitacion">Estado Inicial</label>
-                <select id="id_estado_habitacion" name="id_estado_habitacion" required class="select-form-field">
+            <div class="form__group">
+                <label class="form__label" for="id_estado_habitacion">Estado Inicial</label>
+                <select id="id_estado_habitacion" name="id_estado_habitacion" required class="form__select">
                     <option value="" disabled <?= !isset($_POST['id_estado_habitacion']) && !isset($old['id_estado_habitacion']) ? 'selected' : '' ?>>Seleccione un Estado</option>
                     <?php if (!empty($estados)): ?>
                         <?php foreach ($estados as $estado): ?>
@@ -70,14 +70,14 @@
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="precio_noche_base">Precio por Noche ($)</label>
-                <input type="number" id="precio_noche_base" name="precio_noche_base" placeholder="Ej: 15000.00" required class="input-form-field" autocomplete="off" min="0" step="0.01" value="<?= htmlspecialchars($_POST['precio_noche_base'] ?? $old['precio_noche_base'] ?? '') ?>">
+            <div class="form__group">
+                <label class="form__label" for="precio_noche_base">Precio por Noche ($)</label>
+                <input type="number" id="precio_noche_base" name="precio_noche_base" placeholder="Ej: 15000.00" required class="form__input" autocomplete="off" min="0" step="0.01" value="<?= htmlspecialchars($_POST['precio_noche_base'] ?? $old['precio_noche_base'] ?? '') ?>">
             </div>
         </div>
 
-        <div class="form-actions-footer">
-            <button type="submit" class="btn-filter">
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
                 <i class="fas fa-save"></i> Guardar Habitación
             </button>
         </div>
