@@ -115,3 +115,12 @@
         width: 50%;
     }
 }
+
+.btn-back-container {
+    margin-top: 25px;
+}
+
+.btn-back-container .btn--outline {
+    padding: 8px 20px;
+    font-size: 9pt;
+}

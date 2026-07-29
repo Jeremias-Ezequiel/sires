@@ -73,11 +73,11 @@
             <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
 
                 <label class="form__label">EMAIL</label>
-                <input type="email" name="email" placeholder="usuario@hotel.com" autocomplete="off">
+                <input type="email" name="email" class="form__input" placeholder="usuario@hotel.com" autocomplete="off">
 
                 <label class="form__label">CONTRASEÑA</label>
                 <div class="form__password">
-                    <input type="password" name="password" id="passInput" placeholder="••••••••" autocomplete="new-password">
+                    <input type="password" name="password" id="passInput" class="form__input" placeholder="••••••••" autocomplete="new-password">
                     <i class="fa-solid fa-eye" id="togglePass"></i>
                 </div>
 
