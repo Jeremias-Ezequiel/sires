@@ -39,44 +39,6 @@
     font-weight: 700;
 }
 
-/* --- FILAS DOBLES (Nombre/Apellido y Pass/Confirmar) --- */
-.form-row {
-    display: flex;
-    gap: 15px; /* Espacio entre los dos campos */
-    width: 100%;
-}
-
-.form-group {
-    flex: 1; /* Hace que ambos campos midan lo mismo */
-    display: flex;
-    flex-direction: column;
-}
-
-.label-input {
-    color: var(--dorado-sires);
-    font-size: 11px;
-    font-weight: bold;
-    margin: 15px 0 6px 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-input, select {
-    width: 100%;
-    padding: 12px;
-    background: #1d2d50;
-    border: 1px solid var(--borde-input);
-    border-radius: 10px;
-    color: white;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-input:focus, select:focus {
-    border-color: var(--dorado-sires);
-    outline: none;
-}
-
 .back-link {
     display: block;
     text-align: center;
@@ -95,13 +57,5 @@ input:focus, select:focus {
     font-size: 13px; 
     margin-top: -15px; 
     margin-bottom: 25px;
-}
-
-/* Contenedor de acciones en el pie del formulario */
-.action-buttons {
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    margin-top: 10px;
 }
 

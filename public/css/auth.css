@@ -53,64 +53,6 @@
   font-size: 1.5rem;
 }
 
-/* Grupos de formularios */
-.auth-field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.auth-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--dorado-sires, #fbbf24);
-  letter-spacing: 0.5px;
-}
-
-/* Inputs oscuros integrados */
-.auth-input {
-  width: 100%;
-  height: 46px;
-  padding: 0 16px;
-  background-color: #151f32;
-  border: 1px solid var(--borde-input, #233554);
-  border-radius: 8px;
-  color: var(--texto-blanco, #e6f1ff);
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
-}
-
-.auth-input:focus {
-  outline: none;
-  background-color: #1a263d;
-  border-color: var(--dorado-sires, #fbbf24);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.15);
-}
-
-/* Contenedor especial para el ojito de las claves */
-.auth-password-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.auth-password-wrapper i {
-  position: absolute;
-  right: 16px;
-  color: var(--texto-gris, #8892b0);
-  cursor: pointer;
-  font-size: 14px;
-  transition: color 0.2s ease;
-  user-select: none;
-}
-
-.auth-password-wrapper i:hover {
-  color: var(--dorado-sires, #fbbf24);
-}
-
 /* Enlaces del pie */
 .auth-footer-link {
   text-align: center;

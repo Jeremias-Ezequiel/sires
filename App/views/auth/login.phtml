@@ -72,11 +72,11 @@
             <!-- Pasando la ruta de procesamiento del formulario por la función global url() -->
             <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
 
-                <label class="label-input">EMAIL</label>
+                <label class="form__label">EMAIL</label>
                 <input type="email" name="email" placeholder="usuario@hotel.com" autocomplete="off">
 
-                <label class="label-input">CONTRASEÑA</label>
-                <div class="password-wrapper">
+                <label class="form__label">CONTRASEÑA</label>
+                <div class="form__password">
                     <input type="password" name="password" id="passInput" placeholder="••••••••" autocomplete="new-password">
                     <i class="fa-solid fa-eye" id="togglePass"></i>
                 </div>

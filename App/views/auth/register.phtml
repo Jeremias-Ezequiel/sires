@@ -50,37 +50,37 @@
             <!-- Pasando la ruta de procesamiento por la función global url() -->
             <form action="<?= url('/register/process') ?>" method="POST" autocomplete="off">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="label-input">Nombre</label>
-                        <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan" required
+                <div class="form__row">
+                    <div class="form__group">
+                        <label class="form__label">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan" required class="form__input"
                             pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                             title="El nombre solo puede contener letras y espacios.">
                     </div>
-                    <div class="form-group">
-                        <label class="label-input">Apellido</label>
-                        <input type="text" name="apellido" id="apellido" placeholder="Ej. Pérez" required
+                    <div class="form__group">
+                        <label class="form__label">Apellido</label>
+                        <input type="text" name="apellido" id="apellido" placeholder="Ej. Pérez" required class="form__input"
                             pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                             title="El apellido solo puede contener letras y espacios.">
                     </div>
                 </div>
 
-                <label class="label-input">Correo Electrónico</label>
-                <input type="email" name="email" placeholder="operador@sires.com" required>
+                <label class="form__label">Correo Electrónico</label>
+                <input type="email" name="email" placeholder="operador@sires.com" required class="form__input">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="label-input">Contraseña</label>
-                        <input type="password" name="password" placeholder="••••••••" required>
+                <div class="form__row">
+                    <div class="form__group">
+                        <label class="form__label">Contraseña</label>
+                        <input type="password" name="password" placeholder="••••••••" required class="form__input">
                     </div>
-                    <div class="form-group">
-                        <label class="label-input">Confirmar Contraseña</label>
-                        <input type="password" name="confirm_password" placeholder="••••••••" required>
+                    <div class="form__group">
+                        <label class="form__label">Confirmar Contraseña</label>
+                        <input type="password" name="confirm_password" placeholder="••••••••" required class="form__input">
                     </div>
                 </div>
 
-                <label class="label-input">Asignar Rol del Sistema</label>
-                <select name="rol" required>
+                <label class="form__label">Asignar Rol del Sistema</label>
+                <select name="rol" required class="form__select">
                     <option value="" disabled selected>Seleccione un rol...</option>
                     <?php if (isset($roles) && is_array($roles)): ?>
                         <?php foreach ($roles as $rol): ?>
@@ -89,7 +89,7 @@
                     <?php endif; ?>
                 </select>
 
-                <div class="action-buttons">
+                <div class="form__actions form__actions--stack">
                     <button type="submit" class="btn btn--primary btn--full">REGISTRARSE</button>
 
                     <!-- Pasando el retorno al inicio por la función global url() -->

@@ -31,16 +31,16 @@
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
-            <label class="label-input">Buscar por N° Habitación</label>
+            <label class="form__label">Buscar por N° Habitación</label>
             <div class="search-input-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="input-search" autocomplete="off">
+                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="form__search-input" autocomplete="off">
             </div>
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Tipo</label>
-            <select name="type_filter" class="select-role">
+            <label class="form__label">Filtrar por Tipo</label>
+            <select name="type_filter" class="form__select-filter">
                 <option value="">Todos los Tipos</option>
                 <?php if (!empty($tipos)): ?>
                     <?php foreach ($tipos as $tipo): ?>
@@ -51,8 +51,8 @@
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Estado</label>
-            <select name="status_filter" class="select-status">
+            <label class="form__label">Filtrar por Estado</label>
+            <select name="status_filter" class="form__select-filter">
                 <option value="">Todos los Estados</option>
                 <?php if (!empty($estados)): ?>
                     <?php foreach ($estados as $estado): ?>
@@ -63,8 +63,8 @@
         </div>
 
         <div class="form-group-role">
-            <label class="label-input">Filtrar por Piso</label>
-            <select name="floor_filter" class="select-role">
+            <label class="form__label">Filtrar por Piso</label>
+            <select name="floor_filter" class="form__select-filter">
                 <option value="">Todos los Pisos</option>
                 <?php if (!empty($pisos)): ?>
                     <?php foreach ($pisos as $piso): ?>
