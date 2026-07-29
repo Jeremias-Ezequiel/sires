@@ -112,7 +112,7 @@
                                         echo '<span>Inactivo</span>';
                                         break;
                                     default:
-                                        echo '<span class="status-badge status-desconocido">Desconocido</span>';
+                                        echo '<span class="badge badge--desconocido">Desconocido</span>';
                                         break;
                                 }
                                 ?>
@@ -229,14 +229,14 @@
     </section>
 <?php endif; ?>
 <!-- MODAL DE CONFIRMACIÓN SIRES -->
-<div id="sires-confirm-modal" class="sires-modal-overlay">
-    <div class="sires-modal-box">
-        <div id="modal-icon-frame" class="sires-modal-icon">
+<div id="sires-confirm-modal" class="modal">
+    <div class="modal__box">
+        <div id="modal-icon-frame" class="modal__icon">
             <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
         </div>
-        <h3 id="modal-title-text">Confirmar Acción</h3>
-        <p id="modal-description-text">¿Estás seguro de que deseas continuar?</p>
-        <div class="sires-modal-actions">
+        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
+        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
+        <div class="modal__actions">
             <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
             <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
         </div>
@@ -284,41 +284,36 @@
                 const targetUrl = this.getAttribute('data-url');
                 const employeeName = this.getAttribute('data-name');
 
-                // Limpiamos estados de clases previas
-                modalIconFrame.className = 'sires-modal-icon';
+                modalIconFrame.className = 'modal__icon';
                 btnConfirm.className = 'btn';
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Dar de Baja Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-minus';
-                    modalIconFrame.classList.add('icon-deactivate');
+                    modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-plus';
-                    modalIconFrame.classList.add('icon-activate');
+                    modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 }
 
-                // Asignamos la URL real del controlador al botón "Confirmar"
                 btnConfirm.setAttribute('href', targetUrl);
-                
-                // Mostramos el modal añadiendo la clase active
-                modal.classList.add('active');
+
+                modal.classList.add('is-active');
             });
         });
 
-        // Cerrar modal al hacer clic en Cancelar
         btnCancel.addEventListener('click', function() {
-            modal.classList.remove('active');
+            modal.classList.remove('is-active');
         });
-        
-        // Cerrar modal si se hace clic fuera de la caja contenedora
+
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
-                modal.classList.remove('active');
+                modal.classList.remove('is-active');
             }
         });
     });

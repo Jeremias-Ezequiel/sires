@@ -103,13 +103,13 @@
                 <tbody>
                     <?php foreach ($habitaciones as $room):
                         $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'status-ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'status-reservada' : 'status-disponible');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
                     ?>
                         <tr>
                             <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
-                            <td><span class="status-badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">

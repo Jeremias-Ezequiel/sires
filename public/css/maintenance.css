@@ -79,16 +79,7 @@
     animation: pulse-progress 2s ease-in-out infinite alternate;
 }
 
-.badge-503 {
-    display: inline-block;
-    background-color: rgba(205, 164, 52, 0.1);
-    color: var(--dorado-sires);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid rgba(205, 164, 52, 0.2);
-}
+
 
 /* =====================================================================
    ANIMACIONES CSS 

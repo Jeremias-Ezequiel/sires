@@ -103,12 +103,12 @@
                 <?php if (count($habitaciones) > 0): ?>
                     <?php foreach ($habitaciones as $room):
                         $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'status-ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'status-reservada' : 'status-disponible');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
                     ?>
                         <tr>
                             <td><?= htmlspecialchars((string)$room['numero']) ?></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
-                            <td><span class="<?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -147,19 +147,19 @@
                 if (data.success && data.habitaciones.length > 0) {
                     data.habitaciones.forEach(room => {
                         const statusLower = room.estado.toLowerCase();
-                        let statusClass = 'status-disponible';
+                        let statusClass = 'badge--disponible';
 
                         if (statusLower.includes('ocupad')) {
-                            statusClass = 'status-ocupada';
+                            statusClass = 'badge--ocupada';
                         } else if (statusLower.includes('mantenimient') || statusLower.includes('bloquead')) {
-                            statusClass = 'status-reservada';
+                            statusClass = 'badge--reservada';
                         }
 
                         const fila = `
                     <tr>
                         <td>${room.numero}</td>
                         <td>${room.piso}</td>
-                        <td><span class="${statusClass}">${room.estado}</span></td>
+                        <td><span class="badge ${statusClass}">${room.estado}</span></td>
                         <td>${room.tipo}</td>
                     </tr>
                 `;
