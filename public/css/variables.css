@@ -1,0 +1,80 @@
+/* ==========================================================================
+   🎨 SIRES DESIGN TOKENS
+   Fuente única de verdad para colores, radios, sombras y espaciados.
+   ========================================================================== */
+
+:root {
+  /* ======================================================================
+     PALETA BASE
+     ====================================================================== */
+  --color-bg-primary: #0a192f;
+  --color-bg-panel: #112240;
+  --color-bg-input: #151f32;
+  --color-bg-input-focus: #1a263d;
+  --color-bg-modal: #0d1527;
+  --color-bg-date: #1e293b;
+
+  --color-accent: #fbbf24;
+  --color-accent-hover: #e5b83b;
+
+  --color-text-primary: #e6f1ff;
+  --color-text-muted: #8892b0;
+  --color-text-inverse: #0a192f;
+
+  --color-border: #233554;
+  --color-border-light: #334155;
+
+  --color-success: #22c55e;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+  --color-success-border: rgba(34, 197, 94, 0.2);
+
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-danger-border: rgba(239, 68, 68, 0.2);
+
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.2);
+
+  --color-info: #38bdf8;
+  --color-purple: #c084fc;
+  --color-green: #10b981;
+  --color-green-hover: #059669;
+  --color-white: #ffffff;
+
+  /* ======================================================================
+     RADIOS
+     ====================================================================== */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 30px;
+
+  /* ======================================================================
+     SOMBRAS
+     ====================================================================== */
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* ======================================================================
+     LAYOUT
+     ====================================================================== */
+  --sidebar-width: 250px;
+
+  /* ======================================================================
+     ⚠️ ALIAS RETROCOMPATIBLES (para no romper el CSS existente)
+     Se eliminarán cuando todos los componentes estén migrados a los nuevos nombres.
+     ====================================================================== */
+  --fondo-oscuro: var(--color-bg-primary);
+  --fondo-principal: var(--color-bg-primary);
+  --tarjeta-azul: var(--color-bg-panel);
+  --fondo-panel: var(--color-bg-panel);
+  --dorado-sires: var(--color-accent);
+  --dorado-sires-hover: var(--color-accent-hover);
+  --texto-gris: var(--color-text-muted);
+  --texto-blanco: var(--color-text-primary);
+  --borde-input: var(--color-border);
+  --estado-disponible: var(--color-success);
+  --estado-ocupada: var(--color-danger);
+  --estado-reservada: var(--color-accent);
+}
