@@ -13,14 +13,14 @@
 </header>
 
 <?php if (!empty($errorMessage)): ?>
-    <div class="alert alert-error">
+    <div class="alert alert--error">
         <i class="fa-solid fa-triangle-exclamation"></i>
         <?= htmlspecialchars($errorMessage) ?>
     </div>
 <?php endif; ?>
 
 <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
-    <div class="alert alert-<?= htmlspecialchars($flashStatus) ?>">
+                <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
         <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
         <?= htmlspecialchars($flashMessage) ?>
     </div>

@@ -391,46 +391,6 @@
     border-color: #22c55e;
     transform: translateY(-1px);
 }
-/* --- Alertas de Mensajes Flash (Éxito, Error, Advertencia) --- */
-.alert {
-  padding: 15px 20px;
-  margin-bottom: 25px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  box-sizing: border-box;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.alert i {
-  font-size: 16px;
-}
-
-/* Variación Éxito (Verde adaptado a tu paleta oscura) */
-.alert-success {
-  background-color: rgba(40, 167, 69, 0.1);
-  color: var(--estado-disponible, #28a745);
-  border: 1px solid rgba(40, 167, 69, 0.2);
-}
-
-/* Variación Error (Rojo) */
-.alert-error {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-/* Variación Advertencia (Amarillo/Dorado) */
-.alert-warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-
 /* --- [6. SECCIONES DE BÚSQUEDA & FILTROS] --- */
 .employees-header {
   display: flex;

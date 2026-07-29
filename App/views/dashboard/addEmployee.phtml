@@ -13,7 +13,7 @@
 <!-- Contenedor dinámico para alertas por JavaScript (Front) o redirecciones PHP (Back) -->
 <div id="alert-container">
     <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
-        <div class="alert alert-<?= htmlspecialchars($flashStatus) ?>">
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
             <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
             <?= htmlspecialchars($flashMessage) ?>
         </div>
@@ -184,7 +184,7 @@
 
         function mostrarError(mensaje) {
             alertContainer.innerHTML = `
-                <div class="alert alert-error">
+                <div class="alert alert--error">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     \${mensaje}
                 </div>
