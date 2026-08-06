@@ -1,19 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error 405 - Método No Permitido | SIRES</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/pages/error.css">
-</head>
-
-<body>
+<?php
+$pageTitle = 'Error 405 | SIRES';
+$pageCss   = ['error.css'];
+include __DIR__ . '/../partials/head.phtml';
+?>
 
     <div class="error-page-container">
 
@@ -33,6 +22,4 @@
 
     </div>
 
-</body>
-
-</html>
+<?php include __DIR__ . '/../partials/footer.phtml'; ?>

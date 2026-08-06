@@ -1,20 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
+<?php
+$pageTitle = 'Iniciar Sesión | SIRES';
+$pageCss   = ['login.css'];
+include __DIR__ . '/../partials/head.phtml';
+?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIRES - Hotel Management Login</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Cargando los estilos usando la función global asset() -->
-    <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
-    <link rel="stylesheet" href="<?= asset('css/pages/login.css') ?>">
-</head>
-
-<body>
     <header class="encabezado-fotos">
         <div class="carrusel-container">
             <div class="carrusel-track">
@@ -100,17 +89,6 @@
             passInput.setAttribute('type', type);
             this.classList.toggle('fa-eye-slash');
         });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(function(el) {
-                    el.style.transition = 'opacity 0.3s ease';
-                    el.style.opacity = '0';
-                    setTimeout(function() { el.remove(); }, 300);
-                });
-            }, 3000);
-        });
     </script>
-</body>
 
-</html>
+<?php include __DIR__ . '/../partials/footer.phtml'; ?>

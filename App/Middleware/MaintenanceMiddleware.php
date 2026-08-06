@@ -16,7 +16,7 @@ class MaintenanceMiddleware
             http_response_code(503);
 
             // Cargamos la vista directo o redirigimos
-            require_once __DIR__ . '/../views/errors/maintenance.html';
+            require_once __DIR__ . '/../views/errors/maintenance.phtml';
             exit; // Cortamos el index.php en seco, nadie entra al controlador
         }
     }

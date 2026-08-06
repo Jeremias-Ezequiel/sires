@@ -7,14 +7,12 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
-use App\Helpers\LanguageHelper;
 
 class Provincia extends Model
 {
     private int $id;
     private int $id_pais;
     private string $descripcion;
-    private ?string $traducciones = null;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
@@ -22,7 +20,7 @@ class Provincia extends Model
    public function getAll(): ?array
     {
         try {
-            $sql = "SELECT DISTINCT p1.id, p1.id_pais, TRIM(p1.nombre) AS descripcion, p1.traducciones
+            $sql = "SELECT DISTINCT p1.id, p1.id_pais, TRIM(p1.nombre) AS descripcion
                     FROM Provincias p1
                     WHERE p1.id = (
                         SELECT MIN(p2.id) 
@@ -47,7 +45,7 @@ class Provincia extends Model
     public function getByPais(int $id_pais): ?array
     {
         try {
-            $sql = "SELECT id, id_pais, TRIM(nombre) AS descripcion, traducciones
+            $sql = "SELECT id, id_pais, TRIM(nombre) AS descripcion
                     FROM Provincias 
                     WHERE id_pais = :id_pais 
                     ORDER BY descripcion ASC";
@@ -87,7 +85,7 @@ class Provincia extends Model
 
     public function getDescripcion(): string
     {
-        return LanguageHelper::translate($this->traducciones, $this->descripcion);
+        return $this->descripcion;
     }
     public function setDescripcion(string $descripcion): void
     {
@@ -96,15 +94,6 @@ class Provincia extends Model
             throw new Exception("La descripción de la provincia no puede estar vacía.");
         }
         $this->descripcion = $cleanDesc;
-    }
-
-    public function getTraducciones(): ?string
-    {
-        return $this->traducciones;
-    }
-    public function setTraducciones(?string $traducciones): void
-    {
-        $this->traducciones = $traducciones;
     }
 
     public function getIsActive(): int

@@ -59,6 +59,7 @@ class AuthController
                 session_start();
             }
 
+            $_SESSION['user_name'] = $user->getNombre();
             $_SESSION['user_id'] = $user->getId();
             $_SESSION['user_role'] = $user->getIdRol();
 
