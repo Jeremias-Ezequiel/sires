@@ -1,13 +1,20 @@
 <header class="main-header header-flex">
     <div>
         <h1>Inicio</h1>
-        <p>Resumen general del hotel</p>
+        <p>Bienvenido, <?= htmlspecialchars($userName) ?> — <?= htmlspecialchars($rolNombre) ?></p>
     </div>
     <div class="dashboard-date-container">
         <i class="fas fa-calendar-alt date-icon"></i>
         <span id="fecha-actual" class="date-text"><?= isset($fecha_formateada) ? $fecha_formateada : date('d/m/Y') ?></span>
     </div>
 </header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="error-banner">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p><?= htmlspecialchars($errorMessage) ?></p>
+    </div>
+<?php endif; ?>
 
 <section class="summary-grid">
     <article class="summary-card">
@@ -41,7 +48,7 @@
 </section>
 
 <section class="capacity-filter-grid">
-    <div id="btn-cap-2" class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="filtrarHabitaciones(2)">
+    <a href="<?= url('/dashboard?capacidad=2') ?>" id="btn-cap-2" class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>">
         <div class="capacity-card-header">
             <i class="fas fa-users"></i>
             <div>
@@ -53,9 +60,9 @@
             <strong><?= $disp_2_personas ?></strong>
             <p>Disponibles</p>
         </div>
-    </div>
+    </a>
 
-    <div id="btn-cap-3" class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="filtrarHabitaciones(3)">
+    <a href="<?= url('/dashboard?capacidad=3') ?>" id="btn-cap-3" class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>">
         <div class="capacity-card-header">
             <i class="fas fa-users-cog"></i>
             <div>
@@ -67,9 +74,9 @@
             <strong><?= $disp_3_personas ?></strong>
             <p>Disponibles</p>
         </div>
-    </div>
+    </a>
 
-    <div id="btn-cap-4" class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="filtrarHabitaciones(4)">
+    <a href="<?= url('/dashboard?capacidad=4') ?>" id="btn-cap-4" class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>">
         <div class="capacity-card-header">
             <i class="fas fa-user-friends"></i>
             <div>
@@ -81,7 +88,7 @@
             <strong><?= $disp_4_personas ?></strong>
             <p>Disponibles</p>
         </div>
-    </div>
+    </a>
 </section>
 
 <section class="details-section">
@@ -121,54 +128,3 @@
         </table>
     </div>
 </section>
-
-<script>
-    function filtrarHabitaciones(capacidad) {
-        document.querySelectorAll('.capacity-card').forEach(card => card.classList.remove('active'));
-        document.getElementById('btn-cap-' + capacidad).classList.add('active');
-        document.getElementById('tabla-titulo-capacidad').innerText = capacidad + ' personas';
-
-        // Modificado inyectando url() dinámicamente para la petición AJAX
-        fetch('<?= url("/dashboard") ?>?capacidad=' + capacidad, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('tabla-habitaciones-body');
-                tbody.innerHTML = '';
-
-                if (data.fecha) {
-                    document.getElementById('fecha-actual').innerText = data.fecha;
-                }
-
-                if (data.success && data.habitaciones.length > 0) {
-                    data.habitaciones.forEach(room => {
-                        const statusLower = room.estado.toLowerCase();
-                        let statusClass = 'badge--disponible';
-
-                        if (statusLower.includes('ocupad')) {
-                            statusClass = 'badge--ocupada';
-                        } else if (statusLower.includes('mantenimient') || statusLower.includes('bloquead')) {
-                            statusClass = 'badge--reservada';
-                        }
-
-                        const fila = `
-                    <tr>
-                        <td>${room.numero}</td>
-                        <td>${room.piso}</td>
-                        <td><span class="badge ${statusClass}">${room.estado}</span></td>
-                        <td>${room.tipo}</td>
-                    </tr>
-                `;
-                        tbody.innerHTML += fila;
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="table-empty-message">No se encontraron habitaciones registradas para esta capacidad.</td></tr>`;
-                }
-            })
-            .catch(error => console.error('Error AJAX:', error));
-    }
-</script>

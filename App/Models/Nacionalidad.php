@@ -7,13 +7,11 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
-use App\Helpers\LanguageHelper;
 
 class Nacionalidad extends Model
 {
     private int $id;
     private string $descripcion;
-    private ?string $traducciones = null;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
@@ -21,7 +19,7 @@ class Nacionalidad extends Model
     public function getAll(): ?array
     {
         try {
-            $sql = "SELECT DISTINCT n1.id, TRIM(n1.nombre) AS descripcion, n1.traducciones
+            $sql = "SELECT DISTINCT n1.id, TRIM(n1.nombre) AS descripcion
                     FROM Nacionalidades n1
                     WHERE n1.id = (
                         SELECT MIN(n2.id) 
@@ -54,7 +52,7 @@ class Nacionalidad extends Model
 
     public function getDescripcion(): string
     {
-        return LanguageHelper::translate($this->traducciones, $this->descripcion);
+        return $this->descripcion;
     }
     public function setDescripcion(string $descripcion): void
     {
@@ -63,15 +61,6 @@ class Nacionalidad extends Model
             throw new Exception("La descripción de la nacionalidad no puede estar vacía.");
         }
         $this->descripcion = $cleanDesc;
-    }
-
-    public function getTraducciones(): ?string
-    {
-        return $this->traducciones;
-    }
-    public function setTraducciones(?string $traducciones): void
-    {
-        $this->traducciones = $traducciones;
     }
 
     public function getIsActive(): int

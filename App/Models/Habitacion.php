@@ -17,6 +17,17 @@ class Habitacion extends Model
     private int $id_estado_habitacion;
     private float $precio_noche_base;
 
+    // Estados de habitación según Estados_Habitacion
+    public const ESTADO_DISPONIBLE = 1;
+    public const ESTADO_OCUPADA = 2;
+
+    // Regla de negocio: tipos de habitación según capacidad de personas
+    public const TIPOS_POR_CAPACIDAD = [
+        2 => [1, 4], // Simple + Matrimonial
+        3 => [2],    // Doble
+        4 => [3],    // Suite
+    ];
+
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
     {
         $conditions = [];
@@ -122,6 +133,65 @@ class Habitacion extends Model
             error_log("Error en Habitacion::save: " . $e->getMessage());
             throw new Exception("Error interno al registrar la habitación.");
         }
+    }
+
+    public function countByEstado(int $idEstado): int
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = :estado"
+            );
+            $stmt->execute([':estado' => $idEstado]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::countByEstado: " . $e->getMessage());
+            throw new Exception("Error al consultar las habitaciones por estado.");
+        }
+    }
+
+    public function countDisponiblesPorCapacidad(int $capacidad): int
+    {
+        $tiposIds = $this->tiposPorCapacidad($capacidad);
+        $placeholders = implode(',', array_fill(0, count($tiposIds), '?'));
+
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM Habitaciones
+                 WHERE id_estado_habitacion = ? AND id_tipo_habitacion IN ($placeholders)"
+            );
+            $stmt->execute(array_merge([self::ESTADO_DISPONIBLE], $tiposIds));
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::countDisponiblesPorCapacidad: " . $e->getMessage());
+            throw new Exception("Error al calcular la disponibilidad por capacidad.");
+        }
+    }
+
+    public function getHabitacionesPorCapacidad(int $capacidad): array
+    {
+        $tiposIds = $this->tiposPorCapacidad($capacidad);
+        $placeholders = implode(',', array_fill(0, count($tiposIds), '?'));
+
+        $sql = "SELECT h.numero, h.piso, th.descripcion AS tipo, eh.descripcion AS estado
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                WHERE h.id_tipo_habitacion IN ($placeholders)
+                ORDER BY h.numero ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($tiposIds);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getHabitacionesPorCapacidad: " . $e->getMessage());
+            throw new Exception("Error al obtener las habitaciones por capacidad.");
+        }
+    }
+
+    private function tiposPorCapacidad(int $capacidad): array
+    {
+        return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];
     }
 
     // =====================================================================
