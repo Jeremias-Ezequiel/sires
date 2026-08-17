@@ -42,7 +42,7 @@ include __DIR__ . '/../partials/head.phtml';
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'reservas.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/booking') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'bookings.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-calendar-alt"></i>Reservas
                             </a>
                         </li>

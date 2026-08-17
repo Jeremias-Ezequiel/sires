@@ -10,15 +10,15 @@ use Exception;
 
 class Clientes extends Model
 {
-    private int $id;
-    private int $id_nacionalidad;
-    private int $id_localidad;
-    private int $id_provincia;
-    private string $nombre;
-    private string $apellido;
-    private string $dni;
-    private string $telefono;
-    private string $email;
+    private ?int $id = null;
+    private ?int $id_nacionalidad = null;
+    private ?int $id_localidad = null;
+    private ?int $id_provincia = null;
+    private ?string $nombre = null;
+    private ?string $apellido = null;
+    private ?string $dni_pasaporte = null;
+    private ?string $telefono = null;
+    private ?string $email = null;
     private ?string $observaciones = null;
 
     public function getAll(): ?array
@@ -67,7 +67,7 @@ class Clientes extends Model
                 ':id_provincia'    => $cliente->getIdProvincia(),
                 ':nombre'          => $cliente->getNombre(),
                 ':apellido'        => $cliente->getApellido(),
-                ':dni'             => $cliente->getDni(),
+                ':dni'             => $cliente->getDniPasaporte(),
                 ':telefono'        => $cliente->getTelefono(),
                 ':email'           => $cliente->getEmail(),
                 ':observaciones'   => $cliente->getObservaciones()
@@ -78,7 +78,7 @@ class Clientes extends Model
         }
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -87,7 +87,7 @@ class Clientes extends Model
         $this->id = $id;
     }
 
-    public function getIdNacionalidad(): int
+    public function getIdNacionalidad(): ?int
     {
         return $this->id_nacionalidad;
     }
@@ -99,7 +99,7 @@ class Clientes extends Model
         $this->id_nacionalidad = $id_nacionalidad;
     }
 
-    public function getIdLocalidad(): int
+    public function getIdLocalidad(): ?int
     {
         return $this->id_localidad;
     }
@@ -111,7 +111,7 @@ class Clientes extends Model
         $this->id_localidad = $id_localidad;
     }
 
-    public function getIdProvincia(): int
+    public function getIdProvincia(): ?int
     {
         return $this->id_provincia;
     }
@@ -123,7 +123,7 @@ class Clientes extends Model
         $this->id_provincia = $id_provincia;
     }
 
-    public function getNombre(): string
+    public function getNombre(): ?string
     {
         return $this->nombre;
     }
@@ -136,7 +136,7 @@ class Clientes extends Model
         $this->nombre = $clean;
     }
 
-    public function getApellido(): string
+    public function getApellido(): ?string
     {
         return $this->apellido;
     }
@@ -149,20 +149,20 @@ class Clientes extends Model
         $this->apellido = $clean;
     }
 
-    public function getDni(): string
+    public function getDniPasaporte(): ?string
     {
-        return $this->dni;
+        return $this->dni_pasaporte;
     }
-    public function setDni(string $dni): void
+    public function setDniPasaporte(string $dni): void
     {
-        $clean = htmlspecialchars(trim($dni), ENT_QUOTES, 'UTF-8');
+        $clean = htmlspecialchars(trim($dni_pasaporte), ENT_QUOTES, 'UTF-8');
         if (empty($clean)) {
             throw new Exception("El DNI del cliente no puede estar vacío.");
         }
-        $this->dni = $clean;
+        $this->dni_pasaporte = $clean;
     }
 
-    public function getTelefono(): string
+    public function getTelefono(): ?string
     {
         return $this->telefono;
     }
@@ -175,7 +175,7 @@ class Clientes extends Model
         $this->telefono = $clean;
     }
 
-    public function getEmail(): string
+    public function getEmail(): ?string
     {
         return $this->email;
     }

@@ -1,0 +1,114 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Detalle de Reserva</h1>
+        <p>Información completa de la reserva #<?= htmlspecialchars((string)$reserva['id']) ?></p>
+    </div>
+    <div class="header-actions-container">
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+            <a href="<?= url('/dashboard/booking/edit?id=' . $reserva['id']) ?>" class="btn btn--primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+        <?php endif; ?>
+        <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+</header>
+
+<?php
+$estadoLower = mb_strtolower($reserva['estado_descripcion'] ?? '', 'UTF-8');
+$statusClass = 'badge--disponible';
+if (strpos($estadoLower, 'pendient') !== false) $statusClass = 'badge--pendiente';
+elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
+elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
+?>
+
+<section class="details-section">
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <tbody>
+                <tr>
+                    <td class="detail-label">ID Reserva</td>
+                    <td class="detail-value">#<?= htmlspecialchars((string)$reserva['id']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Estado</td>
+                    <td class="detail-value"><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($reserva['estado_descripcion']) ?></span></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Cliente</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['cliente_nombre'] . ' ' . $reserva['cliente_apellido']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">DNI Cliente</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['cliente_dni'] ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Email Cliente</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['cliente_email'] ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Teléfono Cliente</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['cliente_telefono'] ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Habitación</td>
+                    <td class="detail-value">#<?= htmlspecialchars((string)$reserva['habitacion_numero']) ?> - Piso <?= htmlspecialchars((string)$reserva['habitacion_piso']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Tipo de Habitación</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['tipo_habitacion_descripcion'] ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Precio por Noche</td>
+                    <td class="detail-value">$<?= number_format((float)($reserva['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha de Alta</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['fecha_alta'] ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha de Entrada</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['fecha_entrada']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha de Salida</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['fecha_salida']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Cantidad de Huéspedes</td>
+                    <td class="detail-value"><?= htmlspecialchars((string)$reserva['cantidad_huespedes']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Canal de Origen</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['canal_descripcion']) ?></td>
+                </tr>
+
+                <tr class="detail-section-header">
+                    <td colspan="2">Resumen de Pago</td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Estado de Pago</td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['estado_pago_descripcion'] ?? 'Sin registro') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Monto Total</td>
+                    <td class="detail-value"><?= isset($reserva['monto_total']) ? '$' . number_format((float)$reserva['monto_total'], 2, ',', '.') : '-' ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Monto Cobrado</td>
+                    <td class="detail-value"><?= isset($reserva['monto_cobrado']) ? '$' . number_format((float)$reserva['monto_cobrado'], 2, ',', '.') : '-' ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Saldo Pendiente</td>
+                    <td class="detail-value"><?= isset($reserva['saldo_pendiente']) ? '$' . number_format((float)$reserva['saldo_pendiente'], 2, ',', '.') : '-' ?></td>
+                </tr>
+
+                <tr>
+                    <td class="detail-label">Observaciones</td>
+                    <td class="detail-value"><?= !empty($reserva['observaciones']) ? htmlspecialchars($reserva['observaciones']) : '-' ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
