@@ -20,6 +20,8 @@ class Habitacion extends Model
     // Estados de habitación según Estados_Habitacion
     public const ESTADO_DISPONIBLE = 1;
     public const ESTADO_OCUPADA = 2;
+    public const ESTADO_MANTENIMIENTO = 3;
+    public const ESTADO_BLOQUEADA = 4;
 
     // Regla de negocio: tipos de habitación según capacidad de personas
     public const TIPOS_POR_CAPACIDAD = [
@@ -132,6 +134,100 @@ class Habitacion extends Model
         } catch (PDOException $e) {
             error_log("Error en Habitacion::save: " . $e->getMessage());
             throw new Exception("Error interno al registrar la habitación.");
+        }
+    }
+
+    public function findById(int $id): ?array
+    {
+        try {
+            $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
+                           th.descripcion AS tipo, eh.descripcion AS estado,
+                           h.id_tipo_habitacion, h.id_estado_habitacion
+                    FROM Habitaciones h
+                    JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                    JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                    WHERE h.id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id' => $id]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::findById: " . $e->getMessage());
+            throw new Exception("Error interno al buscar la habitación.");
+        }
+    }
+
+    public function update(Habitacion $habitacion): bool
+    {
+        try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND id != :id");
+            $check->execute([':numero' => $habitacion->getNumero(), ':id' => $habitacion->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El número de habitación ya está en uso por otra habitación.");
+            }
+
+            $sql = "UPDATE Habitaciones
+                    SET numero = :numero, piso = :piso,
+                        id_tipo_habitacion = :id_tipo_habitacion,
+                        id_estado_habitacion = :id_estado_habitacion,
+                        precio_noche_base = :precio_noche_base
+                    WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id'                   => $habitacion->getId(),
+                ':numero'               => $habitacion->getNumero(),
+                ':piso'                 => $habitacion->getPiso(),
+                ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
+                ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
+                ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::update: " . $e->getMessage());
+            throw new Exception("Error interno al actualizar la habitación.");
+        }
+    }
+
+    public function deactivate(int $id): bool
+    {
+        try {
+            $sql = "UPDATE Habitaciones
+                    SET id_estado_habitacion = :nuevo_estado
+                    WHERE id = :id AND id_estado_habitacion = :actual";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':nuevo_estado' => self::ESTADO_BLOQUEADA,
+                ':id'           => $id,
+                ':actual'       => self::ESTADO_DISPONIBLE
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::deactivate: " . $e->getMessage());
+            throw new Exception("Error interno en la base de datos.");
+        }
+    }
+
+    public function activate(int $id): bool
+    {
+        try {
+            $sql = "UPDATE Habitaciones
+                    SET id_estado_habitacion = :nuevo_estado
+                    WHERE id = :id AND id_estado_habitacion = :actual";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':nuevo_estado' => self::ESTADO_DISPONIBLE,
+                ':id'           => $id,
+                ':actual'       => self::ESTADO_BLOQUEADA
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::activate: " . $e->getMessage());
+            throw new Exception("Error interno en la base de datos.");
         }
     }
 

@@ -88,7 +88,9 @@ try {
             break;
     }
 } catch (\Throwable $e) {
-    http_response_code(500);
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
 
     // Registramos la trazabilidad exacta del colapso en el log de Arch/Fedora antes de pintar la pantalla
     error_log("[SIRES CRITICAL] " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
