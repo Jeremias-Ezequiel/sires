@@ -6,7 +6,7 @@
 
     <div class="header-actions-container">
         <!-- Redirección adaptada con url() para el formulario de registro -->
-        <a href="<?= url('/dashboard/habitaciones/add') ?>" class="btn btn--primary">
+        <a href="<?= url('/dashboard/rooms/add') ?>" class="btn btn--primary">
             <i class="fas fa-plus"></i> Registrar Habitación
         </a>
     </div>
@@ -28,7 +28,7 @@
 
 <section class="details-section filter-section">
     <!-- 🌟 Apertura del formulario automatizada para GET: previene la pérdida de la Query String de la sección -->
-    <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones', 'GET', 'filter-form') ?>
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms', 'GET', 'filter-form') ?>
 
         <div class="form-group-search">
             <label class="form__label">Buscar por N° Habitación</label>
@@ -79,7 +79,7 @@
         </button>
         <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
             <!-- Limpieza de filtros configurada con url() -->
-            <a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
+            <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
@@ -114,10 +114,10 @@
                             <td class="cell-actions">
                                 <div class="actions-group-container">
                                     <!-- 🎯 Corregido: links apuntando al ruteo dinámico con su ID correspondiente -->
-                                    <a href="<?= url('/dashboard/habitaciones/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
+                                    <a href="<?= url('/dashboard/rooms/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="<?= url('/dashboard/habitaciones/detail?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
+                                    <a href="<?= url('/dashboard/rooms/detail?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </div>
@@ -139,7 +139,7 @@
 
             <?php if ($hasSearch || $hasType || $hasStatus || $hasFloor): ?>
                 <!-- Limpieza de búsqueda alternativa con url() -->
-<a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
+<a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
             <?php endif; ?>

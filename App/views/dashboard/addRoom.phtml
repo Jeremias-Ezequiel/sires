@@ -5,7 +5,7 @@
     </div>
 
     <!-- Modificado con la función global url() -->
-    <a href="<?= url('/dashboard/habitaciones') ?>" class="btn btn--ghost">
+    <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -21,7 +21,7 @@
 
 <section class="details-section form-container-section">
     <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
-    <?= \App\Helpers\UrlHelper::openForm('/dashboard/habitaciones/add/process', 'POST', 'employee-form') ?>
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/add/process', 'POST', 'employee-form') ?>
 
         <div class="form__section-title">
             <i class="fas fa-door-open"></i> Ubicación de la Habitación

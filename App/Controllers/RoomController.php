@@ -42,7 +42,7 @@ class RoomController
         $estados = $roomModel->getEstadosHabitacion();
         $pisos = $roomModel->getPisos();
 
-        $contentView = __DIR__ . '/../views/dashboard/habitaciones.phtml';
+        $contentView = __DIR__ . '/../views/dashboard/rooms.phtml';
 
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }
@@ -72,7 +72,7 @@ class RoomController
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();
 
-        $contentView = __DIR__ . '/../views/dashboard/addHabitacion.phtml';
+        $contentView = __DIR__ . '/../views/dashboard/addRoom.phtml';
 
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }
@@ -127,7 +127,7 @@ class RoomController
             $_SESSION['flash_status']  = "success";
 
             // Redirección adaptada dinámicamente con UrlHelper
-            header('Location: ' . UrlHelper::to('/dashboard/habitaciones'));
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
@@ -135,7 +135,7 @@ class RoomController
             $_SESSION['flash_status']  = "error";
 
             // Redirección adaptada dinámicamente con UrlHelper
-            header('Location: ' . UrlHelper::to('/dashboard/habitaciones/add'));
+            header('Location: ' . UrlHelper::to('/dashboard/rooms/add'));
             exit;
         }
     }

@@ -145,19 +145,19 @@ return function (RouteCollector $r) {
     ]);
 
     // Habitaciones
-    $r->addRoute('GET', '/dashboard/habitaciones', [
+    $r->addRoute('GET', '/dashboard/rooms', [
         'action' => [RoomController::class, 'showRooms'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/habitaciones/add', [
+    $r->addRoute('GET', '/dashboard/rooms/add', [
         'action' => [RoomController::class, 'showNewRoomForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('POST', '/dashboard/habitaciones/add/process', [
+    $r->addRoute('POST', '/dashboard/rooms/add/process', [
         'action' => [RoomController::class, 'addRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
