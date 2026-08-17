@@ -1,0 +1,160 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Editar Habitación #<?= htmlspecialchars((string)($habitacion['numero'] ?? '')) ?></h1>
+        <p>Modificación de datos de la habitación en el inventario del hotel</p>
+    </div>
+
+    <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<div id="alert-container">
+    <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+            <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+            <?= htmlspecialchars($flashMessage) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<section class="details-section form-container-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/edit/process', 'POST', 'employee-form') ?>
+
+        <input type="hidden" name="id" value="<?= htmlspecialchars((string)$habitacion['id']) ?>">
+
+        <div class="form__section-title">
+            <i class="fas fa-door-open"></i> Ubicación de la Habitación
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="numero">Número de Habitación</label>
+                <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? $habitacion['numero']) ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="piso">Piso</label>
+                <input type="number" id="piso" name="piso" placeholder="Ej: 1" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? $habitacion['piso']) ?>">
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-tags"></i> Clasificación
+        </div>
+
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="id_tipo_habitacion">Tipo de Habitación</label>
+                <select id="id_tipo_habitacion" name="id_tipo_habitacion" required class="form__select">
+                    <option value="" disabled>Seleccione un Tipo</option>
+                    <?php if (!empty($tipos)): ?>
+                        <?php foreach ($tipos as $tipo): ?>
+                            <?php $current_tipo_id = $_POST['id_tipo_habitacion'] ?? $old['id_tipo_habitacion'] ?? $habitacion['id_tipo_habitacion'] ?? ''; ?>
+                            <option value="<?= $tipo['id'] ?>" <?= (string)$current_tipo_id === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_estado_habitacion">Estado</label>
+                <select id="id_estado_habitacion" name="id_estado_habitacion" required class="form__select">
+                    <option value="" disabled>Seleccione un Estado</option>
+                    <?php if (!empty($estados)): ?>
+                        <?php foreach ($estados as $estado): ?>
+                            <?php $current_estado_id = $_POST['id_estado_habitacion'] ?? $old['id_estado_habitacion'] ?? $habitacion['id_estado_habitacion'] ?? ''; ?>
+                            <option value="<?= $estado['id'] ?>" <?= (string)$current_estado_id === (string)$estado['id'] ? 'selected' : '' ?>><?= htmlspecialchars($estado['descripcion']) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="precio_noche_base">Precio por Noche ($)</label>
+                <input type="number" id="precio_noche_base" name="precio_noche_base" placeholder="Ej: 15000.00" required class="form__input" autocomplete="off" min="0" step="0.01" value="<?= htmlspecialchars($_POST['precio_noche_base'] ?? $old['precio_noche_base'] ?? $habitacion['precio_noche_base']) ?>">
+            </div>
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+        </div>
+
+    </form>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputNumero = document.getElementById('numero');
+        const inputPiso = document.getElementById('piso');
+        const inputPrecio = document.getElementById('precio_noche_base');
+
+        if (inputNumero) {
+            inputNumero.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            });
+            inputNumero.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+            inputNumero.addEventListener('paste', function(e) {
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^[0-9]+$/.test(dataPegada)) {
+                    e.preventDefault();
+                    document.getElementById('alert-container').innerHTML = `
+                        <div class="alert alert--error">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            Solo se permiten números enteros en el número de habitación.
+                        </div>
+                    `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
+        if (inputPiso) {
+            inputPiso.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            });
+            inputPiso.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+            inputPiso.addEventListener('paste', function(e) {
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^[0-9]+$/.test(dataPegada)) {
+                    e.preventDefault();
+                    document.getElementById('alert-container').innerHTML = `
+                        <div class="alert alert--error">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            Solo se permiten números enteros en el piso.
+                        </div>
+                    `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
+        if (inputPrecio) {
+            inputPrecio.addEventListener('keypress', function(e) {
+                if (!/[0-9.]/.test(e.key)) e.preventDefault();
+            });
+            inputPrecio.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9.]/g, '');
+            });
+            inputPrecio.addEventListener('paste', function(e) {
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(dataPegada)) {
+                    e.preventDefault();
+                    document.getElementById('alert-container').innerHTML = `
+                        <div class="alert alert--error">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            Solo se permiten valores numéricos en el precio (ej: 15000 o 15000.50).
+                        </div>
+                    `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+    });
+</script>

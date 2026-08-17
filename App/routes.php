@@ -162,5 +162,35 @@ return function (RouteCollector $r) {
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/edit', [
+        'action' => [RoomController::class, 'showEditRoomForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/rooms/edit/process', [
+        'action' => [RoomController::class, 'editRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/detail', [
+        'action' => [RoomController::class, 'showRoomDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
+        'action' => [RoomController::class, 'deactivateRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/activate', [
+        'action' => [RoomController::class, 'activateRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
 };
 

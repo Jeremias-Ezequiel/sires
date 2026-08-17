@@ -1,0 +1,54 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Detalle de Habitación #<?= htmlspecialchars((string)($habitacion['numero'] ?? '')) ?></h1>
+        <p>Información completa de la habitación en el inventario del hotel</p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+        </a>
+        <a href="<?= url('/dashboard/rooms/edit?id=' . $habitacion['id']) ?>" class="btn btn--primary">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+    </div>
+</header>
+
+<section class="details-section">
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <tbody>
+                <tr>
+                    <td class="detail-label">ID</td>
+                    <td class="detail-value"><strong>#<?= htmlspecialchars((string)$habitacion['id']) ?></strong></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Número de Habitación</td>
+                    <td class="detail-value"><?= htmlspecialchars((string)$habitacion['numero']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Piso</td>
+                    <td class="detail-value"><?= htmlspecialchars((string)$habitacion['piso']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Tipo</td>
+                    <td class="detail-value"><?= htmlspecialchars($habitacion['tipo']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Estado</td>
+                    <td class="detail-value">
+                        <?php
+                        $statusLower = mb_strtolower($habitacion['estado'] ?? '', 'UTF-8');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                        ?>
+                        <span class="badge <?= $statusClass ?>"><?= htmlspecialchars($habitacion['estado']) ?></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Precio por Noche</td>
+                    <td class="detail-value">$<?= number_format((float)($habitacion['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
