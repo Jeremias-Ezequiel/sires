@@ -23,6 +23,7 @@
 <section class="details-section form-container-section">
     <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees/add/process', 'POST', 'employee-form') ?>
+        <?= csrf_field() ?>
 
         <div class="form__section-title">
             <i class="fas fa-user"></i> Datos Personales
@@ -74,7 +75,10 @@
 
             <div class="form__group">
                 <label class="form__label" for="fecha_nacimiento">Fecha de Nacimiento</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input" value="<?= htmlspecialchars($_POST['fecha_nacimiento'] ?? $old['fecha_nacimiento'] ?? '') ?>">
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input"
+                    min="<?= (new DateTime('-130 years'))->format('Y-m-d') ?>"
+                    max="<?= (new DateTime('-18 years'))->format('Y-m-d') ?>"
+                    value="<?= htmlspecialchars($_POST['fecha_nacimiento'] ?? $old['fecha_nacimiento'] ?? '') ?>">
             </div>
         </div>
 
@@ -175,6 +179,8 @@
         const inputNombre = document.getElementById('nombre');
         const inputApellido = document.getElementById('apellido');
         const inputEmail = document.getElementById('email');
+        const inputFecha = document.getElementById('fecha_nacimiento');
+        const inputCuil = document.getElementById('cuil');
         const inputPass = document.getElementById('password');
         const inputConfirmPass = document.getElementById('confirm_password');
         const selectRol = document.getElementById('id_rol');
@@ -282,7 +288,31 @@
                     return;
                 }
 
-                // 7. Rol
+                // 7. Fecha de Nacimiento (mayor de edad y menos de 130 años)
+                const fechaVal = inputFecha?.value ?? '';
+                if (fechaVal !== '') {
+                    const nacimiento = new Date(fechaVal + 'T00:00:00');
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                    const mes = hoy.getMonth() - nacimiento.getMonth();
+                    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                        edad--;
+                    }
+                    if (edad < 18) {
+                        e.preventDefault();
+                        mostrarError('El usuario debe ser mayor de edad (18 años o más).');
+                        inputFecha?.focus();
+                        return;
+                    }
+                    if (edad > 130) {
+                        e.preventDefault();
+                        mostrarError('La fecha de nacimiento indica una edad mayor a 130 años.');
+                        inputFecha?.focus();
+                        return;
+                    }
+                }
+
+                // 8. Rol
                 if (!selectRol || selectRol.value === '') {
                     e.preventDefault();
                     mostrarError('Debe seleccionar un rol para el empleado.');
@@ -290,7 +320,7 @@
                     return;
                 }
 
-                // 8. Contraseña
+                // 9. Contraseña
                 const passVal = inputPass?.value ?? '';
                 if (passVal === '') {
                     e.preventDefault();
@@ -298,14 +328,26 @@
                     inputPass?.focus();
                     return;
                 }
-                if (passVal.length < 5) {
+                if (passVal.length < 8) {
                     e.preventDefault();
-                    mostrarError('La contraseña debe tener al menos 5 caracteres.');
+                    mostrarError('La contraseña debe tener al menos 8 caracteres.');
+                    inputPass?.focus();
+                    return;
+                }
+                if (!/[A-Z]/.test(passVal)) {
+                    e.preventDefault();
+                    mostrarError('La contraseña debe contener al menos una letra mayúscula.');
+                    inputPass?.focus();
+                    return;
+                }
+                if (!/\d/.test(passVal)) {
+                    e.preventDefault();
+                    mostrarError('La contraseña debe contener al menos un número.');
                     inputPass?.focus();
                     return;
                 }
 
-                // 9. Confirmar Contraseña
+                // 10. Confirmar Contraseña
                 const confirmVal = inputConfirmPass?.value ?? '';
                 if (confirmVal === '') {
                     e.preventDefault();
@@ -412,6 +454,37 @@
                     .catch(function() {
                         resetSelect(selectLocalidad, 'Error al cargar');
                     });
+            });
+        }
+
+        // --- 🔢 Máscara CUIL XX-XXXXXXXX-X ---
+        if (inputCuil) {
+            const formatCuil = function(value) {
+                const digits = value.replace(/\D/g, '').slice(0, 11);
+                let out = digits;
+                if (digits.length > 2) out = digits.slice(0, 2) + '-' + digits.slice(2);
+                if (digits.length > 10) out = out.slice(0, 11) + '-' + digits.slice(10);
+                return out;
+            };
+            inputCuil.addEventListener('input', function() {
+                const pos = this.selectionStart;
+                this.value = formatCuil(this.value);
+            });
+            inputCuil.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace') {
+                    const pos = this.selectionStart;
+                    if (this.value[pos - 1] === '-') {
+                        e.preventDefault();
+                        const digits = this.value.replace(/\D/g, '').slice(0, -1);
+                        this.value = formatCuil(digits);
+                        this.setSelectionRange(this.value.length, this.value.length);
+                    }
+                }
+            });
+            inputCuil.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                this.value = formatCuil(dataPegada);
             });
         }
     });

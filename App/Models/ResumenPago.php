@@ -38,6 +38,35 @@ class ResumenPago extends Model
         }
     }
 
+    public function save(ResumenPago $resumen): bool
+    {
+        try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Resumen_Pago WHERE id_reserva = :id_reserva");
+            $check->execute([':id_reserva' => $resumen->getIdReserva()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("La reserva ya tiene un resumen de pago asociado.");
+            }
+
+            $sql = "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
+                    VALUES (:id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id_reserva'       => $resumen->getIdReserva(),
+                ':id_estado_pago'   => $resumen->getIdEstadoPago(),
+                ':monto_total'      => $resumen->getTotal(),
+                ':monto_cobrado'    => $resumen->getMontoPagado(),
+                ':saldo_pendiente'  => $resumen->getSaldoPendiente()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::save: " . $e->getMessage());
+            if ($e->getCode() === '23000') {
+                throw new Exception("La reserva ya tiene un resumen de pago.");
+            }
+            throw new Exception("Error interno al guardar el resumen de pago.");
+        }
+    }
+
     public function getId(): int
     {
         return $this->id;

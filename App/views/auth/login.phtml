@@ -60,6 +60,7 @@ include __DIR__ . '/../partials/head.phtml';
 
             <!-- Pasando la ruta de procesamiento del formulario por la función global url() -->
             <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
+                <?= csrf_field() ?>
 
                 <label class="form__label">EMAIL</label>
                 <input type="email" name="email" class="form__input" placeholder="usuario@hotel.com" autocomplete="off">

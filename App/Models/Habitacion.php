@@ -357,8 +357,8 @@ class Habitacion extends Model
     }
     public function setPrecioNocheBase(float $precio_noche_base): void
     {
-        if ($precio_noche_base < 0) {
-            throw new Exception("El precio por noche no puede ser negativo.");
+        if ($precio_noche_base <= 0) {
+            throw new Exception("El precio por noche debe ser mayor a 0.");
         }
         $this->precio_noche_base = $precio_noche_base;
     }

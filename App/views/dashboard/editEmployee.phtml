@@ -20,6 +20,7 @@
 
 <section class="details-section form-container-section">
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees/edit/process', 'POST', 'employee-form') ?>
+        <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= htmlspecialchars((string)($old['id'] ?? $employee->getId() ?? '')) ?>">
 
         <div class="form__section-title">
@@ -72,7 +73,10 @@
 
             <div class="form__group">
                 <label class="form__label" for="fecha_nacimiento">Fecha de Nacimiento</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input" value="<?= htmlspecialchars($old['fecha_nacimiento'] ?? $employee->getFechaNacimiento() ?? '') ?>">
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input"
+                    min="<?= (new DateTime('-130 years'))->format('Y-m-d') ?>"
+                    max="<?= (new DateTime('-18 years'))->format('Y-m-d') ?>"
+                    value="<?= htmlspecialchars($old['fecha_nacimiento'] ?? $employee->getFechaNacimiento() ?? '') ?>">
             </div>
         </div>
 
@@ -155,6 +159,8 @@
         const inputNombre = document.getElementById('nombre');
         const inputApellido = document.getElementById('apellido');
         const inputEmail = document.getElementById('email');
+        const inputFecha = document.getElementById('fecha_nacimiento');
+        const inputCuil = document.getElementById('cuil');
         const selectRol = document.getElementById('id_rol');
         const selectNacionalidad = document.getElementById('id_nacionalidad');
         const selectProvincia = document.getElementById('id_provincia');
@@ -243,6 +249,29 @@
                     mostrarError('Debe seleccionar un rol para el empleado.');
                     selectRol?.focus();
                     return;
+                }
+
+                const fechaVal = inputFecha?.value ?? '';
+                if (fechaVal !== '') {
+                    const nacimiento = new Date(fechaVal + 'T00:00:00');
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                    const mes = hoy.getMonth() - nacimiento.getMonth();
+                    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                        edad--;
+                    }
+                    if (edad < 18) {
+                        e.preventDefault();
+                        mostrarError('El usuario debe ser mayor de edad (18 años o más).');
+                        inputFecha?.focus();
+                        return;
+                    }
+                    if (edad > 130) {
+                        e.preventDefault();
+                        mostrarError('La fecha de nacimiento indica una edad mayor a 130 años.');
+                        inputFecha?.focus();
+                        return;
+                    }
                 }
             });
         }
@@ -366,6 +395,36 @@
                 selectLocalidad.disabled = true;
 
                 cargarLocalidades(provinciaId, '');
+            });
+        }
+
+        // --- 🔢 Máscara CUIL XX-XXXXXXXX-X ---
+        if (inputCuil) {
+            const formatCuil = function(value) {
+                const digits = value.replace(/\D/g, '').slice(0, 11);
+                let out = digits;
+                if (digits.length > 2) out = digits.slice(0, 2) + '-' + digits.slice(2);
+                if (digits.length > 10) out = out.slice(0, 11) + '-' + digits.slice(10);
+                return out;
+            };
+            inputCuil.addEventListener('input', function() {
+                this.value = formatCuil(this.value);
+            });
+            inputCuil.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace') {
+                    const pos = this.selectionStart;
+                    if (this.value[pos - 1] === '-') {
+                        e.preventDefault();
+                        const digits = this.value.replace(/\D/g, '').slice(0, -1);
+                        this.value = formatCuil(digits);
+                        this.setSelectionRange(this.value.length, this.value.length);
+                    }
+                }
+            });
+            inputCuil.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                this.value = formatCuil(dataPegada);
             });
         }
     });

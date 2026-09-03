@@ -24,6 +24,9 @@ class AuthController
     public function login(): void
     {
         try {
+            // 0. Verificamos el token CSRF para prevenir falsificación de solicitudes
+            csrf_check();
+
             // 1. Capturamos los datos crudos del formulario directamente
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
