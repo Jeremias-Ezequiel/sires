@@ -352,8 +352,14 @@ class Usuario extends Model
     public function updatePasswordAfterReset(string $newPassword): bool
     {
         try {
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+            if (strlen($newPassword) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -378,8 +384,14 @@ class Usuario extends Model
     public function changePasswordAdmin(string $newPassword): bool
     {
         try {
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+            if (strlen($newPassword) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
@@ -568,8 +580,14 @@ class Usuario extends Model
     }
     public function setPassword(string $password): void
     {
-        if (strlen($password) < 5) {
-            throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+        if (strlen($password) < 8) {
+            throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+        }
+        if (!preg_match('/\d/', $password)) {
+            throw new Exception("La contraseña debe contener al menos un número.");
         }
 
         $this->password = password_hash($password, PASSWORD_BCRYPT);
@@ -586,8 +604,14 @@ class Usuario extends Model
     public function setTelefono(?string $telefono): void
     {
         $clean = trim($telefono ?? '');
-        if ($clean !== '' && !preg_match('/^[0-9+\-\s()]{7,50}$/', $clean)) {
-            throw new Exception("El formato del teléfono no es válido.");
+        if ($clean !== '') {
+            $digits = preg_replace('/\D/', '', $clean);
+            if (strlen($digits) < 8) {
+                throw new Exception("El teléfono debe tener al menos 8 dígitos.");
+            }
+            if (!preg_match('/^[0-9+\-\s()]{10,50}$/', $clean)) {
+                throw new Exception("El formato del teléfono no es válido.");
+            }
         }
         $this->telefono = $clean !== '' ? $clean : null;
     }
@@ -612,10 +636,15 @@ class Usuario extends Model
     public function setCuil(?string $cuil): void
     {
         $clean = trim($cuil ?? '');
-        if ($clean !== '' && !preg_match('/^[0-9\-]{11,14}$/', $clean)) {
-            throw new Exception("El formato del CUIL no es válido. Ejemplo: 20-12345678-9");
+        if ($clean !== '') {
+            $digits = preg_replace('/\D/', '', $clean);
+            if (strlen($digits) !== 11) {
+                throw new Exception("El CUIL debe tener 11 dígitos en el formato XX-XXXXXXXX-X.");
+            }
+            $this->cuil = substr($digits, 0, 2) . '-' . substr($digits, 2, 8) . '-' . substr($digits, 10, 1);
+        } else {
+            $this->cuil = null;
         }
-        $this->cuil = $clean !== '' ? $clean : null;
     }
 
     public function getDireccion(): ?string
@@ -640,6 +669,17 @@ class Usuario extends Model
         $clean = trim($fecha_nacimiento ?? '');
         if ($clean !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
             throw new Exception("El formato de la fecha de nacimiento no es válido (AAAA-MM-DD).");
+        }
+        if ($clean !== '') {
+            $nacimiento = new \DateTime($clean);
+            $hoy = new \DateTime();
+            $edad = $hoy->diff($nacimiento)->y;
+            if ($edad < 18) {
+                throw new Exception("El usuario debe ser mayor de edad (18 años o más).");
+            }
+            if ($edad > 130) {
+                throw new Exception("La fecha de nacimiento indica una edad mayor a 130 años.");
+            }
         }
         $this->fecha_nacimiento = $clean !== '' ? $clean : null;
     }
@@ -671,6 +711,9 @@ class Usuario extends Model
     }
     public function setFechaBaja(?string $fecha_baja): void
     {
+        if ($fecha_baja !== null && $this->fecha_alta !== '' && $fecha_baja < $this->fecha_alta) {
+            throw new Exception("La fecha de baja no puede ser anterior a la fecha de alta.");
+        }
         $this->fecha_baja = $fecha_baja;
     }
 

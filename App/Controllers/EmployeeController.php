@@ -96,6 +96,8 @@ class EmployeeController
         }
 
         try {
+            csrf_check();
+
             $nombre        = trim($_POST['nombre'] ?? '');
             $apellido      = trim($_POST['apellido'] ?? '');
             $email         = trim($_POST['email'] ?? '');
@@ -126,8 +128,14 @@ class EmployeeController
             if (empty($password)) {
                 throw new Exception("La contraseña es obligatoria.");
             }
-            if (strlen($password) < 5) {
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+            if (strlen($password) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $password)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $password)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
             if ($idRol <= 0) {
                 throw new Exception("Debe seleccionar un rol para el empleado.");
@@ -239,6 +247,8 @@ class EmployeeController
         }
 
         try {
+            csrf_check();
+
             $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de empleado inválido.");
@@ -462,6 +472,8 @@ class EmployeeController
         $id = $_POST['id'] ?? '';
 
         try {
+            csrf_check();
+
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de empleado inválido.");
             }
@@ -472,8 +484,14 @@ class EmployeeController
             if (empty($password)) {
                 throw new Exception("La contraseña es obligatoria.");
             }
-            if (strlen($password) < 5) {
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+            if (strlen($password) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $password)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $password)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
             if ($password !== $confirmPassword) {
                 throw new Exception("Las contraseñas ingresadas no coinciden.");
