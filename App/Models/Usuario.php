@@ -179,6 +179,18 @@ class Usuario extends Model
     public function save(Usuario $usuario): bool
     {
         try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE dni = :dni AND dni IS NOT NULL");
+            $check->execute([':dni' => $usuario->getDni()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI ya se encuentra registrado.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE cuil = :cuil AND cuil IS NOT NULL");
+            $check->execute([':cuil' => $usuario->getCuil()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El CUIL ya se encuentra registrado.");
+            }
+
             $sql = "INSERT INTO Usuarios (
                         id_rol, id_localidad, id_nacionalidad, id_provincia,
                         nombre, apellido, email, telefono, dni, cuil, direccion, fecha_nacimiento,
@@ -238,6 +250,18 @@ class Usuario extends Model
             $check->execute([':email' => $usuario->getEmail(), ':id' => $usuario->getId()]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El correo electrónico ya está en uso por otro usuario.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE dni = :dni AND dni IS NOT NULL AND id != :id");
+            $check->execute([':dni' => $usuario->getDni(), ':id' => $usuario->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI ya está registrado por otro usuario.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE cuil = :cuil AND cuil IS NOT NULL AND id != :id");
+            $check->execute([':cuil' => $usuario->getCuil(), ':id' => $usuario->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El CUIL ya está registrado por otro usuario.");
             }
 
             $sql = "UPDATE Usuarios SET 

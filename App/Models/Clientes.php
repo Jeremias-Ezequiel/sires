@@ -20,6 +20,7 @@ class Clientes extends Model
     private ?string $telefono = null;
     private ?string $email = null;
     private ?string $observaciones = null;
+    private ?int $is_active = 1;
 
     public function getAll(): ?array
     {
@@ -57,8 +58,20 @@ class Clientes extends Model
     public function save(Clientes $cliente): bool
     {
         try {
-            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni, telefono, email, observaciones)
-                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :email, :observaciones)";
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE dni_pasaporte = :dni");
+            $check->execute([':dni' => $cliente->getDniPasaporte()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI/Pasaporte ya se encuentra registrado.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE mail = :mail");
+            $check->execute([':mail' => $cliente->getEmail()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El email ya se encuentra registrado.");
+            }
+
+            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, email, observaciones, is_active)
+                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :email, :observaciones, :is_active)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -70,10 +83,14 @@ class Clientes extends Model
                 ':dni'             => $cliente->getDniPasaporte(),
                 ':telefono'        => $cliente->getTelefono(),
                 ':email'           => $cliente->getEmail(),
-                ':observaciones'   => $cliente->getObservaciones()
+                ':observaciones'   => $cliente->getObservaciones(),
+                ':is_active'       => $cliente->getIsActive()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Clientes::save: " . $e->getMessage());
+            if ($e->getCode() === '23000') {
+                throw new Exception("El DNI o email ya se encuentra registrado.");
+            }
             throw new Exception("Error interno al registrar el cliente.");
         }
     }
@@ -155,7 +172,7 @@ class Clientes extends Model
     }
     public function setDniPasaporte(string $dni): void
     {
-        $clean = htmlspecialchars(trim($dni_pasaporte), ENT_QUOTES, 'UTF-8');
+        $clean = htmlspecialchars(trim($dni), ENT_QUOTES, 'UTF-8');
         if (empty($clean)) {
             throw new Exception("El DNI del cliente no puede estar vacío.");
         }
@@ -202,5 +219,17 @@ class Clientes extends Model
         } else {
             $this->observaciones = null;
         }
+    }
+
+    public function getIsActive(): ?int
+    {
+        return $this->is_active;
+    }
+    public function setIsActive(int $is_active): void
+    {
+        if ($is_active !== 0 && $is_active !== 1) {
+            throw new Exception("El estado de actividad debe ser 0 o 1.");
+        }
+        $this->is_active = $is_active;
     }
 }

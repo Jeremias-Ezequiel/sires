@@ -208,6 +208,10 @@ class Reserva extends Model
     public function save(Reserva $reserva): bool
     {
         try {
+            if ($reserva->getFechaSalida() <= $reserva->getFechaEntrada()) {
+                throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
+            }
+
             $sql = "INSERT INTO Reservas (id_cliente, id_habitacion, id_estado_reserva, id_canal_origen, fecha_entrada, fecha_salida, cantidad_huespedes, observaciones, creado_por, fecha_alta)
                     VALUES (:id_cliente, :id_habitacion, :id_estado_reserva, :id_canal_origen, :fecha_entrada, :fecha_salida, :cantidad_huespedes, :observaciones, :creado_por, NOW())";
 
@@ -232,6 +236,10 @@ class Reserva extends Model
     public function update(Reserva $reserva): bool
     {
         try {
+            if ($reserva->getFechaSalida() <= $reserva->getFechaEntrada()) {
+                throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
+            }
+
             $sql = "UPDATE Reservas
                     SET id_cliente = :id_cliente,
                         id_habitacion = :id_habitacion,
