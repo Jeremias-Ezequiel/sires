@@ -5,9 +5,8 @@
     </div>
 
     <div class="header-actions-container">
-        <!-- Adaptado con url() para redirigir al formulario de alta -->
-        <a href="<?= url('/dashboard/employees/add') ?>" class="btn btn--primary">
-            <i class="fas fa-plus"></i> Añadir
+        <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
+            <i class="fas fa-plus"></i> Registrar
         </a>
     </div>
 </header>
@@ -130,10 +129,11 @@
                                         class="btn btn--icon btn--icon-pass" title="Cambiar Contraseña">
                                         <i class="fas fa-key"></i>
                                     </a>
+
                                     <?php if ($emp->getIsActive() === $emp::ACTIVE): ?>
                                         <!-- Botón para Dar de Baja -->
                                         <button type="button" 
-                                            class="btn btn--icon btn--icon-danger open-sires-modal" 
+                                            class="emp-action-btn btn-deactivate-hover open-sires-modal" 
                                             data-action="deactivate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
                                             data-url="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
@@ -143,7 +143,7 @@
                                     <?php else: ?>
                                         <!-- Botón para Reactivar -->
                                         <button type="button" 
-                                            class="btn btn--icon btn--icon-success open-sires-modal" 
+                                            class="emp-action-btn btn-activate-hover open-sires-modal" 
                                             data-action="activate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
                                             data-url="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
@@ -170,7 +170,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage - 1; 
                     ?>
-                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
                         <i class="fas fa-chevron-left"></i> Anterior
                     </a>
                 <?php endif; ?>
@@ -200,7 +200,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage + 1; 
                     ?>
-                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
                         Siguiente <i class="fas fa-chevron-right"></i>
                     </a>
                 <?php endif; ?>
@@ -229,16 +229,16 @@
     </section>
 <?php endif; ?>
 <!-- MODAL DE CONFIRMACIÓN SIRES -->
-<div id="sires-confirm-modal" class="modal">
-    <div class="modal__box">
-        <div id="modal-icon-frame" class="modal__icon">
+<div id="sires-confirm-modal" class="sires-modal-overlay">
+    <div class="sires-modal-box">
+        <div id="modal-icon-frame" class="sires-modal-icon">
             <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
         </div>
-        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
-        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
-        <div class="modal__actions">
-            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+        <h3 id="modal-title-text">Confirmar Acción</h3>
+        <p id="modal-description-text">¿Estás seguro de que deseas continuar?</p>
+        <div class="sires-modal-actions">
+            <button type="button" id="btn-modal-cancel" class="sires-modal-btn btn-modal-cancel">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="sires-modal-btn">Confirmar</a>
         </div>
     </div>
 </div>
@@ -284,36 +284,41 @@
                 const targetUrl = this.getAttribute('data-url');
                 const employeeName = this.getAttribute('data-name');
 
-                modalIconFrame.className = 'modal__icon';
-                btnConfirm.className = 'btn';
+                // Limpiamos estados de clases previas
+                modalIconFrame.className = 'sires-modal-icon';
+                btnConfirm.className = 'sires-modal-btn';
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Dar de Baja Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-minus';
-                    modalIconFrame.classList.add('modal__icon--deactivate');
-                    btnConfirm.classList.add('btn--danger');
+                    modalIconFrame.classList.add('icon-deactivate');
+                    btnConfirm.classList.add('btn-proceed-deactivate');
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Empleado';
                     modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${employeeName}</strong>?`;
                     modalIcon.className = 'fas fa-user-plus';
-                    modalIconFrame.classList.add('modal__icon--activate');
-                    btnConfirm.classList.add('btn--success');
+                    modalIconFrame.classList.add('icon-activate');
+                    btnConfirm.classList.add('btn-proceed-activate');
                 }
 
+                // Asignamos la URL real del controlador al botón "Confirmar"
                 btnConfirm.setAttribute('href', targetUrl);
-
-                modal.classList.add('is-active');
+                
+                // Mostramos el modal añadiendo la clase active
+                modal.classList.add('active');
             });
         });
 
+        // Cerrar modal al hacer clic en Cancelar
         btnCancel.addEventListener('click', function() {
-            modal.classList.remove('is-active');
+            modal.classList.remove('active');
         });
-
+        
+        // Cerrar modal si se hace clic fuera de la caja contenedora
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
-                modal.classList.remove('is-active');
+                modal.classList.remove('active');
             }
         });
     });

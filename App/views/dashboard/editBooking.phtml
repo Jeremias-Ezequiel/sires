@@ -137,7 +137,7 @@ if (!empty($habitaciones)) {
             'nombre'    => $c->getNombre() ?? '',
             'apellido'  => $c->getApellido() ?? '',
             'dni'       => $c->getDniPasaporte() ?? '',
-            'email'     => $c->getEmail() ?? '',
+            'email'     => $c->getMail() ?? '',
             'telefono'  => $c->getTelefono() ?? '',
         ];
     }, $clientes ?? [])) ?>;

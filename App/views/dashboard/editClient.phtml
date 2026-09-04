@@ -1,0 +1,338 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Editar Cliente</h1>
+        <p>Modificación de datos del cliente</p>
+    </div>
+
+    <a href="<?= url('/dashboard/clients') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<div id="alert-container">
+    <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+            <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+            <?= htmlspecialchars($flashMessage) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<section class="details-section form-container-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/clients/edit/process', 'POST', 'client-form') ?>
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= htmlspecialchars((string)($old['id'] ?? $cliente->getId() ?? '')) ?>">
+
+        <div class="form__section-title">
+            <i class="fas fa-user"></i> Datos Personales
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['nombre'] ?? $cliente->getNombre() ?? '') ?>"
+                    pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                    title="El nombre solo puede contener letras y espacios.">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="apellido">Apellido</label>
+                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['apellido'] ?? $cliente->getApellido() ?? '') ?>"
+                    pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                    title="El apellido solo puede contener letras y espacios.">
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-id-card"></i> Documentación y Contacto
+        </div>
+
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="dni_pasaporte">DNI / Pasaporte</label>
+                <input type="text" id="dni_pasaporte" name="dni_pasaporte" placeholder="Ej: 35.123.456" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni_pasaporte'] ?? $cliente->getDniPasaporte() ?? '') ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $cliente->getTelefono() ?? '') ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="mail">Email</label>
+                <input type="email" id="mail" name="mail" placeholder="ejemplo@sires.com" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['mail'] ?? $cliente->getMail() ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-map-marker-alt"></i> Ubicación y Procedencia
+        </div>
+
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="id_nacionalidad">Nacionalidad</label>
+                <select id="id_nacionalidad" name="id_nacionalidad" required class="form__select">
+                    <option value="" disabled>Seleccione...</option>
+                    <?php if (!empty($countries)): ?>
+                        <?php foreach ($countries as $cou): ?>
+                            <?php
+                                $selectedId = $old['id_nacionalidad'] ?? $cliente->getIdNacionalidad() ?? '';
+                            ?>
+                            <option value="<?= $cou->getId() ?>" <?= (string)$selectedId === (string)$cou->getId() ? 'selected' : '' ?>><?= htmlspecialchars($cou->getDescripcion()) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_provincia">Provincia</label>
+                <select id="id_provincia" name="id_provincia" required class="form__select" disabled>
+                    <option value="" disabled>Cargando...</option>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_localidad">Localidad</label>
+                <select id="id_localidad" name="id_localidad" required class="form__select" disabled>
+                    <option value="" disabled>Cargando...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-sticky-note"></i> Observaciones
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="observaciones">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="3" class="form__input" placeholder="Notas u observaciones del cliente (opcional)"><?= htmlspecialchars($old['observaciones'] ?? $cliente->getObservaciones() ?? '') ?></textarea>
+            </div>
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+        </div>
+
+    </form>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formulario = document.querySelector('.client-form');
+        const alertContainer = document.getElementById('alert-container');
+        const inputNombre = document.getElementById('nombre');
+        const inputApellido = document.getElementById('apellido');
+        const inputMail = document.getElementById('mail');
+        const inputDni = document.getElementById('dni_pasaporte');
+        const selectNacionalidad = document.getElementById('id_nacionalidad');
+        const selectProvincia = document.getElementById('id_provincia');
+        const selectLocalidad = document.getElementById('id_localidad');
+
+        function mostrarError(mensaje) {
+            alertContainer.innerHTML = `
+                <div class="alert alert--error">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    ${mensaje}
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        if (formulario && alertContainer) {
+            formulario.addEventListener('submit', function(e) {
+                alertContainer.innerHTML = '';
+
+                const nombreVal = inputNombre?.value.trim() ?? '';
+                if (nombreVal === '') {
+                    e.preventDefault();
+                    mostrarError('El nombre es obligatorio.');
+                    inputNombre?.focus();
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreVal)) {
+                    e.preventDefault();
+                    mostrarError('El nombre solo puede contener letras y espacios.');
+                    inputNombre?.focus();
+                    return;
+                }
+
+                const apellidoVal = inputApellido?.value.trim() ?? '';
+                if (apellidoVal === '') {
+                    e.preventDefault();
+                    mostrarError('El apellido es obligatorio.');
+                    inputApellido?.focus();
+                    return;
+                }
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellidoVal)) {
+                    e.preventDefault();
+                    mostrarError('El apellido solo puede contener letras y espacios.');
+                    inputApellido?.focus();
+                    return;
+                }
+
+                if (!inputDni || inputDni.value.trim() === '') {
+                    e.preventDefault();
+                    mostrarError('El DNI/Pasaporte es obligatorio.');
+                    inputDni?.focus();
+                    return;
+                }
+
+                const mailVal = inputMail?.value.trim() ?? '';
+                if (mailVal === '') {
+                    e.preventDefault();
+                    mostrarError('El email es obligatorio.');
+                    inputMail?.focus();
+                    return;
+                }
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+                if (!emailRegex.test(mailVal)) {
+                    e.preventDefault();
+                    mostrarError('El formato del email no es válido (ej: nombre@dominio.com).');
+                    inputMail?.focus();
+                    return;
+                }
+
+                if (!selectNacionalidad || selectNacionalidad.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una nacionalidad.');
+                    selectNacionalidad?.focus();
+                    return;
+                }
+                if (!selectProvincia || selectProvincia.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una provincia.');
+                    selectProvincia?.focus();
+                    return;
+                }
+                if (!selectLocalidad || selectLocalidad.value === '') {
+                    e.preventDefault();
+                    mostrarError('Debe seleccionar una localidad.');
+                    selectLocalidad?.focus();
+                    return;
+                }
+            });
+        }
+
+        if (inputNombre && inputApellido) {
+            const inputsLetras = [inputNombre, inputApellido];
+            inputsLetras.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/;
+                    if (!regex.test(e.key)) e.preventDefault();
+                });
+                input.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                });
+                input.addEventListener('paste', function(e) {
+                    const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                    const regexGeneral = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+                    if (!regexGeneral.test(dataPegada)) {
+                        e.preventDefault();
+                        mostrarError('No se permite pegar números o símbolos en los campos de nombre o apellido.');
+                    }
+                });
+                input.addEventListener('drop', function(e) { e.preventDefault(); });
+            });
+        }
+
+        const baseProvincias  = '<?= \App\Helpers\UrlHelper::to('/api/provincias') ?>';
+        const baseLocalidades = '<?= \App\Helpers\UrlHelper::to('/api/localidades') ?>';
+
+        const preloadedNacionalidad = '<?= $cliente->getIdNacionalidad() ?? '' ?>';
+        const preloadedProvincia    = '<?= $cliente->getIdProvincia() ?? '' ?>';
+        const preloadedLocalidad    = '<?= $cliente->getIdLocalidad() ?? '' ?>';
+
+        function poblarSelect(select, items, textoDefault, selectedId) {
+            select.innerHTML = '<option value="" disabled>' + textoDefault + '</option>';
+            items.forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.descripcion;
+                if (selectedId && String(item.id) === String(selectedId)) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+            select.disabled = false;
+        }
+
+        function resetSelect(select, texto) {
+            select.innerHTML = '<option value="" disabled selected>' + texto + '</option>';
+            select.disabled = true;
+        }
+
+        function cargarProvincias(nacionalidadId, provinciaSeleccionada) {
+            return fetch(baseProvincias + '&nacionalidadId=' + encodeURIComponent(nacionalidadId))
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.length > 0) {
+                        poblarSelect(selectProvincia, data, 'Seleccione...', provinciaSeleccionada);
+                    } else {
+                        resetSelect(selectProvincia, 'Sin resultados');
+                    }
+                    return data;
+                })
+                .catch(function() {
+                    resetSelect(selectProvincia, 'Error al cargar');
+                    return [];
+                });
+        }
+
+        function cargarLocalidades(provinciaId, localidadSeleccionada) {
+            return fetch(baseLocalidades + '&provinciaId=' + encodeURIComponent(provinciaId))
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.length > 0) {
+                        poblarSelect(selectLocalidad, data, 'Seleccione...', localidadSeleccionada);
+                    } else {
+                        resetSelect(selectLocalidad, 'Sin resultados');
+                    }
+                    return data;
+                })
+                .catch(function() {
+                    resetSelect(selectLocalidad, 'Error al cargar');
+                    return [];
+                });
+        }
+
+        if (preloadedNacionalidad) {
+            cargarProvincias(preloadedNacionalidad, preloadedProvincia)
+                .then(function() {
+                    if (preloadedProvincia) {
+                        cargarLocalidades(preloadedProvincia, preloadedLocalidad);
+                    }
+                });
+        }
+
+        if (selectNacionalidad && selectProvincia && selectLocalidad) {
+            selectNacionalidad.addEventListener('change', function() {
+                const nacionalidadId = this.value;
+                if (nacionalidadId === "") {
+                    resetSelect(selectProvincia, 'Seleccione una Nacionalidad primero...');
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
+                }
+                resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                selectProvincia.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectProvincia.disabled = true;
+
+                cargarProvincias(nacionalidadId, '');
+            });
+
+            selectProvincia.addEventListener('change', function() {
+                const provinciaId = this.value;
+                if (provinciaId === "") {
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
+                }
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectLocalidad.disabled = true;
+
+                cargarLocalidades(provinciaId, '');
+            });
+        }
+    });
+</script>

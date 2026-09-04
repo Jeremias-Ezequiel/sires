@@ -610,4 +610,137 @@
 }
 
 
+<<<<<<< HEAD:public/css/dashboard.css
+/* --- [⚡ RESPONSIVE MEDIA QUERIES] --- */
+@media (max-width: 768px) {
+  .form-grid-layout, 
+  .form-grid-layout.grid-three-columns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+/* ==========================================================================
+   MODAL DE CONFIRMACIÓN ESTILIZADO (SIRES)
+   ========================================================================== */
+.sires-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(9, 15, 29, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
 
+.sires-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sires-modal-box {
+  background-color: #0d1527;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 35px 30px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.sires-modal-overlay.active .sires-modal-box {
+  transform: scale(1);
+}
+
+.sires-modal-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto 20px auto;
+}
+
+/* Colores dinámicos del icono según la acción */
+.icon-deactivate {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.icon-activate {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.sires-modal-box h3 {
+  color: #ffffff;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.sires-modal-box p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.sires-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.sires-modal-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-modal-cancel {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+.btn-modal-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Colores dinámicos del botón Confirmar */
+.btn-proceed-deactivate {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-proceed-deactivate:hover {
+  background-color: #dc2626;
+}
+
+.btn-proceed-activate {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.btn-proceed-activate:hover {
+  background-color: #059669;
+}
+=======
+
+>>>>>>> origin:public/css/pages/dashboard.css

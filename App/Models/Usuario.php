@@ -80,29 +80,28 @@ class Usuario extends Model
         if ($query !== null) {
             $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
             $search = "%" . $cleanQuery . "%";
-            $conditions[] = "(u.nombre LIKE :search OR u.apellido LIKE :search_apellido)";
+            $conditions[] = "(nombre LIKE :search OR apellido LIKE :search_apellido)";
             $params['search'] = $search;
             $params['search_apellido'] = $search;
         }
 
         if ($is_active !== null) {
-            $conditions[] = "u.is_active = :is_active";
+            $conditions[] = "is_active = :is_active";
             $params['is_active'] = (int)$is_active;
         }
 
         if ($role !== null) {
-            $conditions[] = "u.id_rol = :role";
+            $conditions[] = "id_rol = :role";
             $params['role'] = (int)$role;
         }
 
-        $sql = "SELECT u.*, r.descripcion AS rol_descripcion
-                FROM Usuarios u
-                JOIN Roles r ON u.id_rol = r.id";
+        // Construcción de la SQL con límites de paginación
+        $sql = "SELECT * FROM Usuarios";
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
-        $sql .= " ORDER BY u.is_active DESC, u.id ASC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY is_active DESC, id ASC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -352,7 +351,11 @@ class Usuario extends Model
     public function updatePasswordAfterReset(string $newPassword): bool
     {
         try {
-            if (strlen($newPassword) < 8) {
+
+            if (strlen($newPassword) < 5) {
+                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+            }
+                if (strlen($newPassword) < 8) {
                 throw new Exception("La contraseña debe tener al menos 8 caracteres.");
             }
             if (!preg_match('/[A-Z]/', $newPassword)) {
@@ -373,6 +376,7 @@ class Usuario extends Model
                 ':password' => $hashedPassword,
                 ':id'       => $this->id
             ]);
+    
         } catch (PDOException $e) {
             error_log("Error en updatePasswordAfterReset: " . $e->getMessage());
             throw new Exception("Error interno al actualizar la clave.");
@@ -384,6 +388,10 @@ class Usuario extends Model
     public function changePasswordAdmin(string $newPassword): bool
     {
         try {
+
+            if (strlen($newPassword) < 5) {
+                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+            }
             if (strlen($newPassword) < 8) {
                 throw new Exception("La contraseña debe tener al menos 8 caracteres.");
             }
@@ -392,6 +400,7 @@ class Usuario extends Model
             }
             if (!preg_match('/\d/', $newPassword)) {
                 throw new Exception("La contraseña debe contener al menos un número.");
+
             }
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
@@ -580,6 +589,10 @@ class Usuario extends Model
     }
     public function setPassword(string $password): void
     {
+
+        if (strlen($password) < 5) {
+            throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+        }
         if (strlen($password) < 8) {
             throw new Exception("La contraseña debe tener al menos 8 caracteres.");
         }
@@ -588,6 +601,7 @@ class Usuario extends Model
         }
         if (!preg_match('/\d/', $password)) {
             throw new Exception("La contraseña debe contener al menos un número.");
+
         }
 
         $this->password = password_hash($password, PASSWORD_BCRYPT);

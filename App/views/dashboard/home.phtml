@@ -115,7 +115,7 @@
                         <tr>
                             <td><?= htmlspecialchars((string)$room['numero']) ?></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
-                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td><span class="<?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -128,3 +128,53 @@
         </table>
     </div>
 </section>
+
+<script>
+    function filtrarHabitaciones(capacidad) {
+        document.querySelectorAll('.capacity-card').forEach(card => card.classList.remove('active'));
+        document.getElementById('btn-cap-' + capacidad).classList.add('active');
+        document.getElementById('tabla-titulo-capacidad').innerText = capacidad + ' personas';
+
+        fetch('?capacidad=' + capacidad, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('tabla-habitaciones-body');
+                tbody.innerHTML = '';
+
+                if (data.fecha) {
+                    document.getElementById('fecha-actual').innerText = data.fecha;
+                }
+
+                if (data.success && data.habitaciones.length > 0) {
+                    data.habitaciones.forEach(room => {
+                        const statusLower = room.estado.toLowerCase();
+                        let statusClass = 'status-disponible';
+
+                        if (statusLower.includes('ocupad')) {
+                            statusClass = 'status-ocupada';
+                        } else if (statusLower.includes('mantenimient') || statusLower.includes('bloquead')) {
+                            statusClass = 'status-reservada';
+                        }
+
+                        const fila = `
+                    <tr>
+                        <td>${room.numero}</td>
+                        <td>${room.piso}</td>
+                        <td><span class="${statusClass}">${room.estado}</span></td>
+                        <td>${room.tipo}</td>
+                    </tr>
+                `;
+                        tbody.innerHTML += fila;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="table-empty-message">No se encontraron habitaciones registradas para esta capacidad.</td></tr>`;
+                }
+            })
+            .catch(error => console.error('Error AJAX:', error));
+    }
+</script>

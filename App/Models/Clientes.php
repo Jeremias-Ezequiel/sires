@@ -18,7 +18,7 @@ class Clientes extends Model
     private ?string $apellido = null;
     private ?string $dni_pasaporte = null;
     private ?string $telefono = null;
-    private ?string $email = null;
+    private ?string $mail = null;
     private ?string $observaciones = null;
     private ?int $is_active = 1;
 
@@ -36,6 +36,75 @@ class Clientes extends Model
         } catch (PDOException $e) {
             error_log("Error in getAll clientes: " . $e->getMessage());
             throw new Exception("Database error during clientes lookup.");
+        }
+    }
+
+    public function listClientes(?string $query, $is_active, int $limit = 10, int $offset = 0): ?array
+    {
+        $conditions = [];
+        $params = [];
+
+        $query = ($query === "") ? null : $query;
+
+        if ($query !== null) {
+            $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
+            $search = "%" . $cleanQuery . "%";
+            $conditions[] = "(nombre LIKE :search_nombre OR apellido LIKE :search_apellido OR dni_pasaporte LIKE :search_dni)";
+            $params['search_nombre'] = $search;
+            $params['search_apellido'] = $search;
+            $params['search_dni'] = $search;
+        }
+
+        $sql = "SELECT * FROM Clientes";
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+        $sql .= " ORDER BY apellido ASC, nombre ASC LIMIT :limit OFFSET :offset";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue(':' . $key, $val);
+            }
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Clientes::class);
+            return $stmt->fetchAll() ?: null;
+        } catch (PDOException $e) {
+            error_log("Error en Clientes::listClientes: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al buscar clientes.");
+        }
+    }
+
+    public function countClientes(?string $query, $is_active): int
+    {
+        $conditions = [];
+        $params = [];
+
+        $query = ($query === "") ? null : $query;
+
+        if ($query !== null) {
+            $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
+            $search = "%" . $cleanQuery . "%";
+            $conditions[] = "(nombre LIKE :search_nombre OR apellido LIKE :search_apellido OR dni_pasaporte LIKE :search_dni)";
+            $params['search_nombre'] = $search;
+            $params['search_apellido'] = $search;
+            $params['search_dni'] = $search;
+        }
+
+        $sql = "SELECT COUNT(*) FROM Clientes";
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en Clientes::countClientes: " . $e->getMessage());
+            return 0;
         }
     }
 
@@ -65,13 +134,13 @@ class Clientes extends Model
             }
 
             $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE mail = :mail");
-            $check->execute([':mail' => $cliente->getEmail()]);
+            $check->execute([':mail' => $cliente->getMail()]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El email ya se encuentra registrado.");
             }
 
-            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, email, observaciones, is_active)
-                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :email, :observaciones, :is_active)";
+            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, mail, observaciones)
+                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :mail, :observaciones)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -82,9 +151,8 @@ class Clientes extends Model
                 ':apellido'        => $cliente->getApellido(),
                 ':dni'             => $cliente->getDniPasaporte(),
                 ':telefono'        => $cliente->getTelefono(),
-                ':email'           => $cliente->getEmail(),
-                ':observaciones'   => $cliente->getObservaciones(),
-                ':is_active'       => $cliente->getIsActive()
+                ':mail'            => $cliente->getMail(),
+                ':observaciones'   => $cliente->getObservaciones()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Clientes::save: " . $e->getMessage());
@@ -92,6 +160,55 @@ class Clientes extends Model
                 throw new Exception("El DNI o email ya se encuentra registrado.");
             }
             throw new Exception("Error interno al registrar el cliente.");
+        }
+    }
+
+    public function update(Clientes $cliente): bool
+    {
+        try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE dni_pasaporte = :dni AND id != :id");
+            $check->execute([':dni' => $cliente->getDniPasaporte(), ':id' => $cliente->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI/Pasaporte ya se encuentra registrado por otro cliente.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE mail = :mail AND id != :id");
+            $check->execute([':mail' => $cliente->getMail(), ':id' => $cliente->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El email ya se encuentra registrado por otro cliente.");
+            }
+
+            $sql = "UPDATE Clientes SET
+                        id_nacionalidad = :id_nacionalidad,
+                        id_localidad    = :id_localidad,
+                        id_provincia    = :id_provincia,
+                        nombre          = :nombre,
+                        apellido        = :apellido,
+                        dni_pasaporte   = :dni,
+                        telefono        = :telefono,
+                        mail            = :mail,
+                        observaciones   = :observaciones
+                    WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id_nacionalidad' => $cliente->getIdNacionalidad(),
+                ':id_localidad'    => $cliente->getIdLocalidad(),
+                ':id_provincia'    => $cliente->getIdProvincia(),
+                ':nombre'          => $cliente->getNombre(),
+                ':apellido'        => $cliente->getApellido(),
+                ':dni'             => $cliente->getDniPasaporte(),
+                ':telefono'        => $cliente->getTelefono(),
+                ':mail'            => $cliente->getMail(),
+                ':observaciones'   => $cliente->getObservaciones(),
+                ':id'              => $cliente->getId()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en Clientes::update: " . $e->getMessage());
+            if ($e->getCode() === '23000') {
+                throw new Exception("El DNI o email ya se encuentra registrado.");
+            }
+            throw new Exception("Error interno al actualizar el cliente.");
         }
     }
 
@@ -192,20 +309,20 @@ class Clientes extends Model
         $this->telefono = $clean;
     }
 
-    public function getEmail(): ?string
+    public function getMail(): ?string
     {
-        return $this->email;
+        return $this->mail;
     }
-    public function setEmail(string $email): void
+    public function setMail(string $mail): void
     {
-        $clean = htmlspecialchars(trim($email), ENT_QUOTES, 'UTF-8');
+        $clean = htmlspecialchars(trim($mail), ENT_QUOTES, 'UTF-8');
         if (empty($clean)) {
             throw new Exception("El email del cliente no puede estar vacío.");
         }
         if (!filter_var($clean, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("El formato del email no es válido.");
         }
-        $this->email = $clean;
+        $this->mail = $clean;
     }
 
     public function getObservaciones(): ?string
