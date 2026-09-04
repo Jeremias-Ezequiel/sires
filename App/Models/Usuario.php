@@ -23,10 +23,19 @@ class Usuario extends Model
     private string $email;
     private string $password;
 
+    // 📋 ATRIBUTOS PARA REGISTRO DE EMPLEADOS ARGENTINOS
+    private ?string $telefono = null;
+    private ?string $dni = null;
+    private ?string $cuil = null;
+    private ?string $direccion = null;
+    private ?string $fecha_nacimiento = null;
+
     // ⚡ ATRIBUTOS DE BAJA LÓGICA E HISTORIAL
     private int $is_active = 1;
     private string $fecha_alta = '';
     private ?string $fecha_baja = null;
+
+    private ?string $rol_descripcion = null;
 
     // 🔑 ATRIBUTOS ADICIONALES PARA RECUPERACIÓN DE CONTRASEÑA
     private ?string $reset_token = null;
@@ -169,24 +178,45 @@ class Usuario extends Model
     public function save(Usuario $usuario): bool
     {
         try {
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE dni = :dni AND dni IS NOT NULL");
+            $check->execute([':dni' => $usuario->getDni()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI ya se encuentra registrado.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE cuil = :cuil AND cuil IS NOT NULL");
+            $check->execute([':cuil' => $usuario->getCuil()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El CUIL ya se encuentra registrado.");
+            }
+
             $sql = "INSERT INTO Usuarios (
-                        id_rol, id_localidad, id_nacionalidad, id_provincia, nombre, apellido, email, password, is_active
+                        id_rol, id_localidad, id_nacionalidad, id_provincia,
+                        nombre, apellido, email, telefono, dni, cuil, direccion, fecha_nacimiento,
+                        password, is_active
                     ) VALUES (
-                        :id_rol, :id_localidad, :id_nacionalidad, :id_provincia, :nombre, :apellido, :email, :password, :is_active
+                        :id_rol, :id_localidad, :id_nacionalidad, :id_provincia,
+                        :nombre, :apellido, :email, :telefono, :dni, :cuil, :direccion, :fecha_nacimiento,
+                        :password, :is_active
                     )";
 
             $stmt = $this->db->prepare($sql);
 
             return $stmt->execute([
-                ':id_rol'          => $usuario->getIdRol(),
-                ':id_localidad'    => $usuario->getIdLocalidad(),
-                ':id_nacionalidad' => $usuario->getIdNacionalidad(),
-                ':id_provincia'    => $usuario->getIdProvincia(),
-                ':nombre'          => $usuario->getNombre(),
-                ':apellido'        => $usuario->getApellido(),
-                ':email'           => $usuario->getEmail(),
-                ':password'        => $usuario->getPassword(),
-                ':is_active'       => $usuario->getIsActive()
+                ':id_rol'            => $usuario->getIdRol(),
+                ':id_localidad'      => $usuario->getIdLocalidad(),
+                ':id_nacionalidad'   => $usuario->getIdNacionalidad(),
+                ':id_provincia'      => $usuario->getIdProvincia(),
+                ':nombre'            => $usuario->getNombre(),
+                ':apellido'          => $usuario->getApellido(),
+                ':email'             => $usuario->getEmail(),
+                ':telefono'          => $usuario->getTelefono(),
+                ':dni'               => $usuario->getDni(),
+                ':cuil'              => $usuario->getCuil(),
+                ':direccion'         => $usuario->getDireccion(),
+                ':fecha_nacimiento'  => $usuario->getFechaNacimiento(),
+                ':password'          => $usuario->getPassword(),
+                ':is_active'         => $usuario->getIsActive()
             ]);
         } catch (PDOException $e) {
             error_log("Error in Usuario::save: " . $e->getMessage());
@@ -221,6 +251,18 @@ class Usuario extends Model
                 throw new Exception("El correo electrónico ya está en uso por otro usuario.");
             }
 
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE dni = :dni AND dni IS NOT NULL AND id != :id");
+            $check->execute([':dni' => $usuario->getDni(), ':id' => $usuario->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El DNI ya está registrado por otro usuario.");
+            }
+
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Usuarios WHERE cuil = :cuil AND cuil IS NOT NULL AND id != :id");
+            $check->execute([':cuil' => $usuario->getCuil(), ':id' => $usuario->getId()]);
+            if ((int)$check->fetchColumn() > 0) {
+                throw new Exception("El CUIL ya está registrado por otro usuario.");
+            }
+
             $sql = "UPDATE Usuarios SET 
                         id_rol = :id_rol,
                         id_localidad = :id_localidad,
@@ -228,19 +270,29 @@ class Usuario extends Model
                         id_provincia = :id_provincia,
                         nombre = :nombre,
                         apellido = :apellido,
-                        email = :email
+                        email = :email,
+                        telefono = :telefono,
+                        dni = :dni,
+                        cuil = :cuil,
+                        direccion = :direccion,
+                        fecha_nacimiento = :fecha_nacimiento
                     WHERE id = :id";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                ':id_rol'          => $usuario->getIdRol(),
-                ':id_localidad'    => $usuario->getIdLocalidad(),
-                ':id_nacionalidad' => $usuario->getIdNacionalidad(),
-                ':id_provincia'    => $usuario->getIdProvincia(),
-                ':nombre'          => $usuario->getNombre(),
-                ':apellido'        => $usuario->getApellido(),
-                ':email'           => $usuario->getEmail(),
-                ':id'              => $usuario->getId()
+                ':id_rol'            => $usuario->getIdRol(),
+                ':id_localidad'      => $usuario->getIdLocalidad(),
+                ':id_nacionalidad'   => $usuario->getIdNacionalidad(),
+                ':id_provincia'      => $usuario->getIdProvincia(),
+                ':nombre'            => $usuario->getNombre(),
+                ':apellido'          => $usuario->getApellido(),
+                ':email'             => $usuario->getEmail(),
+                ':telefono'          => $usuario->getTelefono(),
+                ':dni'               => $usuario->getDni(),
+                ':cuil'              => $usuario->getCuil(),
+                ':direccion'         => $usuario->getDireccion(),
+                ':fecha_nacimiento'  => $usuario->getFechaNacimiento(),
+                ':id'                => $usuario->getId()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Usuario::update: " . $e->getMessage());
@@ -299,12 +351,18 @@ class Usuario extends Model
     public function updatePasswordAfterReset(string $newPassword): bool
     {
         try {
+
             if (strlen($newPassword) < 5) {
-<<<<<<< Updated upstream
                 throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-=======
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
->>>>>>> Stashed changes
+            }
+                if (strlen($newPassword) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -318,6 +376,7 @@ class Usuario extends Model
                 ':password' => $hashedPassword,
                 ':id'       => $this->id
             ]);
+    
         } catch (PDOException $e) {
             error_log("Error en updatePasswordAfterReset: " . $e->getMessage());
             throw new Exception("Error interno al actualizar la clave.");
@@ -329,12 +388,19 @@ class Usuario extends Model
     public function changePasswordAdmin(string $newPassword): bool
     {
         try {
+
             if (strlen($newPassword) < 5) {
-<<<<<<< Updated upstream
                 throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-=======
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
->>>>>>> Stashed changes
+            }
+            if (strlen($newPassword) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $newPassword)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
+
             }
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
@@ -523,15 +589,113 @@ class Usuario extends Model
     }
     public function setPassword(string $password): void
     {
+
         if (strlen($password) < 5) {
-<<<<<<< Updated upstream
             throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-=======
-            throw new Exception("La contraseña debe tener al menos 5 caracteres.");
->>>>>>> Stashed changes
+        }
+        if (strlen($password) < 8) {
+            throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+        }
+        if (!preg_match('/\d/', $password)) {
+            throw new Exception("La contraseña debe contener al menos un número.");
+
         }
 
         $this->password = password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    // =====================================================================
+    // GETTERS Y SETTERS PARA CAMPOS DE EMPLEADOS ARGENTINOS
+    // =====================================================================
+
+    public function getTelefono(): ?string
+    {
+        return $this->telefono;
+    }
+    public function setTelefono(?string $telefono): void
+    {
+        $clean = trim($telefono ?? '');
+        if ($clean !== '') {
+            $digits = preg_replace('/\D/', '', $clean);
+            if (strlen($digits) < 8) {
+                throw new Exception("El teléfono debe tener al menos 8 dígitos.");
+            }
+            if (!preg_match('/^[0-9+\-\s()]{10,50}$/', $clean)) {
+                throw new Exception("El formato del teléfono no es válido.");
+            }
+        }
+        $this->telefono = $clean !== '' ? $clean : null;
+    }
+
+    public function getDni(): ?string
+    {
+        return $this->dni;
+    }
+    public function setDni(?string $dni): void
+    {
+        $clean = trim($dni ?? '');
+        if ($clean !== '' && !preg_match('/^[0-9.]{6,20}$/', $clean)) {
+            throw new Exception("El formato del DNI no es válido.");
+        }
+        $this->dni = $clean !== '' ? $clean : null;
+    }
+
+    public function getCuil(): ?string
+    {
+        return $this->cuil;
+    }
+    public function setCuil(?string $cuil): void
+    {
+        $clean = trim($cuil ?? '');
+        if ($clean !== '') {
+            $digits = preg_replace('/\D/', '', $clean);
+            if (strlen($digits) !== 11) {
+                throw new Exception("El CUIL debe tener 11 dígitos en el formato XX-XXXXXXXX-X.");
+            }
+            $this->cuil = substr($digits, 0, 2) . '-' . substr($digits, 2, 8) . '-' . substr($digits, 10, 1);
+        } else {
+            $this->cuil = null;
+        }
+    }
+
+    public function getDireccion(): ?string
+    {
+        return $this->direccion;
+    }
+    public function setDireccion(?string $direccion): void
+    {
+        $clean = trim($direccion ?? '');
+        if ($clean !== '') {
+            $clean = htmlspecialchars($clean, ENT_QUOTES, 'UTF-8');
+        }
+        $this->direccion = $clean !== '' ? $clean : null;
+    }
+
+    public function getFechaNacimiento(): ?string
+    {
+        return $this->fecha_nacimiento;
+    }
+    public function setFechaNacimiento(?string $fecha_nacimiento): void
+    {
+        $clean = trim($fecha_nacimiento ?? '');
+        if ($clean !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
+            throw new Exception("El formato de la fecha de nacimiento no es válido (AAAA-MM-DD).");
+        }
+        if ($clean !== '') {
+            $nacimiento = new \DateTime($clean);
+            $hoy = new \DateTime();
+            $edad = $hoy->diff($nacimiento)->y;
+            if ($edad < 18) {
+                throw new Exception("El usuario debe ser mayor de edad (18 años o más).");
+            }
+            if ($edad > 130) {
+                throw new Exception("La fecha de nacimiento indica una edad mayor a 130 años.");
+            }
+        }
+        $this->fecha_nacimiento = $clean !== '' ? $clean : null;
     }
 
     public function getIsActive(): int
@@ -561,7 +725,15 @@ class Usuario extends Model
     }
     public function setFechaBaja(?string $fecha_baja): void
     {
+        if ($fecha_baja !== null && $this->fecha_alta !== '' && $fecha_baja < $this->fecha_alta) {
+            throw new Exception("La fecha de baja no puede ser anterior a la fecha de alta.");
+        }
         $this->fecha_baja = $fecha_baja;
+    }
+
+    public function getRolDescripcion(): ?string
+    {
+        return $this->rol_descripcion;
     }
 
     public function getResetToken(): ?string 

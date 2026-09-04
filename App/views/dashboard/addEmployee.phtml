@@ -4,7 +4,8 @@
         <p>Alta de personal y configuración de accesos al sistema SIRES</p>
     </div>
 
-    <a href="/sires/dashboard/employees" class="btn-clear-filters">
+    <!-- Modificado con la función global url() -->
+    <a href="<?= url('/dashboard/employees') ?>" class="btn btn--ghost">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
 </header>
@@ -12,7 +13,7 @@
 <!-- Contenedor dinámico para alertas por JavaScript (Front) o redirecciones PHP (Back) -->
 <div id="alert-container">
     <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
-        <div class="alert alert-<?= htmlspecialchars($flashStatus) ?>">
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
             <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
             <?= htmlspecialchars($flashMessage) ?>
         </div>
@@ -20,36 +21,75 @@
 </div>
 
 <section class="details-section form-container-section">
-    <form action="/sires/dashboard/employees/add/process" method="POST" class="employee-form">
+    <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/employees/add/process', 'POST', 'employee-form') ?>
+        <?= csrf_field() ?>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-user"></i> Datos Personales
         </div>
 
-        <div class="form-grid-layout">
-            <div class="form-field-group">
-                <label class="label-input" for="nombre">Nombre</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['nombre'] ?? $old['nombre'] ?? '') ?>"
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['nombre'] ?? $old['nombre'] ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El nombre solo puede contener letras y espacios.">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="apellido">Apellido</label>
-                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['apellido'] ?? $old['apellido'] ?? '') ?>"
+            <div class="form__group">
+                <label class="form__label" for="apellido">Apellido</label>
+                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['apellido'] ?? $old['apellido'] ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El apellido solo puede contener letras y espacios.">
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
+            <i class="fas fa-id-card"></i> Documentación y Contacto
+        </div>
+
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="dni">DNI / Documento</label>
+                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['dni'] ?? $old['dni'] ?? '') ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="cuil">CUIL</label>
+                <input type="text" id="cuil" name="cuil" placeholder="Ej: 20-12345678-9" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['cuil'] ?? $old['cuil'] ?? '') ?>"
+                    pattern="[0-9\-]{11,14}" title="Formato CUIL: XX-XXXXXXXX-X">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['telefono'] ?? $old['telefono'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. San Martín 1234, Piso 2" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['direccion'] ?? $old['direccion'] ?? '') ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="fecha_nacimiento">Fecha de Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form__input"
+                    min="<?= (new DateTime('-130 years'))->format('Y-m-d') ?>"
+                    max="<?= (new DateTime('-18 years'))->format('Y-m-d') ?>"
+                    value="<?= htmlspecialchars($_POST['fecha_nacimiento'] ?? $old['fecha_nacimiento'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form__section-title">
             <i class="fas fa-map-marker-alt"></i> Ubicación y Procedencia
         </div>
 
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="id_nacionalidad">Nacionalidad</label>
-                <select id="id_nacionalidad" name="id_nacionalidad" required class="select-form-field">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="id_nacionalidad">Nacionalidad</label>
+                <select id="id_nacionalidad" name="id_nacionalidad" required class="form__select">
                     <option value="" disabled <?= !isset($_POST['id_nacionalidad']) && !isset($old['id_nacionalidad']) ? 'selected' : '' ?>>Seleccione...</option>
                     <?php if (!empty($countries)): ?>
                         <?php foreach ($countries as $cou): ?>
@@ -60,47 +100,35 @@
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_provincia">Provincia</label>
-                <select id="id_provincia" name="id_provincia" required class="select-form-field" <?= !isset($_POST['id_nacionalidad']) && !isset($old['id_nacionalidad']) ? 'disabled' : '' ?>>
-                    <option value="" disabled <?= !isset($_POST['id_provincia']) && !isset($old['id_provincia']) ? 'selected' : '' ?>>Seleccione...</option>
-                    <?php if (!empty($provinces)): ?>
-                        <?php foreach ($provinces as $prov): ?>
-                            <?php $current_prov_id = $_POST['id_provincia'] ?? $old['id_provincia'] ?? ''; ?>
-                            <option value="<?= $prov->getId() ?>" <?= (string)$current_prov_id === (string)$prov->getId() ? 'selected' : '' ?>><?= htmlspecialchars($prov->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+            <div class="form__group">
+                <label class="form__label" for="id_provincia">Provincia</label>
+                <select id="id_provincia" name="id_provincia" required class="form__select" disabled>
+                    <option value="" disabled selected>Seleccione una Nacionalidad primero...</option>
                 </select>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_localidad">Localidad</label>
-                <select id="id_localidad" name="id_localidad" required class="select-form-field" <?= !isset($_POST['id_provincia']) && !isset($old['id_provincia']) ? 'disabled' : '' ?>>
-                    <option value="" disabled <?= !isset($_POST['id_localidad']) && !isset($old['id_localidad']) ? 'selected' : '' ?>>Seleccione...</option>
-                    <?php if (!empty($cities)): ?>
-                        <?php foreach ($cities as $cit): ?>
-                            <?php $current_cit_id = $_POST['id_localidad'] ?? $old['id_localidad'] ?? ''; ?>
-                            <option value="<?= $cit->getId() ?>" <?= (string)$current_cit_id === (string)$cit->getId() ? 'selected' : '' ?>><?= htmlspecialchars($cit->getDescripcion()) ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+            <div class="form__group">
+                <label class="form__label" for="id_localidad">Localidad</label>
+                <select id="id_localidad" name="id_localidad" required class="form__select" disabled>
+                    <option value="" disabled selected>Seleccione una Provincia primero...</option>
                 </select>
             </div>
         </div>
 
-        <div class="form-section-title">
+        <div class="form__section-title">
             <i class="fas fa-shield-alt"></i> Credenciales y Permisos
         </div>
 
         <!-- Fila Superior: Correo y Rol -->
-        <div class="form-grid-layout grid-three-columns">
-            <div class="form-field-group">
-                <label class="label-input" for="email">Correo Electrónico</label>
-                <input type="email" id="email" name="email" placeholder="ejemplo@sires.com" required class="input-form-field" autocomplete="off" value="<?= htmlspecialchars($_POST['email'] ?? $old['email'] ?? '') ?>">
+        <div class="form__grid form__grid--3">
+            <div class="form__group">
+                <label class="form__label" for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" placeholder="ejemplo@sires.com" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['email'] ?? $old['email'] ?? '') ?>">
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="id_rol">Rol del Empleado</label>
-                <select id="id_rol" name="id_rol" required class="select-form-field">
+            <div class="form__group">
+                <label class="form__label" for="id_rol">Rol del Empleado</label>
+                <select id="id_rol" name="id_rol" required class="form__select">
                     <option value="" disabled <?= !isset($_POST['id_rol']) && !isset($old['id_rol']) ? 'selected' : '' ?>>Seleccione un Rol</option>
                     <?php if (!empty($roles)): ?>
                         <?php foreach ($roles as $rol): ?>
@@ -115,19 +143,19 @@
         </div>
 
         <!-- Fila Inferior: Contraseñas desglosadas -->
-        <div class="form-grid-layout grid-three-columns" style="margin-top: 15px;">
-            <div class="form-field-group">
-                <label class="label-input" for="password">Contraseña</label>
-                <div class="password-wrapper" style="position: relative; width: 100%;">
-                    <input type="password" id="password" name="password" placeholder="Mínimo 5 carac." required class="input-form-field">
+        <div class="form__grid form__grid--3" style="margin-top: 15px;">
+            <div class="form__group">
+                <label class="form__label" for="password">Contraseña</label>
+                <div class="form__password">
+                    <input type="password" id="password" name="password" placeholder="Mínimo 5 carac." required class="form__input">
                     <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--texto-gris);"></i>
                 </div>
             </div>
 
-            <div class="form-field-group">
-                <label class="label-input" for="confirm_password">Confirmar Contraseña</label>
-                <div class="password-wrapper" style="position: relative; width: 100%;">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Repetir clave" required class="input-form-field">
+            <div class="form__group">
+                <label class="form__label" for="confirm_password">Confirmar Contraseña</label>
+                <div class="form__password">
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Repetir clave" required class="form__input">
                     <i class="fa-solid fa-eye" id="toggleConfirmPassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--texto-gris);"></i>
                 </div>
             </div>
@@ -151,6 +179,8 @@
         const inputNombre = document.getElementById('nombre');
         const inputApellido = document.getElementById('apellido');
         const inputEmail = document.getElementById('email');
+        const inputFecha = document.getElementById('fecha_nacimiento');
+        const inputCuil = document.getElementById('cuil');
         const inputPass = document.getElementById('password');
         const inputConfirmPass = document.getElementById('confirm_password');
         const selectRol = document.getElementById('id_rol');
@@ -160,9 +190,9 @@
 
         function mostrarError(mensaje) {
             alertContainer.innerHTML = `
-                <div class="alert alert-error">
+                <div class="alert alert--error">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    ${mensaje}
+                    \${mensaje}
                 </div>
             `;
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -258,7 +288,31 @@
                     return;
                 }
 
-                // 7. Rol
+                // 7. Fecha de Nacimiento (mayor de edad y menos de 130 años)
+                const fechaVal = inputFecha?.value ?? '';
+                if (fechaVal !== '') {
+                    const nacimiento = new Date(fechaVal + 'T00:00:00');
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                    const mes = hoy.getMonth() - nacimiento.getMonth();
+                    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                        edad--;
+                    }
+                    if (edad < 18) {
+                        e.preventDefault();
+                        mostrarError('El usuario debe ser mayor de edad (18 años o más).');
+                        inputFecha?.focus();
+                        return;
+                    }
+                    if (edad > 130) {
+                        e.preventDefault();
+                        mostrarError('La fecha de nacimiento indica una edad mayor a 130 años.');
+                        inputFecha?.focus();
+                        return;
+                    }
+                }
+
+                // 8. Rol
                 if (!selectRol || selectRol.value === '') {
                     e.preventDefault();
                     mostrarError('Debe seleccionar un rol para el empleado.');
@@ -266,7 +320,7 @@
                     return;
                 }
 
-                // 8. Contraseña
+                // 9. Contraseña
                 const passVal = inputPass?.value ?? '';
                 if (passVal === '') {
                     e.preventDefault();
@@ -274,14 +328,26 @@
                     inputPass?.focus();
                     return;
                 }
-                if (passVal.length < 5) {
+                if (passVal.length < 8) {
                     e.preventDefault();
-                    mostrarError('La contraseña debe tener al menos 5 caracteres.');
+                    mostrarError('La contraseña debe tener al menos 8 caracteres.');
+                    inputPass?.focus();
+                    return;
+                }
+                if (!/[A-Z]/.test(passVal)) {
+                    e.preventDefault();
+                    mostrarError('La contraseña debe contener al menos una letra mayúscula.');
+                    inputPass?.focus();
+                    return;
+                }
+                if (!/\d/.test(passVal)) {
+                    e.preventDefault();
+                    mostrarError('La contraseña debe contener al menos un número.');
                     inputPass?.focus();
                     return;
                 }
 
-                // 9. Confirmar Contraseña
+                // 10. Confirmar Contraseña
                 const confirmVal = inputConfirmPass?.value ?? '';
                 if (confirmVal === '') {
                     e.preventDefault();
@@ -321,26 +387,104 @@
             });
         }
 
-        // --- 🌍 Lógica de Dependencia Escalonada de Ubicación ---
+        // --- 🌍 Lógica de Dependencia Escalonada de Ubicación (AJAX) ---
+        const baseProvincias  = '<?= \App\Helpers\UrlHelper::to('/api/provincias') ?>';
+        const baseLocalidades = '<?= \App\Helpers\UrlHelper::to('/api/localidades') ?>';
+
+        function poblarSelect(select, items, textoDefault) {
+            select.innerHTML = '<option value="" disabled selected>' + textoDefault + '</option>';
+            items.forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.descripcion;
+                select.appendChild(opt);
+            });
+            select.disabled = false;
+        }
+
+        function resetSelect(select, texto) {
+            select.innerHTML = '<option value="" disabled selected>' + texto + '</option>';
+            select.disabled = true;
+        }
+
         if (selectNacionalidad && selectProvincia && selectLocalidad) {
             selectNacionalidad.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectProvincia.disabled = false;
-                } else {
-                    selectProvincia.disabled = true;
-                    selectLocalidad.disabled = true;
-                    selectProvincia.value = "";
-                    selectLocalidad.value = "";
+                const nacionalidadId = this.value;
+                if (nacionalidadId === "") {
+                    resetSelect(selectProvincia, 'Seleccione una Nacionalidad primero...');
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                selectProvincia.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectProvincia.disabled = true;
+
+                fetch(baseProvincias + '&nacionalidadId=' + encodeURIComponent(nacionalidadId))
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (data.length > 0) {
+                            poblarSelect(selectProvincia, data, 'Seleccione...');
+                        } else {
+                            resetSelect(selectProvincia, 'Sin resultados');
+                        }
+                    })
+                    .catch(function() {
+                        resetSelect(selectProvincia, 'Error al cargar');
+                    });
             });
 
             selectProvincia.addEventListener('change', function() {
-                if (this.value !== "") {
-                    selectLocalidad.disabled = false;
-                } else {
-                    selectLocalidad.disabled = true;
-                    selectLocalidad.value = "";
+                const provinciaId = this.value;
+                if (provinciaId === "") {
+                    resetSelect(selectLocalidad, 'Seleccione una Provincia primero...');
+                    return;
                 }
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+                selectLocalidad.disabled = true;
+
+                fetch(baseLocalidades + '&provinciaId=' + encodeURIComponent(provinciaId))
+                    .then(function(resp) { return resp.json(); })
+                    .then(function(data) {
+                        if (data.length > 0) {
+                            poblarSelect(selectLocalidad, data, 'Seleccione...');
+                        } else {
+                            resetSelect(selectLocalidad, 'Sin resultados');
+                        }
+                    })
+                    .catch(function() {
+                        resetSelect(selectLocalidad, 'Error al cargar');
+                    });
+            });
+        }
+
+        // --- 🔢 Máscara CUIL XX-XXXXXXXX-X ---
+        if (inputCuil) {
+            const formatCuil = function(value) {
+                const digits = value.replace(/\D/g, '').slice(0, 11);
+                let out = digits;
+                if (digits.length > 2) out = digits.slice(0, 2) + '-' + digits.slice(2);
+                if (digits.length > 10) out = out.slice(0, 11) + '-' + digits.slice(10);
+                return out;
+            };
+            inputCuil.addEventListener('input', function() {
+                const pos = this.selectionStart;
+                this.value = formatCuil(this.value);
+            });
+            inputCuil.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace') {
+                    const pos = this.selectionStart;
+                    if (this.value[pos - 1] === '-') {
+                        e.preventDefault();
+                        const digits = this.value.replace(/\D/g, '').slice(0, -1);
+                        this.value = formatCuil(digits);
+                        this.setSelectionRange(this.value.length, this.value.length);
+                    }
+                }
+            });
+            inputCuil.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
+                this.value = formatCuil(dataPegada);
             });
         }
     });

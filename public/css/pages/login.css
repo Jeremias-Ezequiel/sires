@@ -80,63 +80,6 @@
     flex-shrink: 0;
 }
 
-/* Ajustes de los elementos internos */
-.label-input {
-    display: block;
-    color: var(--dorado-sires);
-    font-size: 11px;
-    font-weight: bold;
-    margin: 15px 0 5px 0;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-/* 🔌 MODIFICADO: Ahora el estilo solo afecta a los inputs del login */
-.login-container input {
-    width: 100%;
-    padding: 12px;
-    background: #1d2d50;
-    border: 1px solid var(--borde-input);
-    border-radius: 8px;
-    color: white;
-    box-sizing: border-box;
-    font-size: 14px;
-    margin-bottom: 0;
-}
-
-/* 🔌 MODIFICADO: El margen inferior se maneja desde el contenedor del input */
-.password-wrapper {
-    position: relative;
-    width: 100%;
-    margin-bottom: 15px; 
-}
-
-.password-wrapper i {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: var(--texto-gris);
-}
-
-.btn-primary {
-    width: 100%;
-    padding: 14px;
-    background: transparent;
-    border: 1px solid var(--texto-blanco);
-    color: var(--texto-blanco);
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: 0.3s;
-}
-
-.btn-primary:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
 .link-yellow {
     color: var(--dorado-sires);
     text-decoration: none;
@@ -180,15 +123,4 @@
     text-decoration: underline;
 }
 
-/* Contenedor dinámico para errores de login (PHP) */
-.alert-error {
-    background-color: #ff4d4d;
-    color: white;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(255, 77, 77, 0.2);
-    font-weight: 500;
-}
+

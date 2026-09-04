@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Middleware\AuthMiddleware;
+use App\Helpers\UrlHelper;
 
 class AuthController
 {
@@ -23,6 +24,9 @@ class AuthController
     public function login(): void
     {
         try {
+            // 0. Verificamos el token CSRF para prevenir falsificación de solicitudes
+            csrf_check();
+
             // 1. Capturamos los datos crudos del formulario directamente
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
@@ -58,10 +62,11 @@ class AuthController
                 session_start();
             }
 
+            $_SESSION['user_name'] = $user->getNombre();
             $_SESSION['user_id'] = $user->getId();
             $_SESSION['user_role'] = $user->getIdRol();
 
-            header('Location: /sires/dashboard');
+            header('Location:' . UrlHelper::to('/dashboard'));
             exit;
         } catch (Exception $e) {
             // Cualquier excepción (campos vacíos, formato de mail roto o clave inválida)
@@ -71,7 +76,7 @@ class AuthController
             }
 
             $_SESSION['auth_error'] = $e->getMessage();
-            header('Location: /sires/login');
+            header('Location:' . UrlHelper::to('/login'));
             exit;
         }
     }

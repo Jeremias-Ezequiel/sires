@@ -79,52 +79,6 @@
     animation: pulse-progress 2s ease-in-out infinite alternate;
 }
 
-.badge-503 {
-    display: inline-block;
-    background-color: rgba(205, 164, 52, 0.1);
-    color: var(--dorado-sires);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid rgba(205, 164, 52, 0.2);
-}
-
-/* =====================================================================
-   🔄 ESTILOS DEL BOTÓN VOLVER ATRÁS (Agregado)
-   ===================================================================== */
-.btn-back-container {
-    margin-top: 25px;
-    display: flex;
-    justify-content: center;
-}
-
-.btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background-color: transparent;
-    color: var(--dorado-sires);
-    border: 1px solid var(--borde-input);
-    padding: 10px 22px;
-    border-radius: 6px;
-    font-size: 10pt;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-back:hover {
-    background-color: rgba(205, 164, 52, 0.1);
-    color: var(--dorado-sires-hover);
-    border-color: var(--dorado-sires);
-    transform: translateX(-3px); /* Desplazamiento sutil hacia la izquierda */
-}
-
-.btn-back i {
-    font-size: 0.95rem;
-}
 
 
 /* =====================================================================
@@ -160,4 +114,13 @@
         transform: translateX(120%);
         width: 50%;
     }
+}
+
+.btn-back-container {
+    margin-top: 25px;
+}
+
+.btn-back-container .btn--outline {
+    padding: 8px 20px;
+    font-size: 9pt;
 }

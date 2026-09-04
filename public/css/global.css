@@ -1,18 +1,7 @@
-/* --- VARIABLES GLOBALES SIRES --- */
-:root {
-    --fondo-oscuro: #0a192f;
-    --tarjeta-azul: #112240;
-    --dorado-sires: #fbbf24;
-    --texto-gris: #8892b0;
-    --texto-blanco: #e6f1ff;
-    --borde-input: #233554;
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--fondo-oscuro);
-    color: var(--texto-blanco);
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100vh;
-}
+@import 'settings/variables.css';
+@import 'base/base.css';
+@import 'components/alerts.css';
+@import 'components/buttons.css';
+@import 'components/forms.css';
+@import 'components/badges.css';
+@import 'components/modal.css';

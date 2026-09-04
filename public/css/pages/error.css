@@ -49,28 +49,4 @@
     margin-bottom: 30px;
 }
 
-/* Botón de retorno estilizado */
-.btn-back {
-    display: inline-block;
-    background-color: transparent;
-    color: var(--dorado-sires);
-    border: 2px solid var(--dorado-sires);
-    padding: 12px 28px;
-    font-size: 10pt;
-    font-weight: 600;
-    text-decoration: none;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
 
-/* Efecto Hover profesional para el botón */
-.btn-back:hover {
-    background-color: rgba(251, 191, 36, 0.1); /* Destello sutil dorado */
-    transform: translateY(-2px);
-}
-
-.btn-back i {
-    margin-right: 8px;
-}

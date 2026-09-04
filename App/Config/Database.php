@@ -8,41 +8,34 @@ use Exception;
 
 class Database
 {
-    protected PDO $db;
+    private static ?PDO $instance = null;
 
     public function __construct()
     {
-        $host   = $_ENV['DB_HOST'];
-        $port   = $_ENV['DB_PORT'];
-        $dbname = $_ENV['DB_NAME'];
-        $user   = $_ENV['DB_USER'];
-        $pass   = $_ENV['DB_PASS'];
-
-        try {
-            $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-
-            $this->db = new PDO($dsn, $user, $pass);
-
-            // Configuraciones profesionales de PDO
-            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $this->db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false); // Estricto y seguro contra SQL Injection
-
-        } catch (PDOException $e) {
-            // 1. REGISTRO PROFESIONAL: Guardamos el error real en los logs de Apache/PHP
-            // Esto va a escribir en tu archivo de logs de Bitnami o Fedora la causa exacta
-            error_log("[SIRES DB ERROR] Connection Failed: " . $e->getMessage());
-
-            // 2. ENCAPSULAMIENTO: Lanzamos una excepción genérica para el usuario,
-            // pero le pasamos $e como tercer parámetro (el "Previous Exception").
-            // Esto mantiene viva la cadena del error real para herramientas de desarrollo.
-            throw new Exception("Error interno de configuración. Intente más tarde.", 500, $e);
-        }
     }
 
-    // Método para poder usar la conexión en tus modelos
     public function getConnection(): PDO
     {
-        return $this->db;
+        if (self::$instance === null) {
+            $host   = $_ENV['DB_HOST'];
+            $port   = $_ENV['DB_PORT'] ?? '3306';
+            $dbname = $_ENV['DB_NAME'];
+            $user   = $_ENV['DB_USER'];
+            $pass   = $_ENV['DB_PASS'];
+
+            try {
+                $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+
+                self::$instance = new PDO($dsn, $user, $pass);
+                self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                self::$instance->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            } catch (PDOException $e) {
+                error_log("[SIRES DB ERROR] Connection Failed: " . $e->getMessage());
+                throw new Exception("Error interno de configuración. Intente más tarde.", 500, $e);
+            }
+        }
+
+        return self::$instance;
     }
 }

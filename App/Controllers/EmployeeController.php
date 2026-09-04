@@ -5,10 +5,11 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Models\Rol;
+use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinámicas
 
 class EmployeeController
 {
-    public function showEmployees(): void
+    public function showEmployees(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -38,12 +39,15 @@ class EmployeeController
         $role      = $_GET['role_filter'] ?? "";
         $is_active = $_GET['status_filter'] ?? "";
 
-        $hasSearch = !empty($_GET['search']);
-        $hasRole = !empty($role);
-        $hasStatus = isset($_GET['status_filter']) && $_GET['status_filter'] !== '';
+        $search = $vars['search'] ?? "";
+        $role      = $vars['role_filter'] ?? "";
+        $is_active = $vars['status_filter'] ?? "";
 
-        $rolModel = new Rol();
-        $roles = $rolModel->getAll();
+        $hasSearch = !empty($vars['search']);
+        $hasRole = !empty($role);
+        $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
+
+        $roles = (new Rol())->getAll();
 
         $userModel = new Usuario();
         
@@ -81,8 +85,6 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $provinces = (new \App\Models\Provincia())->getAll();
-        $cities    = (new \App\Models\Localidad())->getAll();
         $countries = (new \App\Models\Nacionalidad())->getAll();
         $roles     = (new \App\Models\Rol())->getAll();
 
@@ -98,9 +100,16 @@ class EmployeeController
         }
 
         try {
+            csrf_check();
+
             $nombre        = trim($_POST['nombre'] ?? '');
             $apellido      = trim($_POST['apellido'] ?? '');
             $email         = trim($_POST['email'] ?? '');
+            $telefono      = trim($_POST['telefono'] ?? '');
+            $dni           = trim($_POST['dni'] ?? '');
+            $cuil          = trim($_POST['cuil'] ?? '');
+            $direccion     = trim($_POST['direccion'] ?? '');
+            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
             $password      = $_POST['password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
             $idRol         = (int)($_POST['id_rol'] ?? 0);
@@ -125,12 +134,15 @@ class EmployeeController
             }
             if (strlen($password) < 5) {
                 throw new Exception("La contraseña debe tener al menos 5 caracteres.");
-<<<<<<< Updated upstream
-=======
             }
-            if ($password !== $confirmPassword) {
-                throw new Exception("Las contraseñas ingresadas no coinciden.");
->>>>>>> Stashed changes
+            if (strlen($password) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $password)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $password)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
             if ($idRol <= 0) {
                 throw new Exception("Debe seleccionar un rol para el empleado.");
@@ -163,6 +175,12 @@ class EmployeeController
             $usuario->setIdLocalidad($idLocalidad);
             $usuario->setIdNacionalidad($idNacionalidad);
 
+            $usuario->setTelefono($telefono);
+            $usuario->setDni($dni);
+            $usuario->setCuil($cuil);
+            $usuario->setDireccion($direccion);
+            $usuario->setFechaNacimiento($fechaNacimiento);
+
             $success = $usuario->save($usuario);
 
             if (!$success) {
@@ -177,11 +195,12 @@ class EmployeeController
             $_SESSION['flash_status']  = "error";
         }
 
-        header('Location: /sires/dashboard/employees/add');
+        // Redirección adaptada dinámicamente con UrlHelper
+        header('Location: ' . UrlHelper::to('/dashboard/employees/add'));
         exit;
     }
 
-    public function showEditEmployeeForm(): void
+    public function showEditEmployeeForm(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -202,11 +221,11 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        $id = $_GET['id'] ?? '';
+        $id = $vars['id'] ?? '';
         if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
             $_SESSION['flash_message'] = "ID de empleado inválido.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
@@ -216,12 +235,10 @@ class EmployeeController
         if (!$employee) {
             $_SESSION['flash_message'] = "El empleado solicitado no existe.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
-        $provinces = (new \App\Models\Provincia())->getAll();
-        $cities    = (new \App\Models\Localidad())->getAll();
         $countries = (new \App\Models\Nacionalidad())->getAll();
         $roles     = (new \App\Models\Rol())->getAll();
 
@@ -237,6 +254,8 @@ class EmployeeController
         }
 
         try {
+            csrf_check();
+
             $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de empleado inválido.");
@@ -245,6 +264,11 @@ class EmployeeController
             $nombre        = trim($_POST['nombre'] ?? '');
             $apellido      = trim($_POST['apellido'] ?? '');
             $email         = trim($_POST['email'] ?? '');
+            $telefono      = trim($_POST['telefono'] ?? '');
+            $dni           = trim($_POST['dni'] ?? '');
+            $cuil          = trim($_POST['cuil'] ?? '');
+            $direccion     = trim($_POST['direccion'] ?? '');
+            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
             $idRol         = (int)($_POST['id_rol'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
             $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
@@ -292,6 +316,12 @@ class EmployeeController
             $usuario->setIdLocalidad($idLocalidad);
             $usuario->setIdNacionalidad($idNacionalidad);
 
+            $usuario->setTelefono($telefono);
+            $usuario->setDni($dni);
+            $usuario->setCuil($cuil);
+            $usuario->setDireccion($direccion);
+            $usuario->setFechaNacimiento($fechaNacimiento);
+
             $success = $usuario->update($usuario);
 
             if (!$success) {
@@ -301,7 +331,7 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado actualizado exitosamente.";
             $_SESSION['flash_status']  = "success";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         } catch (Exception $e) {
             $_SESSION['old_inputs']    = $_POST;
@@ -309,22 +339,22 @@ class EmployeeController
             $_SESSION['flash_status']  = "error";
 
             $redirectId = $_POST['id'] ?? '';
-            header('Location: /sires/dashboard/employees/edit?id=' . urlencode((string)$redirectId));
+            header('Location: ' . UrlHelper::to('/dashboard/employees/edit?id=' . urlencode((string)$redirectId)));
             exit;
         }
     }
 
-/**
+    /**
      * Procesa la baja lógica de un empleado (Inactivación)
      */
-    public function deactivateEmployee(): void
+    public function deactivateEmployee(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
         try {
-            $idToDeactivate = $_GET['id'] ?? '';
+            $idToDeactivate = $vars['id'] ?? '';
             
             if (empty($idToDeactivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
@@ -342,14 +372,14 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado desactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
             
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
 
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
     }
@@ -357,14 +387,14 @@ class EmployeeController
     /**
      * Procesa la reactivación del acceso de un empleado (Activación)
      */
-    public function activateEmployee(): void
+    public function activateEmployee(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
         try {
-            $idToActivate = $_GET['id'] ?? '';
+            $idToActivate = $vars['id'] ?? '';
             
             if (empty($idToActivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
@@ -383,14 +413,14 @@ class EmployeeController
             $_SESSION['flash_message'] = "Empleado reactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
             
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
 
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
     }
@@ -449,6 +479,8 @@ class EmployeeController
         $id = $_POST['id'] ?? '';
 
         try {
+            csrf_check();
+
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de empleado inválido.");
             }
@@ -459,8 +491,14 @@ class EmployeeController
             if (empty($password)) {
                 throw new Exception("La contraseña es obligatoria.");
             }
-            if (strlen($password) < 5) {
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+            if (strlen($password) < 8) {
+                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
+            }
+            if (!preg_match('/[A-Z]/', $password)) {
+                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
+            }
+            if (!preg_match('/\d/', $password)) {
+                throw new Exception("La contraseña debe contener al menos un número.");
             }
             if ($password !== $confirmPassword) {
                 throw new Exception("Las contraseñas ingresadas no coinciden.");
@@ -496,6 +534,5 @@ class EmployeeController
             exit;
         }
     }
-
+    
 }
-

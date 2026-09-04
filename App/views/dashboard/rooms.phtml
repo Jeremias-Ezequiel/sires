@@ -1,0 +1,232 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Administración de Habitaciones</h1>
+        <p>Gestión del inventario de habitaciones del hotel</p>
+    </div>
+
+    <div class="header-actions-container">
+        <!-- Redirección adaptada con url() para el formulario de registro -->
+        <a href="<?= url('/dashboard/rooms/add') ?>" class="btn btn--primary">
+            <i class="fas fa-plus"></i> Registrar Habitación
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+                <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section filter-section">
+    <!-- 🌟 Apertura del formulario automatizada para GET: previene la pérdida de la Query String de la sección -->
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms', 'GET', 'filter-form') ?>
+
+        <div class="form-group-search">
+            <label class="form__label">Buscar por N° Habitación</label>
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" placeholder="Ej: 101..." value="<?= htmlspecialchars($search ?? '') ?>" class="form__search-input" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Tipo</label>
+            <select name="type_filter" class="form__select-filter">
+                <option value="">Todos los Tipos</option>
+                <?php if (!empty($tipos)): ?>
+                    <?php foreach ($tipos as $tipo): ?>
+                        <option value="<?= $tipo['id'] ?>" <?= ($type ?? '') === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Estado</label>
+            <select name="status_filter" class="form__select-filter">
+                <option value="">Todos los Estados</option>
+                <?php if (!empty($estados)): ?>
+                    <?php foreach ($estados as $estado): ?>
+                        <option value="<?= $estado['id'] ?>" <?= ($status ?? '') === (string)$estado['id'] ? 'selected' : '' ?>><?= htmlspecialchars($estado['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Piso</label>
+            <select name="floor_filter" class="form__select-filter">
+                <option value="">Todos los Pisos</option>
+                <?php if (!empty($pisos)): ?>
+                    <?php foreach ($pisos as $piso): ?>
+                        <option value="<?= $piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= $piso ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn--primary">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
+            <!-- Limpieza de filtros configurada con url() -->
+            <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
+                <i class="fas fa-undo"></i>Limpiar Filtros
+            </a>
+        <?php endif; ?>
+    </form>
+</section>
+
+<?php if (!empty($habitaciones) && is_array($habitaciones)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">N°</th>
+                        <th>Piso</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Precio/Noche</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($habitaciones as $room):
+                        $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                    ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
+                            <td><?= htmlspecialchars((string)$room['piso']) ?></td>
+                            <td><?= htmlspecialchars($room['tipo']) ?></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
+                            <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
+                            <td class="cell-actions">
+                                <div class="actions-group-container">
+                                    <a href="<?= url('/dashboard/rooms/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="<?= url('/dashboard/rooms/detail?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <?php if ((int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_DISPONIBLE): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-danger open-sires-modal"
+                                            data-action="deactivate"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/deactivate?id=' . $room['id']) ?>"
+                                            title="Bloquear Habitación">
+                                            <i class="fas fa-bed"></i>
+                                        </button>
+                                    <?php elseif ((int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_BLOQUEADA): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="activate"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/activate?id=' . $room['id']) ?>"
+                                            title="Reactivar Habitación">
+                                            <i class="fas fa-bed"></i>
+                                        </button>
+<?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-bed"></i>
+            </div>
+            <h3>No se encontraron habitaciones</h3>
+            <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
+
+            <?php if ($hasSearch || $hasType || $hasStatus || $hasFloor): ?>
+                <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
+                    <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
+                </a>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
+<!-- MODAL DE CONFIRMACIÓN SIRES -->
+<div id="sires-confirm-modal" class="modal">
+    <div class="modal__box">
+        <div id="modal-icon-frame" class="modal__icon">
+            <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
+        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
+        <div class="modal__actions">
+            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('sires-confirm-modal');
+        const modalIconFrame = document.getElementById('modal-icon-frame');
+        const modalIcon = document.getElementById('modal-action-icon');
+        const modalTitle = document.getElementById('modal-title-text');
+        const modalText = document.getElementById('modal-description-text');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
+        const btnCancel = document.getElementById('btn-modal-cancel');
+
+        const buttons = document.querySelectorAll('.open-sires-modal');
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const actionType = this.getAttribute('data-action');
+                const targetUrl = this.getAttribute('data-url');
+                const roomName = this.getAttribute('data-name');
+
+                modalIconFrame.className = 'modal__icon';
+                btnConfirm.className = 'btn';
+
+                if (actionType === 'deactivate') {
+                    modalTitle.innerText = 'Bloquear Habitación';
+                    modalText.innerHTML = `¿Está seguro de que desea bloquear la <br><strong>${roomName}</strong>?`;
+                    modalIcon.className = 'fas fa-bed';
+                    modalIconFrame.classList.add('modal__icon--deactivate');
+                    btnConfirm.classList.add('btn--danger');
+                } else if (actionType === 'activate') {
+                    modalTitle.innerText = 'Reactivar Habitación';
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?`;
+                    modalIcon.className = 'fas fa-bed';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                }
+
+                btnConfirm.setAttribute('href', targetUrl);
+
+                modal.classList.add('is-active');
+            });
+        });
+
+        btnCancel.addEventListener('click', function() {
+            modal.classList.remove('is-active');
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('is-active');
+            }
+        });
+    });
+</script>

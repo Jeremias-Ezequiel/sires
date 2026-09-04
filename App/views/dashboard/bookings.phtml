@@ -1,0 +1,264 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Administración de Reservas</h1>
+        <p>Gestión de reservas, check-ins y check-outs del hotel</p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/booking/add') ?>" class="btn btn--primary">
+            <i class="fas fa-plus"></i> Nueva Reserva
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section filter-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/booking', 'GET', 'filter-form') ?>
+
+        <div class="form-group-search">
+            <label class="form__label">Buscar</label>
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" placeholder="Cliente o habitación..." value="<?= htmlspecialchars($search ?? '') ?>" class="form__search-input" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Estado</label>
+            <select name="estado_filter" class="form__select-filter">
+                <option value="">Todos los Estados</option>
+                <?php if (!empty($estadosReserva)): ?>
+                    <?php foreach ($estadosReserva as $est): ?>
+                        <option value="<?= $est['id'] ?>" <?= ($estado ?? '') === (string)$est['id'] ? 'selected' : '' ?>><?= htmlspecialchars($est['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Canal</label>
+            <select name="canal_filter" class="form__select-filter">
+                <option value="">Todos los Canales</option>
+                <?php if (!empty($canalesOrigen)): ?>
+                    <?php foreach ($canalesOrigen as $can): ?>
+                        <option value="<?= $can['id'] ?>" <?= ($canal ?? '') === (string)$can['id'] ? 'selected' : '' ?>><?= htmlspecialchars($can['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn--primary">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+            <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
+                <i class="fas fa-undo"></i>Limpiar Filtros
+            </a>
+        <?php endif; ?>
+    </form>
+</section>
+
+<?php if (!empty($reservas) && is_array($reservas)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Cliente</th>
+                        <th>Habitación</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Canal</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($reservas as $res): ?>
+                        <?php
+                        $estadoLower = mb_strtolower($res['estado_descripcion'] ?? '', 'UTF-8');
+                        $statusClass = 'badge--disponible';
+                        if (strpos($estadoLower, 'pendient') !== false) {
+                            $statusClass = 'badge--pendiente';
+                        } elseif (strpos($estadoLower, 'confirm') !== false) {
+                            $statusClass = 'badge--reservada';
+                        } elseif (strpos($estadoLower, 'cancel') !== false) {
+                            $statusClass = 'badge--ocupada';
+                        } elseif (strpos($estadoLower, 'finaliz') !== false || strpos($estadoLower, 'check') !== false) {
+                            $statusClass = 'badge--disponible';
+                        }
+                        ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$res['id']) ?></strong></td>
+                            <td><?= htmlspecialchars($res['cliente_nombre'] . ' ' . $res['cliente_apellido']) ?></td>
+                            <td>#<?= htmlspecialchars((string)$res['habitacion_numero']) ?></td>
+                            <td><?= htmlspecialchars($res['fecha_entrada']) ?></td>
+                            <td><?= htmlspecialchars($res['fecha_salida']) ?></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($res['estado_descripcion']) ?></span></td>
+                            <td><?= htmlspecialchars($res['canal_descripcion']) ?></td>
+                            <td class="cell-actions">
+                                <div class="actions-group-container">
+                                    <a href="<?= url('/dashboard/booking/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <a href="<?= url('/dashboard/booking/edit?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Reserva">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="confirm"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-url="<?= url('/dashboard/booking/confirm?id=' . $res['id']) ?>"
+                                            title="Confirmar Reserva">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-danger open-sires-modal"
+                                            data-action="cancel"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-url="<?= url('/dashboard/booking/cancel?id=' . $res['id']) ?>"
+                                            title="Cancelar Reserva">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
+                <?php if ($currentPage > 1): ?>
+                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage - 1; ?>
+                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+
+                <div class="pagination-numbers" style="display: flex; gap: 5px;">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <?php $queryParams = $_GET; $queryParams['page'] = $i; $isActivePage = ($i === $currentPage); ?>
+                        <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>"
+                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
+                                  <?= $isActivePage
+                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;'
+                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;'
+                                  ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+
+                <?php if ($currentPage < $totalPages): ?>
+                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage + 1; ?>
+                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h3>No se encontraron reservas</h3>
+            <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
+
+            <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+                <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
+                    <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
+                </a>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
+<div id="sires-confirm-modal" class="modal">
+    <div class="modal__box">
+        <div id="modal-icon-frame" class="modal__icon">
+            <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
+        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
+        <div class="modal__actions">
+            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('sires-confirm-modal');
+        const modalIconFrame = document.getElementById('modal-icon-frame');
+        const modalIcon = document.getElementById('modal-action-icon');
+        const modalTitle = document.getElementById('modal-title-text');
+        const modalText = document.getElementById('modal-description-text');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
+        const btnCancel = document.getElementById('btn-modal-cancel');
+
+        const buttons = document.querySelectorAll('.open-sires-modal');
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const actionType = this.getAttribute('data-action');
+                const targetUrl = this.getAttribute('data-url');
+                const reservaName = this.getAttribute('data-name');
+
+                modalIconFrame.className = 'modal__icon';
+                btnConfirm.className = 'btn';
+
+                if (actionType === 'cancel') {
+                    modalTitle.innerText = 'Cancelar Reserva';
+                    modalText.innerHTML = `¿Está seguro de que desea cancelar la <br><strong>${reservaName}</strong>?`;
+                    modalIcon.className = 'fas fa-times';
+                    modalIconFrame.classList.add('modal__icon--deactivate');
+                    btnConfirm.classList.add('btn--danger');
+                } else if (actionType === 'confirm') {
+                    modalTitle.innerText = 'Confirmar Reserva';
+                    modalText.innerHTML = `¿Está seguro de que desea confirmar la <br><strong>${reservaName}</strong>?`;
+                    modalIcon.className = 'fas fa-check';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                }
+
+                btnConfirm.setAttribute('href', targetUrl);
+                modal.classList.add('is-active');
+            });
+        });
+
+        btnCancel.addEventListener('click', function() {
+            modal.classList.remove('is-active');
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('is-active');
+            }
+        });
+    });
+</script>

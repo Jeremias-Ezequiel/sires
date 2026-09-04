@@ -1,22 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIRES - Registro de Usuario</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/register.css">
-</head>
-
-<body>
+<?php
+$pageTitle = 'Registro de Usuario | SIRES';
+$pageCss   = ['register.css'];
+include __DIR__ . '/../partials/head.phtml';
+?>
 
     <div class="main-container">
 
         <div class="logo-side">
-            <img src="/sires/public/img/logo.png" alt="Logo SIRES" class="logo-formulario">
+            <!-- Cargando el logo mediante la función global asset() -->
+            <img src="<?= asset('img/logo.png') ?>" alt="Logo SIRES" class="logo-formulario">
         </div>
 
         <div class="register-card">
@@ -30,7 +22,7 @@
             } ?>
 
             <?php if (isset($_SESSION['registro_exitoso'])): ?>
-                <div class="alert-success">
+                <div class="alert alert--success">
                     <i class="fas fa-check-circle"></i>
                     <?= htmlspecialchars($_SESSION['registro_exitoso']) ?>
                 </div>
@@ -38,46 +30,47 @@
             <?php endif; ?>
 
             <?php if (isset($_SESSION['registro_error'])): ?>
-                <div class="alert-danger">
+                <div class="alert alert--error">
                     <i class="fas fa-exclamation-circle"></i>
                     <?= htmlspecialchars($_SESSION['registro_error']) ?>
                 </div>
                 <?php unset($_SESSION['registro_error']); ?>
             <?php endif; ?>
 
-            <form action="/sires/register/process" method="POST" autocomplete="off">
+            <!-- Pasando la ruta de procesamiento por la función global url() -->
+            <form action="<?= url('/register/process') ?>" method="POST" autocomplete="off">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="label-input">Nombre</label>
-                        <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan" required
+                <div class="form__row">
+                    <div class="form__group">
+                        <label class="form__label">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan" required class="form__input"
                             pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                             title="El nombre solo puede contener letras y espacios.">
                     </div>
-                    <div class="form-group">
-                        <label class="label-input">Apellido</label>
-                        <input type="text" name="apellido" id="apellido" placeholder="Ej. Pérez" required
+                    <div class="form__group">
+                        <label class="form__label">Apellido</label>
+                        <input type="text" name="apellido" id="apellido" placeholder="Ej. Pérez" required class="form__input"
                             pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                             title="El apellido solo puede contener letras y espacios.">
                     </div>
                 </div>
 
-                <label class="label-input">Correo Electrónico</label>
-                <input type="email" name="email" placeholder="operador@sires.com" required>
+                <label class="form__label">Correo Electrónico</label>
+                <input type="email" name="email" placeholder="operador@sires.com" required class="form__input">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="label-input">Contraseña</label>
-                        <input type="password" name="password" placeholder="••••••••" required>
+                <div class="form__row">
+                    <div class="form__group">
+                        <label class="form__label">Contraseña</label>
+                        <input type="password" name="password" placeholder="••••••••" required class="form__input">
                     </div>
-                    <div class="form-group">
-                        <label class="label-input">Confirmar Contraseña</label>
-                        <input type="password" name="confirm_password" placeholder="••••••••" required>
+                    <div class="form__group">
+                        <label class="form__label">Confirmar Contraseña</label>
+                        <input type="password" name="confirm_password" placeholder="••••••••" required class="form__input">
                     </div>
                 </div>
 
-                <label class="label-input">Asignar Rol del Sistema</label>
-                <select name="rol" required>
+                <label class="form__label">Asignar Rol del Sistema</label>
+                <select name="rol" required class="form__select">
                     <option value="" disabled selected>Seleccione un rol...</option>
                     <?php if (isset($roles) && is_array($roles)): ?>
                         <?php foreach ($roles as $rol): ?>
@@ -86,10 +79,11 @@
                     <?php endif; ?>
                 </select>
 
-                <div class="action-buttons">
-                    <button type="submit" class="btn-register">REGISTRARSE</button>
+                <div class="form__actions form__actions--stack">
+                    <button type="submit" class="btn btn--primary btn--full">REGISTRARSE</button>
 
-                    <a href="/sires/dashboard" class="btn-back-dashboard">
+                    <!-- Pasando el retorno al inicio por la función global url() -->
+                    <a href="<?= url('/dashboard') ?>" class="btn btn--ghost btn--full">
                         <i class="fas fa-arrow-left"></i> Volver al Inicio
                     </a>
                 </div>
@@ -154,6 +148,4 @@
         });
     </script>
 
-</body>
-
-</html>
+<?php include __DIR__ . '/../partials/footer.phtml'; ?>

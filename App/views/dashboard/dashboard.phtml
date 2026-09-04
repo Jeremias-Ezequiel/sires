@@ -1,32 +1,26 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIRES - Dashboard Hotelero</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/sires/public/css/global.css">
-    <link rel="stylesheet" href="/sires/public/css/dashboard.css">
-</head>
-
-<body>
+<?php
+$pageTitle = 'Dashboard | SIRES';
+$pageCss   = ['dashboard.css'];
+include __DIR__ . '/../partials/head.phtml';
+?>
 
     <div class="dashboard-container">
 
         <aside class="sidebar">
             <div class="logo-container">
-                <img src="/sires/public/img/logo.png" alt="Logo SIRES" class="logo-img" style="max-width: 210px; height: auto; display: block; margin: 20px auto 15px auto; padding: 0 10px;">
+                <!-- El logo modificado con asset() -->
+                <img src="<?= asset('img/logo.png') ?>" alt="Logo SIRES" class="logo-img" style="max-width: 210px; height: auto; display: block; margin: 20px auto 15px auto; padding: 0 10px;">
             </div>
             <nav>
                 <ul class="nav-links">
-                    <li><a href="/sires/dashboard" class="nav-link active"><i class="fas fa-home"></i>Inicio</a></li>
-                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-users"></i>Clientes</a></li>
-                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-calendar-alt"></i>Reservas</a></li>
-                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
-                    <li><a href="/sires/maintenance" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
-                    <li><a href="/sires/register" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
-                    <li><a href="/sires/logout" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
+                    <!-- Rutas del menú adaptadas con la función global url() -->
+                    <li><a href="<?= url('/dashboard') ?>" class="nav-link active"><i class="fas fa-home"></i>Inicio</a></li>
+                    <li><a href="<?= url('/maintenance') ?>" class="nav-link"><i class="fas fa-users"></i>Clientes</a></li>
+                    <li><a href="<?= url('/maintenance') ?>" class="nav-link"><i class="fas fa-calendar-alt"></i>Reservas</a></li>
+                    <li><a href="<?= url('/dashboard/habitaciones') ?>" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
+                    <li><a href="<?= url('/maintenance') ?>" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
+                    <li><a href="<?= url('/dashboard/employees') ?>" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
+                    <li><a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
                 </ul>
             </nav>
         </aside>
@@ -40,7 +34,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: #1e293b; /* Fondo slate oscuro de tu paleta */
+            background: #1e293b; 
             padding: 10px 16px;
             border-radius: 8px;
             border: 1px solid #334155;
@@ -96,7 +90,8 @@
             </section>
 
             <section class="capacity-filter-grid">
-                <div class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="location.href='?capacidad=2'">
+                <!-- Filtros por clicks reescritos con url() inyectando el parámetro query de forma prolija -->
+                <div class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=2') ?>'">
                     <div class="capacity-card-header">
                         <i class="fas fa-users"></i>
                         <div>
@@ -110,7 +105,7 @@
                     </div>
                 </div>
 
-                <div class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="location.href='?capacidad=3'">
+                <div class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=3') ?>'">
                     <div class="capacity-card-header">
                         <i class="fas fa-users-cog"></i>
                         <div>
@@ -124,7 +119,7 @@
                     </div>
                 </div>
 
-                <div class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="location.href='?capacidad=4'">
+                <div class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=4') ?>'">
                     <div class="capacity-card-header">
                         <i class="fas fa-user-friends"></i>
                         <div>
@@ -158,18 +153,18 @@
                             <?php if (count($habitaciones) > 0): ?>
                                 <?php foreach ($habitaciones as $hab):
                                     $estadoLower = strtolower($hab['estado']);
-                                    $claseEstado = 'status-disponible';
+                                    $claseEstado = 'badge--disponible';
                                     if (strpos($estadoLower, 'ocupad') !== false) {
-                                        $claseEstado = 'status-ocupada';
+                                        $claseEstado = 'badge--ocupada';
                                     } elseif (strpos($estadoLower, 'mantenimient') !== false || strpos($estadoLower, 'bloquead') !== false) {
-                                        $claseEstado = 'status-reservada';
+                                        $claseEstado = 'badge--reservada';
                                     }
                                 ?>
                                     <tr>
                                         <td><?= htmlspecialchars($hab['numero']) ?></td>
                                         <td><?= htmlspecialchars($hab['piso']) ?></td>
                                         <td>
-                                            <span class="status-badge <?= $claseEstado ?>">
+                                            <span class="badge <?= $claseEstado ?>">
                                                 <?= htmlspecialchars($hab['estado']) ?>
                                             </span>
                                         </td>
@@ -196,6 +191,4 @@
         </main>
     </div>
 
-</body>
-
-</html>
+<?php include __DIR__ . '/../partials/footer.phtml'; ?>

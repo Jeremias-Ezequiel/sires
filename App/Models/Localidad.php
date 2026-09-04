@@ -10,28 +10,19 @@ use Exception;
 
 class Localidad extends Model
 {
-    // =====================================================================
-    // ATRIBUTOS PRIVADOS (Actualizados con la nueva base de datos)
-    // =====================================================================
     private int $id;
-    private int $id_provincia; // 🔗 Relación jerárquica con Provincias
+    private int $id_provincia;
     private string $descripcion;
     private int $is_active;
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    // =====================================================================
-    // MÉTODOS DE NEGOCIO
-    // =====================================================================
-
     public function getAll(): ?array
     {
         try {
-            // ✨ CORREGIDO: Agrupamos estrictamente por el nombre de la localidad borrando duplicados reales de la BD
-            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(descripcion) AS descripcion, MAX(is_active) AS is_active 
-                    FROM Localidades 
-                    WHERE is_active = 1 
-                    GROUP BY TRIM(descripcion) 
+            $sql = "SELECT MAX(id) AS id, MAX(id_provincia) AS id_provincia, TRIM(nombre) AS descripcion
+                    FROM Localidades
+                    GROUP BY TRIM(nombre) 
                     ORDER BY descripcion ASC";
                     
             $stmt = $this->db->prepare($sql);
@@ -47,13 +38,13 @@ class Localidad extends Model
         }
     }
 
-    /**
-     * ⚡ NUEVOS MÉTODOS: Filtra localidades según la provincia seleccionada
-     */
     public function getByProvincia(int $id_provincia): ?array
     {
         try {
-            $sql = "SELECT * FROM Localidades WHERE id_provincia = :id_provincia ORDER BY descripcion ASC";
+            $sql = "SELECT id, id_provincia, TRIM(nombre) AS descripcion
+                    FROM Localidades 
+                    WHERE id_provincia = :id_provincia 
+                    ORDER BY descripcion ASC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id_provincia' => $id_provincia]);
 
@@ -66,10 +57,6 @@ class Localidad extends Model
             throw new Exception("Database error during cities filtering.");
         }
     }
-
-    // =====================================================================
-    // GETTERS Y SETTERS
-    // =====================================================================
 
     public function getId(): int
     {

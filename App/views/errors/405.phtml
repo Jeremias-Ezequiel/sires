@@ -1,0 +1,25 @@
+<?php
+$pageTitle = 'Error 405 | SIRES';
+$pageCss   = ['error.css'];
+include __DIR__ . '/../partials/head.phtml';
+?>
+
+    <div class="error-page-container">
+
+        <h1 class="error-code" style="color: #ef4444;">405</h1>
+
+        <div class="error-card">
+            <h2>Método no permitido</h2>
+            <p>
+                La petición HTTP realizada no está permitida para la ruta solicitada. El servidor de **SIRES** rechazó
+                la acción por razones de seguridad de la infraestructura.
+            </p>
+
+            <a href="/sires/dashboard" class="btn btn--outline" onclick="event.preventDefault(); history.back();">
+                <i class=" fa-solid fa-arrow-left"></i> Volver al inicio
+            </a>
+        </div>
+
+    </div>
+
+<?php include __DIR__ . '/../partials/footer.phtml'; ?>
