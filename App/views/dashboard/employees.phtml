@@ -5,7 +5,7 @@
     </div>
 
     <div class="header-actions-container">
-        <a href="/sires/dashboard/employees/add" class="btn-add">
+        <a href="<?= url('/dashboard/employees/add') ?>" class="btn-add">
             <i class="fas fa-plus"></i> Registrar
         </a>
     </div>
@@ -136,7 +136,7 @@
                                             class="emp-action-btn btn-deactivate-hover open-sires-modal" 
                                             data-action="deactivate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="/sires/dashboard/employees/deactivate?id=<?= $emp->getId() ?>"
+                                            data-url="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
                                             title="Dar de Baja Empleado">
                                             <i class="fas fa-user-minus"></i>
                                         </button>
@@ -146,7 +146,7 @@
                                             class="emp-action-btn btn-activate-hover open-sires-modal" 
                                             data-action="activate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="/sires/dashboard/employees/activate?id=<?= $emp->getId() ?>"
+                                            data-url="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
                                             title="Reactivar Empleado">
                                             <i class="fas fa-user-plus"></i>
                                         </button>
@@ -170,7 +170,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage - 1; 
                     ?>
-                    <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
                         <i class="fas fa-chevron-left"></i> Anterior
                     </a>
                 <?php endif; ?>
@@ -183,7 +183,7 @@
                             $queryParams['page'] = $i; 
                             $isActivePage = ($i === $currentPage);
                         ?>
-                        <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" 
+                        <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" 
                            style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
                                   <?= $isActivePage 
                                       ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;' 
@@ -200,7 +200,7 @@
                         $queryParams = $_GET; 
                         $queryParams['page'] = $currentPage + 1; 
                     ?>
-                    <a href="/sires/dashboard/employees?<?= http_build_query($queryParams) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
+                    <a href="<?= url('/dashboard/employees?' . http_build_query($queryParams)) ?>" class="btn-clear-filters" style="padding: 6px 12px; font-size: 14px;">
                         Siguiente <i class="fas fa-chevron-right"></i>
                     </a>
                 <?php endif; ?>

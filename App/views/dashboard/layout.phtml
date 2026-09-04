@@ -27,8 +27,7 @@ include __DIR__ . '/../partials/head.phtml';
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
 
-                            <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
-                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/clients') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-users"></i>Clientes
                             </a>
                         </li>

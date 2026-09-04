@@ -122,12 +122,6 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('POST', '/sires/dashboard/employees/reset-password/process', [
-        'action' => [EmployeeController::class, 'resetPassword'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
     $r->addRoute('GET', '/dashboard/employees/edit', [
         'action' => [EmployeeController::class, 'showEditEmployeeForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
@@ -282,82 +276,4 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/edit', [
-        'action' => [RoomController::class, 'showEditRoomForm'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('POST', '/dashboard/rooms/edit/process', [
-        'action' => [RoomController::class, 'editRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/rooms/detail', [
-        'action' => [RoomController::class, 'showRoomDetail'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
-        'action' => [RoomController::class, 'deactivateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/rooms/activate', [
-        'action' => [RoomController::class, 'activateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    // Reservas
-    $r->addRoute('GET', '/dashboard/booking', [
-        'action' => [BookingController::class, 'showBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/booking/add', [
-        'action' => [BookingController::class, 'showNewBookingForm'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('POST', '/dashboard/booking/add/process', [
-        'action' => [BookingController::class, 'addBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/booking/edit', [
-        'action' => [BookingController::class, 'showEditBookingForm'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('POST', '/dashboard/booking/edit/process', [
-        'action' => [BookingController::class, 'editBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/booking/detail', [
-        'action' => [BookingController::class, 'showBookingDetail'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/booking/cancel', [
-        'action' => [BookingController::class, 'cancelBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
-
-    $r->addRoute('GET', '/dashboard/booking/confirm', [
-        'action' => [BookingController::class, 'confirmBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
-    ]);
 };

@@ -27,17 +27,12 @@ class EmployeeController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
-        // --- LÓGICA DE PAGINACIÓN --//
         // --- LÓGICA DE PAGINACIÓN ---
         $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         if ($currentPage < 1) { $currentPage = 1; }
         
         $limit = 5; // Cambiá este número para definir cuántos empleados ver por página
         $offset = ($currentPage - 1) * $limit;
-
-        $search = $_GET['search'] ?? "";
-        $role      = $_GET['role_filter'] ?? "";
-        $is_active = $_GET['status_filter'] ?? "";
 
         $search = $vars['search'] ?? "";
         $role      = $vars['role_filter'] ?? "";
@@ -131,9 +126,6 @@ class EmployeeController
             }
             if (empty($password)) {
                 throw new Exception("La contraseña es obligatoria.");
-            }
-            if (strlen($password) < 5) {
-                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
             }
             if (strlen($password) < 8) {
                 throw new Exception("La contraseña debe tener al menos 8 caracteres.");
@@ -446,7 +438,7 @@ class EmployeeController
         if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
             $_SESSION['flash_message'] = "ID de empleado inválido.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
@@ -456,7 +448,7 @@ class EmployeeController
         if (!$employee) {
             $_SESSION['flash_message'] = "El empleado solicitado no existe.";
             $_SESSION['flash_status']  = "error";
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
         }
 
@@ -523,14 +515,14 @@ class EmployeeController
             $_SESSION['flash_status']  = "success";
 
             // Redireccionamos a la lista general de empleados
-            header('Location: /sires/dashboard/employees');
+            header('Location: ' . UrlHelper::to('/dashboard/employees'));
             exit;
 
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: /sires/dashboard/employees/reset-password?id=' . urlencode((string)$id));
+            header('Location: ' . UrlHelper::to('/dashboard/employees/reset-password?id=' . urlencode((string)$id)));
             exit;
         }
     }
