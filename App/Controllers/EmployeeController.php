@@ -125,6 +125,12 @@ class EmployeeController
             }
             if (strlen($password) < 5) {
                 throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+<<<<<<< Updated upstream
+=======
+            }
+            if ($password !== $confirmPassword) {
+                throw new Exception("Las contraseñas ingresadas no coinciden.");
+>>>>>>> Stashed changes
             }
             if ($idRol <= 0) {
                 throw new Exception("Debe seleccionar un rol para el empleado.");

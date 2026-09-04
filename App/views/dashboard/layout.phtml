@@ -34,13 +34,17 @@ use App\Models\Rol;
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
+<<<<<<< Updated upstream
                             <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
+=======
+                            <a href="<?= url('/dashboard/clients') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'clientes.phtml')) ? 'active' : '' ?>">
+>>>>>>> Stashed changes
                                 <i class="fas fa-users"></i>Clientes
                             </a>
                         </li>
                     <?php endif; ?>
 
-                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE])): ?>
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
                         <li>
                             <a href="/sires/dashboard/employees" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'employees.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-user-tie"></i>Empleados
@@ -64,7 +68,7 @@ use App\Models\Rol;
                         </li>
                     <?php endif; ?>
 
-                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE])): ?>
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
                         <li>
                             <a href="/sires/maintenance" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-money-bill-wave"></i>Pagos

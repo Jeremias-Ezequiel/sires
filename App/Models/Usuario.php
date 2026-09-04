@@ -300,7 +300,11 @@ class Usuario extends Model
     {
         try {
             if (strlen($newPassword) < 5) {
+<<<<<<< Updated upstream
                 throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+=======
+                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+>>>>>>> Stashed changes
             }
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -326,7 +330,11 @@ class Usuario extends Model
     {
         try {
             if (strlen($newPassword) < 5) {
+<<<<<<< Updated upstream
                 throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+=======
+                throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+>>>>>>> Stashed changes
             }
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
@@ -516,7 +524,11 @@ class Usuario extends Model
     public function setPassword(string $password): void
     {
         if (strlen($password) < 5) {
+<<<<<<< Updated upstream
             throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
+=======
+            throw new Exception("La contraseña debe tener al menos 5 caracteres.");
+>>>>>>> Stashed changes
         }
 
         $this->password = password_hash($password, PASSWORD_BCRYPT);

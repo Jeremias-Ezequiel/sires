@@ -6,6 +6,7 @@ use FastRoute\RouteCollector;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EmployeeController;
+use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Middleware\AuthMiddleware;
@@ -135,6 +136,37 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    // Clientes
+    $r->addRoute('GET', '/dashboard/clients', [
+        'action' => [ClienteController::class, 'showClients'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/clients/add', [
+        'action' => [ClienteController::class, 'showNewClientForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/clients/add/process', [
+        'action' => [ClienteController::class, 'addClient'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/clients/edit', [
+        'action' => [ClienteController::class, 'showEditClientForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/clients/edit/process', [
+        'action' => [ClienteController::class, 'editClient'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
     // Habitaciones
     $r->addRoute('GET', '/sires/dashboard/habitaciones', [
         'action' => [RoomController::class, 'showRooms'],
@@ -145,13 +177,96 @@ return function (RouteCollector $r) {
     $r->addRoute('GET', '/sires/dashboard/habitaciones/add', [
         'action' => [RoomController::class, 'showNewRoomForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
     $r->addRoute('POST', '/sires/dashboard/habitaciones/add/process', [
         'action' => [RoomController::class, 'addRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE]
+    ]);
+<<<<<<< Updated upstream
+=======
+
+    $r->addRoute('GET', '/dashboard/rooms/edit', [
+        'action' => [RoomController::class, 'showEditRoomForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/rooms/edit/process', [
+        'action' => [RoomController::class, 'editRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
+      
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/detail', [
+        'action' => [RoomController::class, 'showRoomDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
+        'action' => [RoomController::class, 'deactivateRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/activate', [
+        'action' => [RoomController::class, 'activateRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    // Reservas
+    $r->addRoute('GET', '/dashboard/booking', [
+        'action' => [BookingController::class, 'showBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/add', [
+        'action' => [BookingController::class, 'showNewBookingForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/booking/add/process', [
+        'action' => [BookingController::class, 'addBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/edit', [
+        'action' => [BookingController::class, 'showEditBookingForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+        ]);
+
+    $r->addRoute('POST', '/dashboard/booking/edit/process', [
+        'action' => [BookingController::class, 'editBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/detail', [
+        'action' => [BookingController::class, 'showBookingDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/cancel', [
+        'action' => [BookingController::class, 'cancelBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/confirm', [
+        'action' => [BookingController::class, 'confirmBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+>>>>>>> Stashed changes
 };
 

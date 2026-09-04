@@ -1,0 +1,532 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Nueva Reserva</h1>
+        <p>Registrar una nueva reserva en el sistema</p>
+    </div>
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section">
+    <form action="<?= url('/dashboard/booking/add/process') ?>" method="POST" class="form" id="form-reserva">
+
+        <div class="form__section">
+            <h2 class="form__section-title">Información de la Reserva</h2>
+
+            <div class="form__group">
+                <label class="form__label" for="cliente-search">Cliente *</label>
+                <div class="autocomplete-wrapper">
+                    <input type="text" name="cliente_text" id="cliente-search" class="form__input" placeholder="Buscar cliente por DNI o Pasaporte..." value="<?= htmlspecialchars($old['cliente_text'] ?? '') ?>" autocomplete="off" required>
+                    <input type="hidden" name="id_cliente" id="id_cliente" value="<?= (int)($old['id_cliente'] ?? 0) ?>">
+                    <div class="autocomplete-dropdown" id="cliente-dropdown"></div>
+                    <div class="cliente-confirm-card" id="cliente-confirm-card" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="habitacion-search">Habitación *</label>
+                <div class="autocomplete-wrapper">
+                    <input type="text" name="habitacion_text" id="habitacion-search" class="form__input" placeholder="Buscar por número, piso o tipo..." value="<?= htmlspecialchars($old['habitacion_text'] ?? '') ?>" autocomplete="off" required>
+                    <input type="hidden" name="id_habitacion" id="id_habitacion" value="<?= (int)($old['id_habitacion'] ?? 0) ?>">
+                    <div class="autocomplete-dropdown" id="habitacion-dropdown"></div>
+                    <div class="room-confirm-card" id="habitacion-confirm-card" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_canal_origen">Canal de Origen *</label>
+                <select name="id_canal_origen" id="id_canal_origen" class="form__input" required>
+                    <option value="">Seleccione un Canal</option>
+                    <?php if (!empty($canales)): ?>
+                        <?php foreach ($canales as $can): ?>
+                            <option value="<?= $can->getId() ?>" <?= (isset($old['id_canal_origen']) && (int)$old['id_canal_origen'] === $can->getId()) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($can->getDescripcion()) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="form__section">
+            <h2 class="form__section-title">Fechas y Huéspedes</h2>
+
+            <div class="form-row">
+                <div class="form__group">
+                    <label class="form__label" for="fecha_entrada">Fecha de Entrada *</label>
+                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" value="<?= htmlspecialchars($old['fecha_entrada'] ?? date('Y-m-d')) ?>" required>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="fecha_salida">Fecha de Salida *</label>
+                    <input type="date" name="fecha_salida" id="fecha_salida" class="form__input" value="<?= htmlspecialchars($old['fecha_salida'] ?? date('Y-m-d', strtotime('+1 day'))) ?>" required>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="cantidad_huespedes">Cantidad de Huéspedes *</label>
+                    <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? 1)) ?>" min="1" max="10" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="form__section">
+            <h2 class="form__section-title">Observaciones</h2>
+
+            <div class="form__group">
+                <textarea name="observaciones" id="observaciones" class="form__input form__textarea" rows="3" placeholder="Notas adicionales..."><?= htmlspecialchars($old['observaciones'] ?? '') ?></textarea>
+            </div>
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Guardar Reserva
+            </button>
+            <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</section>
+
+<script>
+    var CLIENTES = <?= json_encode(array_map(function ($c) {
+        return [
+            'id'        => $c->getId(),
+            'nombre'    => $c->getNombre() ?? '',
+            'apellido'  => $c->getApellido() ?? '',
+            'dni'       => $c->getDniPasaporte() ?? '',
+            'email'     => $c->getMail() ?? '',
+            'telefono'  => $c->getTelefono() ?? '',
+        ];
+    }, $clientes ?? [])) ?>;
+
+    var ROOMS = <?= json_encode(array_map(function ($h) {
+        return [
+            'id'       => (int)$h['id'],
+            'numero'   => (int)$h['numero'],
+            'piso'     => (int)$h['piso'],
+            'tipo'     => $h['tipo'] ?? '',
+            'estado'   => $h['estado'] ?? '',
+            'precio'   => (float)($h['precio_noche_base'] ?? 0),
+        ];
+    }, $habitaciones ?? [])) ?>;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('cliente-search');
+        var hiddenInput = document.getElementById('id_cliente');
+        var dropdown = document.getElementById('cliente-dropdown');
+        var confirmCard = document.getElementById('cliente-confirm-card');
+        var confirmedId = parseInt(hiddenInput.value) || null;
+        var highlightedIndex = -1;
+
+        function filterByDni(query) {
+            if (!query) return [];
+            var q = query.toLowerCase();
+            var exact = [];
+            var partial = [];
+            CLIENTES.forEach(function(c) {
+                var dni = c.dni.toLowerCase();
+                if (dni === q) {
+                    exact.push(c);
+                } else if (dni.indexOf(q) !== -1) {
+                    partial.push(c);
+                }
+            });
+            if (exact.length > 0) return { type: 'exact', results: exact };
+            if (partial.length > 0) return { type: 'partial', results: partial };
+            return { type: 'none', results: [] };
+        }
+
+        function renderDNIResults(filtered) {
+            dropdown.innerHTML = '';
+            confirmCard.style.display = 'none';
+
+            if (filtered.type === 'none') {
+                dropdown.innerHTML = '<div class="autocomplete-no-results">Cliente no registrado con ese DNI</div>';
+                dropdown.classList.add('open');
+                return;
+            }
+
+            if (filtered.type === 'exact') {
+                var c = filtered.results[0];
+                confirmCard.innerHTML =
+                    '<div class="confirm-card-header">' +
+                        '<i class="fas fa-check-circle confirm-icon"></i>' +
+                        '<span class="confirm-label">Cliente encontrado</span>' +
+                    '</div>' +
+                    '<div class="confirm-card-body">' +
+                        '<div class="confirm-field"><span class="confirm-field-label">Nombre</span><span class="confirm-field-value">' + escHtml(c.nombre + ' ' + c.apellido) + '</span></div>' +
+                        '<div class="confirm-field"><span class="confirm-field-label">DNI</span><span class="confirm-field-value">' + escHtml(c.dni) + '</span></div>' +
+                        '<div class="confirm-field"><span class="confirm-field-label">Email</span><span class="confirm-field-value">' + escHtml(c.email || '-') + '</span></div>' +
+                        '<div class="confirm-field"><span class="confirm-field-label">Teléfono</span><span class="confirm-field-value">' + escHtml(c.telefono || '-') + '</span></div>' +
+                    '</div>';
+                confirmCard.style.display = 'block';
+                dropdown.classList.remove('open');
+                confirmedId = c.id;
+                hiddenInput.value = c.id;
+                searchInput.setCustomValidity('');
+                return;
+            }
+
+            dropdown.classList.add('open');
+            var q = searchInput.value.toLowerCase();
+            filtered.results.forEach(function(c, i) {
+                var item = document.createElement('div');
+                item.className = 'autocomplete-item';
+                item.dataset.id = c.id;
+                item.dataset.nombre = c.nombre;
+                item.dataset.apellido = c.apellido;
+                item.dataset.dni = c.dni;
+                item.dataset.email = c.email;
+                item.dataset.telefono = c.telefono;
+                item.innerHTML = highlightMatch(c.nombre + ' ' + c.apellido, q) + ' <small>' + escHtml(c.dni) + '</small>';
+                item.addEventListener('click', function() {
+                    confirmExact(c);
+                });
+                dropdown.appendChild(item);
+            });
+            highlightedIndex = -1;
+        }
+
+        function confirmExact(c) {
+            confirmedId = c.id;
+            hiddenInput.value = c.id;
+            searchInput.value = c.dni;
+            searchInput.setCustomValidity('');
+            dropdown.classList.remove('open');
+            confirmCard.innerHTML =
+                '<div class="confirm-card-header">' +
+                    '<i class="fas fa-check-circle confirm-icon"></i>' +
+                    '<span class="confirm-label">Cliente encontrado</span>' +
+                '</div>' +
+                '<div class="confirm-card-body">' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Nombre</span><span class="confirm-field-value">' + escHtml(c.nombre + ' ' + c.apellido) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">DNI</span><span class="confirm-field-value">' + escHtml(c.dni) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Email</span><span class="confirm-field-value">' + escHtml(c.email || '-') + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Teléfono</span><span class="confirm-field-value">' + escHtml(c.telefono || '-') + '</span></div>' +
+                '</div>';
+            confirmCard.style.display = 'block';
+        }
+
+        function escHtml(str) {
+            var d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            var idx = text.toLowerCase().indexOf(query);
+            if (idx === -1) return text;
+            return text.substring(0, idx) + '<strong>' + text.substring(idx, idx + query.length) + '</strong>' + text.substring(idx + query.length);
+        }
+
+        searchInput.addEventListener('input', function() {
+            var val = this.value.trim();
+            if (!val) {
+                hiddenInput.value = '';
+                confirmedId = null;
+                dropdown.classList.remove('open');
+                confirmCard.style.display = 'none';
+                this.setCustomValidity('');
+                return;
+            }
+            if (confirmedId !== null) {
+                var match = CLIENTES.find(function(c) { return c.id === confirmedId; });
+                if (match && this.value === match.dni) {
+                    dropdown.classList.remove('open');
+                    return;
+                }
+            }
+            confirmedId = null;
+            hiddenInput.value = '';
+            confirmCard.style.display = 'none';
+            var filtered = filterByDni(val);
+            renderDNIResults(filtered);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            var items = dropdown.querySelectorAll('.autocomplete-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightedIndex = Math.max(highlightedIndex - 1, -1);
+                updateHighlight(items);
+            } else if (e.key === 'Enter') {
+                if (items.length > 0 && highlightedIndex >= 0 && items[highlightedIndex]) {
+                    e.preventDefault();
+                    var item = items[highlightedIndex];
+                    confirmExact({
+                        id: parseInt(item.dataset.id),
+                        nombre: item.dataset.nombre,
+                        apellido: item.dataset.apellido,
+                        dni: item.dataset.dni,
+                        email: item.dataset.email,
+                        telefono: item.dataset.telefono
+                    });
+                } else if (confirmedId) {
+                    e.preventDefault();
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        function updateHighlight(items) {
+            items.forEach(function(item, i) {
+                item.classList.toggle('highlighted', i === highlightedIndex);
+            });
+            if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        /* --- Room search --- */
+        var roomSearch = document.getElementById('habitacion-search');
+        var roomHidden = document.getElementById('id_habitacion');
+        var roomDropdown = document.getElementById('habitacion-dropdown');
+        var roomConfirmCard = document.getElementById('habitacion-confirm-card');
+        var roomConfirmedId = parseInt(roomHidden.value) || null;
+        var roomHighlightIdx = -1;
+
+        if (roomConfirmedId) {
+            var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
+            if (match) {
+                showRoomConfirmCard(match);
+                roomSearch.value = '#' + match.numero + ' - Piso ' + match.piso + ' (' + match.tipo + ')';
+            }
+        }
+
+        function filterRooms(query) {
+            if (!query) return [];
+            var q = query.toLowerCase();
+            var exact = [];
+            var partial = [];
+            ROOMS.forEach(function(r) {
+                var num = String(r.numero);
+                var label = '#' + r.numero + ' - piso ' + r.piso + ' (' + r.tipo.toLowerCase() + ')';
+                if (num === q || '#' + num === q) {
+                    exact.push(r);
+                } else if (label.indexOf(q) !== -1 || r.tipo.toLowerCase().indexOf(q) !== -1 || String(r.piso).indexOf(q) !== -1) {
+                    partial.push(r);
+                }
+            });
+            if (exact.length > 0) return { type: 'exact', results: exact };
+            if (partial.length > 0) return { type: 'partial', results: partial };
+            return { type: 'none', results: [] };
+        }
+
+        function renderRoomResults(filtered) {
+            roomDropdown.innerHTML = '';
+            roomConfirmCard.style.display = 'none';
+
+            if (filtered.type === 'none') {
+                roomDropdown.innerHTML = '<div class="autocomplete-no-results">No se encontraron habitaciones</div>';
+                roomDropdown.classList.add('open');
+                return;
+            }
+
+            if (filtered.type === 'exact') {
+                var r = filtered.results[0];
+                confirmRoom(r);
+                return;
+            }
+
+            roomDropdown.classList.add('open');
+            var q = roomSearch.value.toLowerCase();
+            filtered.results.forEach(function(r, i) {
+                var item = document.createElement('div');
+                item.className = 'autocomplete-item';
+                item.dataset.id = r.id;
+                item.dataset.numero = r.numero;
+                item.dataset.piso = r.piso;
+                item.dataset.tipo = r.tipo;
+                item.dataset.estado = r.estado;
+                item.dataset.precio = r.precio;
+                var label = '#' + r.numero + ' - Piso ' + r.piso;
+                item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>';
+                item.addEventListener('click', function() {
+                    confirmRoom(r);
+                });
+                roomDropdown.appendChild(item);
+            });
+            roomHighlightIdx = -1;
+        }
+
+        function confirmRoom(r) {
+            roomConfirmedId = r.id;
+            roomHidden.value = r.id;
+            roomSearch.value = '#' + r.numero + ' - Piso ' + r.piso + ' (' + r.tipo + ')';
+            roomSearch.setCustomValidity('');
+            roomDropdown.classList.remove('open');
+            showRoomConfirmCard(r);
+        }
+
+        function showRoomConfirmCard(r) {
+            roomConfirmCard.innerHTML =
+                '<div class="confirm-card-header" style="border-color: rgba(56, 189, 248, 0.15); background-color: rgba(56, 189, 248, 0.08);">' +
+                    '<i class="fas fa-door-open confirm-icon" style="color: #38bdf8;"></i>' +
+                    '<span class="confirm-label" style="color: #38bdf8;">Habitación seleccionada</span>' +
+                '</div>' +
+                '<div class="confirm-card-body">' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Habitación</span><span class="confirm-field-value">#' + escHtml(String(r.numero)) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Piso</span><span class="confirm-field-value">' + escHtml(String(r.piso)) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Tipo</span><span class="confirm-field-value">' + escHtml(r.tipo) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Estado</span><span class="confirm-field-value">' + escHtml(r.estado) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value">$' + escHtml(r.precio.toFixed(2)) + '</span></div>' +
+                '</div>';
+            roomConfirmCard.style.display = 'block';
+            roomDropdown.classList.remove('open');
+        }
+
+        roomSearch.addEventListener('input', function() {
+            var val = this.value.trim();
+            if (!val) {
+                roomHidden.value = '';
+                roomConfirmedId = null;
+                roomDropdown.classList.remove('open');
+                roomConfirmCard.style.display = 'none';
+                this.setCustomValidity('');
+                return;
+            }
+            if (roomConfirmedId !== null) {
+                var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
+                if (match) {
+                    var expected = '#' + match.numero + ' - Piso ' + match.piso + ' (' + match.tipo + ')';
+                    if (this.value === expected) {
+                        roomDropdown.classList.remove('open');
+                        return;
+                    }
+                }
+            }
+            roomConfirmedId = null;
+            roomHidden.value = '';
+            roomConfirmCard.style.display = 'none';
+            var filtered = filterRooms(val);
+            renderRoomResults(filtered);
+        });
+
+        roomSearch.addEventListener('keydown', function(e) {
+            var items = roomDropdown.querySelectorAll('.autocomplete-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                roomHighlightIdx = Math.min(roomHighlightIdx + 1, items.length - 1);
+                updateRoomHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                roomHighlightIdx = Math.max(roomHighlightIdx - 1, -1);
+                updateRoomHighlight(items);
+            } else if (e.key === 'Enter') {
+                if (items.length > 0 && roomHighlightIdx >= 0 && items[roomHighlightIdx]) {
+                    e.preventDefault();
+                    var item = items[roomHighlightIdx];
+                    confirmRoom({
+                        id: parseInt(item.dataset.id),
+                        numero: parseInt(item.dataset.numero),
+                        piso: parseInt(item.dataset.piso),
+                        tipo: item.dataset.tipo,
+                        estado: item.dataset.estado,
+                        precio: parseFloat(item.dataset.precio)
+                    });
+                } else if (roomConfirmedId) {
+                    e.preventDefault();
+                }
+            } else if (e.key === 'Escape') {
+                roomDropdown.classList.remove('open');
+            }
+        });
+
+        function updateRoomHighlight(items) {
+            items.forEach(function(item, i) {
+                item.classList.toggle('highlighted', i === roomHighlightIdx);
+            });
+            if (roomHighlightIdx >= 0 && items[roomHighlightIdx]) {
+                items[roomHighlightIdx].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        roomSearch.addEventListener('invalid', function() {
+            if (!roomHidden.value) {
+                this.setCustomValidity('Seleccione una habitación de la lista');
+            }
+        });
+
+        roomSearch.addEventListener('input', function() {
+            this.setCustomValidity('');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                dropdown.classList.remove('open');
+                roomDropdown.classList.remove('open');
+            }
+        });
+
+        searchInput.addEventListener('blur', function() {
+            setTimeout(function() {
+                if (!dropdown.contains(document.activeElement)) {
+                    dropdown.classList.remove('open');
+                }
+            }, 150);
+        });
+
+        roomSearch.addEventListener('blur', function() {
+            setTimeout(function() {
+                if (!roomDropdown.contains(document.activeElement)) {
+                    roomDropdown.classList.remove('open');
+                }
+            }, 150);
+        });
+
+        searchInput.addEventListener('invalid', function() {
+            if (!hiddenInput.value) {
+                this.setCustomValidity('Ingrese un DNI de cliente válido');
+            }
+        });
+
+        searchInput.addEventListener('input', function() {
+            this.setCustomValidity('');
+        });
+
+        var entrada = document.getElementById('fecha_entrada');
+        var salida = document.getElementById('fecha_salida');
+
+        if (entrada && salida) {
+            entrada.addEventListener('change', function() {
+                if (salida.value && salida.value <= this.value) {
+                    var nextDay = new Date(this.value);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    salida.value = nextDay.toISOString().split('T')[0];
+                }
+                salida.min = this.value;
+            });
+
+            salida.addEventListener('change', function() {
+                if (entrada.value && this.value <= entrada.value) {
+                    alert('La fecha de salida debe ser posterior a la fecha de entrada.');
+                    this.value = '';
+                }
+            });
+        }
+    });
+</script>
