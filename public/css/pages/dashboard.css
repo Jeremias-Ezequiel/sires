@@ -610,7 +610,6 @@
 }
 
 
-<<<<<<< HEAD:public/css/dashboard.css
 /* --- [⚡ RESPONSIVE MEDIA QUERIES] --- */
 @media (max-width: 768px) {
   .form-grid-layout, 
@@ -741,6 +740,201 @@
 .btn-proceed-activate:hover {
   background-color: #059669;
 }
-=======
+/* ==========================================================================
+   EMPLEADOS — ESTILOS DE PANTALLA (listado, alta, edición, reset de clave)
+   ========================================================================== */
 
->>>>>>> origin:public/css/pages/dashboard.css
+/* Contenedor de acciones del encabezado (Registrar, etc.) */
+.header-actions-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Botón principal "Registrar" de la cabecera del listado */
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: var(--dorado-sires);
+  color: var(--fondo-principal);
+  border-radius: 30px;
+  padding: 0 24px;
+  height: 46px;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-add:hover {
+  background-color: var(--dorado-sires-hover, #e5b83b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(205, 164, 52, 0.2);
+}
+
+/* Botón de envío de los formularios de empleados */
+.btn-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: var(--dorado-sires);
+  color: var(--fondo-principal);
+  border-radius: 30px;
+  padding: 0 28px;
+  height: 46px;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-filter:hover {
+  background-color: var(--dorado-sires-hover, #e5b83b);
+}
+
+/* Enlace secundario (volver / limpiar filtros) */
+.btn-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--borde-input);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texto-blanco);
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 30px;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-clear-filters:hover {
+  border-color: var(--dorado-sires);
+  color: var(--dorado-sires);
+}
+
+/* Pie de formulario con los botones de acción */
+.form-actions-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+  margin-top: 10px;
+}
+
+/* Variante legacy de .form__section-title (usada por resetPassword) */
+.form-section-title {
+  font-size: 1.1rem;
+  color: var(--dorado-sires);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Grilla de 2 columnas usada por resetPassword (base de la media query existente) */
+.form-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* Grupos de campo legacy de resetPassword */
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-input {
+  font-weight: 600;
+  color: var(--texto-gris);
+  font-size: 0.9rem;
+}
+
+.input-form-field {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--borde-input);
+  border-radius: 8px;
+  color: var(--texto-blanco);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.25s ease-in-out;
+}
+
+.input-form-field:focus {
+  outline: none;
+  background-color: var(--color-bg-input-focus);
+  border-color: var(--dorado-sires);
+  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+}
+
+/* Acciones de la tabla de empleados: botones de alta/baja */
+.emp-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--borde-input);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-deactivate-hover {
+  color: var(--estado-ocupada);
+}
+
+.btn-deactivate-hover:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: var(--estado-ocupada);
+}
+
+.btn-activate-hover {
+  color: var(--estado-disponible);
+}
+
+.btn-activate-hover:hover {
+  background-color: rgba(34, 197, 94, 0.12);
+  border-color: var(--estado-disponible);
+}
+
+/* Alias de compatibilidad para el formato legacy "alert error" */
+.alert-error {
+  background-color: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+@media (max-width: 768px) {
+  .form-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
