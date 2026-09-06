@@ -10,6 +10,7 @@ use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Controllers\BookingController;
+use App\Controllers\PaymentController;
 use App\Controllers\ApiController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
@@ -110,13 +111,13 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
     // Restablecer contraseña de empleados desde el Dashboard
-    $r->addRoute('GET', '/sires/dashboard/employees/reset-password', [
+    $r->addRoute('GET', '/dashboard/employees/reset-password', [
         'action' => [EmployeeController::class, 'showResetPasswordForm'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('POST', '/sires/dashboard/employees/reset-password/process', [
+    $r->addRoute('POST', '/dashboard/employees/reset-password/process', [
         'action' => [EmployeeController::class, 'resetPassword'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
@@ -274,6 +275,25 @@ return function (RouteCollector $r) {
         'action' => [BookingController::class, 'confirmBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Pagos
+    $r->addRoute('GET', '/dashboard/payments', [
+        'action' => [PaymentController::class, 'showPayments'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/payments/detail', [
+        'action' => [PaymentController::class, 'showPaymentDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/payments/add/process', [
+        'action' => [PaymentController::class, 'addPayment'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
     ]);
 
 };

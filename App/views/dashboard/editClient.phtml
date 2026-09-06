@@ -50,12 +50,16 @@
         <div class="form__grid form__grid--3">
             <div class="form__group">
                 <label class="form__label" for="dni_pasaporte">DNI / Pasaporte</label>
-                <input type="text" id="dni_pasaporte" name="dni_pasaporte" placeholder="Ej: 35.123.456" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni_pasaporte'] ?? $cliente->getDniPasaporte() ?? '') ?>">
+                <input type="text" id="dni_pasaporte" name="dni_pasaporte" placeholder="Ej: 35.123.456" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni_pasaporte'] ?? $cliente->getDniPasaporte() ?? '') ?>"
+                    pattern="^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$"
+                    title="Normativa OACI 9303: DNI de 6 a 8 dígitos (ej: 35.123.456) o Pasaporte alfanumérico de 5 a 9 caracteres.">
             </div>
 
             <div class="form__group">
                 <label class="form__label" for="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $cliente->getTelefono() ?? '') ?>">
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 9 11 1234 5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $cliente->getTelefono() ?? '') ?>"
+                    pattern="^\+[0-9]{8,15}$"
+                    title="Formato internacional UIT-T E.164 (ej: +5491123456789). Solo números, sin espacios ni guiones.">
             </div>
 
             <div class="form__group">
@@ -127,6 +131,7 @@
         const inputApellido = document.getElementById('apellido');
         const inputMail = document.getElementById('mail');
         const inputDni = document.getElementById('dni_pasaporte');
+        const inputTelefono = document.getElementById('telefono');
         const selectNacionalidad = document.getElementById('id_nacionalidad');
         const selectProvincia = document.getElementById('id_provincia');
         const selectLocalidad = document.getElementById('id_localidad');
@@ -178,6 +183,25 @@
                     mostrarError('El DNI/Pasaporte es obligatorio.');
                     inputDni?.focus();
                     return;
+                }
+                const dniVal = inputDni.value.trim();
+                const regexDniOPasaporte = /^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/;
+                if (!regexDniOPasaporte.test(dniVal)) {
+                    e.preventDefault();
+                    mostrarError('El formato del DNI o Pasaporte no es válido (normativa OACI 9303): DNI de 6 a 8 dígitos (ej: 35.123.456) o pasaporte alfanumérico de 5 a 9 caracteres.');
+                    inputDni?.focus();
+                    return;
+                }
+
+                const telefonoVal = inputTelefono?.value.trim() ?? '';
+                if (telefonoVal !== '') {
+                    const regexTelefonoE164 = /^\+[0-9]{8,15}$/;
+                    if (!regexTelefonoE164.test(telefonoVal)) {
+                        e.preventDefault();
+                        mostrarError('El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).');
+                        inputTelefono?.focus();
+                        return;
+                    }
                 }
 
                 const mailVal = inputMail?.value.trim() ?? '';
@@ -235,6 +259,13 @@
                     }
                 });
                 input.addEventListener('drop', function(e) { e.preventDefault(); });
+            });
+        }
+
+        if (inputTelefono) {
+            inputTelefono.addEventListener('input', function() {
+                const soloDigitos = this.value.replace(/[^0-9]/g, '');
+                this.value = soloDigitos === '' ? '' : '+' + soloDigitos.slice(0, 15);
             });
         }
 

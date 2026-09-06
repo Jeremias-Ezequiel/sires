@@ -1,0 +1,172 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Administración de Pagos</h1>
+        <p>Gestión de cobros y saldos asociados a las reservas del hotel</p>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section filter-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/payments', 'GET', 'filter-form') ?>
+
+        <div class="form-group-search">
+            <label class="form__label">Buscar</label>
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" placeholder="Cliente o habitación..." value="<?= htmlspecialchars($search ?? '') ?>" class="form__search-input" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group-role">
+            <label class="form__label">Filtrar por Estado de Pago</label>
+            <select name="estado_pago_filter" class="form__select-filter">
+                <option value="">Todos los Estados</option>
+                <?php if (!empty($estadosPago)): ?>
+                    <?php foreach ($estadosPago as $est): ?>
+                        <option value="<?= (int)$est['id'] ?>" <?= ($estadoPago ?? '') === (string)$est['id'] ? 'selected' : '' ?>><?= htmlspecialchars($est['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn--primary">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <?php if ($hasSearch || $hasEstado): ?>
+            <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
+                <i class="fas fa-undo"></i>Limpiar Filtros
+            </a>
+        <?php endif; ?>
+    </form>
+</section>
+
+<?php if (!empty($pagos) && is_array($pagos)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Cliente</th>
+                        <th>Habitación</th>
+                        <th>Estado Reserva</th>
+                        <th>Estado Pago</th>
+                        <th>Total</th>
+                        <th>Cobrado</th>
+                        <th>Saldo</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pagos as $pag): ?>
+                        <?php
+                        $estadoPagoLower = mb_strtolower($pag['estado_pago_descripcion'] ?? '', 'UTF-8');
+                        $pagoStatusClass = 'badge--disponible';
+                        if (strpos($estadoPagoLower, 'pendient') !== false) {
+                            $pagoStatusClass = 'badge--pendiente';
+                        } elseif (strpos($estadoPagoLower, 'parcial') !== false) {
+                            $pagoStatusClass = 'badge--reservada';
+                        } elseif (strpos($estadoPagoLower, 'reembols') !== false) {
+                            $pagoStatusClass = 'badge--ocupada';
+                        }
+
+                        $reservaEstadoLower = mb_strtolower($pag['estado_descripcion'] ?? '', 'UTF-8');
+                        $reservaStatusClass = 'badge--disponible';
+                        if (strpos($reservaEstadoLower, 'pendient') !== false) {
+                            $reservaStatusClass = 'badge--pendiente';
+                        } elseif (strpos($reservaEstadoLower, 'confirm') !== false) {
+                            $reservaStatusClass = 'badge--reservada';
+                        } elseif (strpos($reservaEstadoLower, 'cancel') !== false) {
+                            $reservaStatusClass = 'badge--ocupada';
+                        }
+                        ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$pag['id']) ?></strong></td>
+                            <td><?= htmlspecialchars($pag['cliente_nombre'] . ' ' . $pag['cliente_apellido']) ?></td>
+                            <td>#<?= htmlspecialchars((string)$pag['habitacion_numero']) ?></td>
+                            <td><span class="badge <?= $reservaStatusClass ?>"><?= htmlspecialchars($pag['estado_descripcion']) ?></span></td>
+                            <td>
+                                <?php if (isset($pag['estado_pago_descripcion'])): ?>
+                                    <span class="badge <?= $pagoStatusClass ?>"><?= htmlspecialchars($pag['estado_pago_descripcion']) ?></span>
+                                <?php else: ?>
+                                    <span class="badge badge--desconocido">Sin registro</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= isset($pag['monto_total']) && $pag['monto_total'] !== null ? '$' . number_format((float)$pag['monto_total'], 2, ',', '.') : '-' ?></td>
+                            <td><?= isset($pag['monto_cobrado']) && $pag['monto_cobrado'] !== null ? '$' . number_format((float)$pag['monto_cobrado'], 2, ',', '.') : '-' ?></td>
+                            <td><?= isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? '$' . number_format((float)$pag['saldo_pendiente'], 2, ',', '.') : '-' ?></td>
+                            <td class="cell-actions">
+                                <div class="actions-group-container">
+                                    <a href="<?= url('/dashboard/payments/detail?id=' . $pag['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver y Registrar Pago">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
+                <?php if ($currentPage > 1): ?>
+                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage - 1; ?>
+                    <a href="<?= url('/dashboard/payments?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+
+                <div class="pagination-numbers" style="display: flex; gap: 5px;">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <?php $queryParams = $_GET; $queryParams['page'] = $i; $isActivePage = ($i === $currentPage); ?>
+                        <a href="<?= url('/dashboard/payments?' . http_build_query($queryParams)) ?>"
+                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
+                                  <?= $isActivePage
+                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;'
+                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;'
+                                  ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+
+                <?php if ($currentPage < $totalPages): ?>
+                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage + 1; ?>
+                    <a href="<?= url('/dashboard/payments?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <h3>No se encontraron pagos</h3>
+            <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
+
+            <?php if ($hasSearch || $hasEstado): ?>
+                <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
+                    <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
+                </a>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
