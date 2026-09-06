@@ -68,6 +68,28 @@ class TransaccionPago extends Model
         }
     }
 
+    public function getByResumenPago(int $id_resumen_pago): array
+    {
+        try {
+            $sql = "SELECT tp.id, tp.id_resumen_pago, tp.id_metodo_pago,
+                           tp.monto_abonado, tp.fecha_hora, tp.registrado_por,
+                           mp.descripcion AS metodo_pago_descripcion,
+                           u.nombre AS usuario_nombre, u.apellido AS usuario_apellido
+                    FROM Transacciones_Pago tp
+                    JOIN Metodos_Pago mp ON tp.id_metodo_pago = mp.id
+                    JOIN Usuarios u ON tp.registrado_por = u.id
+                    WHERE tp.id_resumen_pago = :id_resumen_pago
+                    ORDER BY tp.fecha_hora DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id_resumen_pago' => $id_resumen_pago]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en TransaccionPago::getByResumenPago: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al listar las transacciones de pago.");
+        }
+    }
+
     public function getId(): int
     {
         return $this->id;

@@ -10,12 +10,12 @@ use Exception;
 
 class ResumenPago extends Model
 {
-    private int $id;
-    private int $id_reserva;
-    private int $id_estado_pago;
-    private float $total;
-    private float $monto_pagado;
-    private float $saldo_pendiente;
+    private int $id = 0;
+    private int $id_reserva = 0;
+    private int $id_estado_pago = 0;
+    private float $total = 0.0;
+    private float $monto_pagado = 0.0;
+    private float $saldo_pendiente = 0.0;
 
     public const ESTADO_PENDIENTE = 1;
     public const ESTADO_PAGO_PARCIAL = 2;
@@ -64,6 +64,157 @@ class ResumenPago extends Model
                 throw new Exception("La reserva ya tiene un resumen de pago.");
             }
             throw new Exception("Error interno al guardar el resumen de pago.");
+        }
+    }
+
+    public function update(ResumenPago $resumen): bool
+    {
+        try {
+            $sql = "UPDATE Resumen_Pago
+                    SET id_estado_pago = :id_estado_pago,
+                        monto_total    = :monto_total,
+                        monto_cobrado  = :monto_cobrado,
+                        saldo_pendiente = :saldo_pendiente
+                    WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':id'                => $resumen->getId(),
+                ':id_estado_pago'    => $resumen->getIdEstadoPago(),
+                ':monto_total'       => $resumen->getTotal(),
+                ':monto_cobrado'     => $resumen->getMontoPagado(),
+                ':saldo_pendiente'   => $resumen->getSaldoPendiente()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::update: " . $e->getMessage());
+            throw new Exception("Error interno al actualizar el resumen de pago.");
+        }
+    }
+
+    public function listPagos(?string $search, ?string $estadoPago, int $limit, int $offset): array
+    {
+        $conditions = [];
+        $params = [];
+
+        if ($search !== null && $search !== '') {
+            $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
+            $params['search'] = "%" . $search . "%";
+            $params['search2'] = "%" . $search . "%";
+            $params['search3'] = "%" . $search . "%";
+        }
+
+        if ($estadoPago !== null && $estadoPago !== '') {
+            $conditions[] = "rp.id_estado_pago = :estado_pago";
+            $params['estado_pago'] = (int)$estadoPago;
+        }
+
+        $sql = "SELECT r.id, r.id_estado_reserva, r.fecha_entrada, r.fecha_salida,
+                       c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
+                       h.numero AS habitacion_numero,
+                       er.descripcion AS estado_descripcion,
+                       rp.id AS id_resumen_pago,
+                       rp.id_estado_pago, rp.monto_total, rp.monto_cobrado, rp.saldo_pendiente,
+                       ep.descripcion AS estado_pago_descripcion
+                FROM Reservas r
+                JOIN Clientes c ON r.id_cliente = c.id
+                JOIN Habitaciones h ON r.id_habitacion = h.id
+                JOIN Estados_Reserva er ON r.id_estado_reserva = er.id
+                LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
+                LEFT JOIN Estados_Pago ep ON rp.id_estado_pago = ep.id";
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue(':' . $key, $value);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::listPagos: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al buscar pagos.");
+        }
+    }
+
+    public function countPagos(?string $search, ?string $estadoPago): int
+    {
+        $conditions = [];
+        $params = [];
+
+        if ($search !== null && $search !== '') {
+            $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
+            $params['search'] = "%" . $search . "%";
+            $params['search2'] = "%" . $search . "%";
+            $params['search3'] = "%" . $search . "%";
+        }
+
+        if ($estadoPago !== null && $estadoPago !== '') {
+            $conditions[] = "rp.id_estado_pago = :estado_pago";
+            $params['estado_pago'] = (int)$estadoPago;
+        }
+
+        $sql = "SELECT COUNT(*)
+                FROM Reservas r
+                JOIN Clientes c ON r.id_cliente = c.id
+                JOIN Habitaciones h ON r.id_habitacion = h.id
+                LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id";
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::countPagos: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getEstadosPago(): array
+    {
+        try {
+            $stmt = $this->db->query("SELECT id, descripcion FROM Estados_Pago ORDER BY id ASC");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::getEstadosPago: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function reembolsarPorReserva(int $id_reserva): bool
+    {
+        try {
+            $resumen = $this->getByReserva($id_reserva);
+            if ($resumen === null) {
+                throw new Exception("La reserva no tiene un resumen de pago asociado.");
+            }
+
+            $sql = "UPDATE Resumen_Pago
+                    SET id_estado_pago = :estado,
+                        monto_cobrado  = :cobrado,
+                        saldo_pendiente = :saldo
+                    WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':estado'  => self::ESTADO_REEMBOLSADO,
+                ':cobrado' => 0.0,
+                ':saldo'   => 0.0,
+                ':id'      => $resumen->getId()
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::reembolsarPorReserva: " . $e->getMessage());
+            throw new Exception("Error interno al reembolsar el pago.");
         }
     }
 
