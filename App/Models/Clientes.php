@@ -293,6 +293,11 @@ class Clientes extends Model
         if (empty($clean)) {
             throw new Exception("El DNI del cliente no puede estar vacío.");
         }
+        // Normativa ICAO/OACI 9303: DNI numérico (6-8 dígitos, con o sin separador de miles)
+        // o Pasaporte alfanumérico de 5 a 9 caracteres sin caracteres especiales.
+        if (!preg_match('/^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/', $clean)) {
+            throw new Exception("El formato del DNI o Pasaporte no es válido (normativa OACI 9303).");
+        }
         $this->dni_pasaporte = $clean;
     }
 
@@ -302,9 +307,15 @@ class Clientes extends Model
     }
     public function setTelefono(string $telefono): void
     {
-        $clean = htmlspecialchars(trim($telefono), ENT_QUOTES, 'UTF-8');
-        if (empty($clean)) {
-            throw new Exception("El teléfono del cliente no puede estar vacío.");
+        $clean = trim($telefono ?? '');
+        if ($clean === '') {
+            $this->telefono = null;
+            return;
+        }
+        // Normalización UIT-T E.164: se eliminan separadores y se garantiza el prefijo "+".
+        $clean = '+' . preg_replace('/[^0-9]/', '', $clean);
+        if (!preg_match('/^\+[0-9]{8,15}$/', $clean)) {
+            throw new Exception("El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).");
         }
         $this->telefono = $clean;
     }
