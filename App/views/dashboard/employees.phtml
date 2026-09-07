@@ -99,16 +99,26 @@
                             <td><?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?></td>
                             <td><?= htmlspecialchars($emp->getEmail()) ?></td>
                             <td>
-                                        <?= htmlspecialchars($emp->getRolDescripcion() ?? 'Desconocido') ?>
+                            <?php
+                            $rolLower = strtolower(htmlspecialchars($emp->getRolDescripcion() ?? ''));
+                            $rolBadge = match ($rolLower) {
+                                'recepcionista' => 'badge--recepcionista',
+                                'gerente'       => 'badge--gerente',
+                                'auditor'       => 'badge--auditor',
+                                'administrador' => 'badge--administrador',
+                                default         => 'badge--desconocido',
+                            };
+                            ?>
+                            <span class="badge <?= $rolBadge ?>"><?= htmlspecialchars($emp->getRolDescripcion() ?? 'Desconocido') ?></span>
                             </td>
                             <td>
                                 <?php
                                 switch ($emp->getIsActive()) {
                                     case $emp::ACTIVE:
-                                        echo '<span>Activo</span>';
+                                        echo '<span class="badge badge--disponible">Activo</span>';
                                         break;
                                     case $emp::INACTIVE:
-                                        echo '<span>Inactivo</span>';
+                                        echo '<span class="badge badge--ocupada">Inactivo</span>';
                                         break;
                                     default:
                                         echo '<span class="badge badge--desconocido">Desconocido</span>';

@@ -59,7 +59,7 @@ include __DIR__ . '/../partials/head.phtml';
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
                         <li>
-                            <a href="<?= url('/maintenance') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/payments') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-money-bill-wave"></i>Pagos
                             </a>
                         </li>
