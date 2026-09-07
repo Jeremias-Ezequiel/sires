@@ -6,3 +6,16 @@ body {
     font-family: 'Montserrat', sans-serif;
     min-height: 100vh;
 }
+
+.system-footer {
+    text-align: center;
+    padding: 8px 0;
+    font-size: 9pt;
+    color: var(--texto-gris, #888);
+    border-top: 1px solid var(--color-border, #eee);
+    margin-top: 20px;
+}
+
+.system-footer .system-version {
+    font-weight: 600;
+}
