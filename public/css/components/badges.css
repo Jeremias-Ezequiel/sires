@@ -35,6 +35,12 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+.badge--administrador {
+  background: rgba(205, 164, 52, 0.1);
+  color: var(--dorado-sires);
+  border: 1px solid rgba(205, 164, 52, 0.25);
+}
+
 .badge--503 {
   display: inline-block;
   background-color: rgba(205, 164, 52, 0.1);

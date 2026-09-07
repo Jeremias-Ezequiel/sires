@@ -80,28 +80,30 @@ class Usuario extends Model
         if ($query !== null) {
             $cleanQuery = htmlspecialchars(trim($query), ENT_QUOTES, 'UTF-8');
             $search = "%" . $cleanQuery . "%";
-            $conditions[] = "(nombre LIKE :search OR apellido LIKE :search_apellido)";
+            $conditions[] = "(u.nombre LIKE :search OR u.apellido LIKE :search_apellido)";
             $params['search'] = $search;
             $params['search_apellido'] = $search;
         }
 
         if ($is_active !== null) {
-            $conditions[] = "is_active = :is_active";
+            $conditions[] = "u.is_active = :is_active";
             $params['is_active'] = (int)$is_active;
         }
 
         if ($role !== null) {
-            $conditions[] = "id_rol = :role";
+            $conditions[] = "u.id_rol = :role";
             $params['role'] = (int)$role;
         }
 
         // Construcción de la SQL con límites de paginación
-        $sql = "SELECT * FROM Usuarios";
+        $sql = "SELECT u.*, r.descripcion AS rol_descripcion
+                FROM Usuarios u
+                LEFT JOIN Roles r ON u.id_rol = r.id";
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
-        $sql .= " ORDER BY is_active DESC, id ASC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY u.is_active DESC, u.id ASC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);

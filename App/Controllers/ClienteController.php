@@ -101,11 +101,20 @@ class ClienteController
             if (empty($dni)) {
                 throw new Exception("El DNI/Pasaporte es obligatorio.");
             }
+            if (!preg_match('/^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/', $dni)) {
+                throw new Exception("El formato del DNI o Pasaporte no es válido (normativa OACI 9303).");
+            }
             if (empty($mail)) {
                 throw new Exception("El email es obligatorio.");
             }
             if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
                 throw new Exception("El formato del email no es válido.");
+            }
+            if ($telefono !== '') {
+                $telefono = '+' . preg_replace('/[^0-9]/', '', $telefono);
+                if (!preg_match('/^\+[0-9]{8,15}$/', $telefono)) {
+                    throw new Exception("El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).");
+                }
             }
             if ($idNacionalidad <= 0) {
                 throw new Exception("Debe seleccionar una nacionalidad.");
@@ -229,11 +238,20 @@ class ClienteController
             if (empty($dni)) {
                 throw new Exception("El DNI/Pasaporte es obligatorio.");
             }
+            if (!preg_match('/^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/', $dni)) {
+                throw new Exception("El formato del DNI o Pasaporte no es válido (normativa OACI 9303).");
+            }
             if (empty($mail)) {
                 throw new Exception("El email es obligatorio.");
             }
             if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
                 throw new Exception("El formato del email no es válido.");
+            }
+            if ($telefono !== '') {
+                $telefono = '+' . preg_replace('/[^0-9]/', '', $telefono);
+                if (!preg_match('/^\+[0-9]{8,15}$/', $telefono)) {
+                    throw new Exception("El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).");
+                }
             }
             if ($idNacionalidad <= 0) {
                 throw new Exception("Debe seleccionar una nacionalidad.");

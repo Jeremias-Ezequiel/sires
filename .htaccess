@@ -1,0 +1,37 @@
+# =====================================================================
+#  SIRES - CONFIGURACIÓN DE APACHE (ENRUTAMIENTO TOTAL A PHP)
+# =====================================================================
+
+RewriteEngine On
+
+# ---------------------------------------------------------------------
+# 1. BLOQUE DE SEGURIDAD OPERATIVO
+# ---------------------------------------------------------------------
+# Eliminamos el bloque <Files ".env"> para evitar que Apache corte la 
+# conexión de forma nativa y rompa el ciclo de redirección a index.php.
+
+# ---------------------------------------------------------------------
+# 2. MANEJO DE ERRORES RELATIVO (Ruta raíz del servidor)
+# ---------------------------------------------------------------------
+ErrorDocument 404 /index.php
+ErrorDocument 403 /index.php
+
+
+# ---------------------------------------------------------------------
+# 3. REGLAS DE ENRUTAMIENTO (Tubería centralizada hacia index.php)
+# ---------------------------------------------------------------------
+
+# 🛡️ ESCUDO DE SOFTWARE: Si piden el .env, App, o vendor, reescribimos 
+# silenciosamente la URL hacia index.php. PHP se va a encargar de tirar el 404/403.
+RewriteRule \.env$ index.php [QSA,L]
+RewriteRule ^(?i)App/.*$ index.php [QSA,L]
+RewriteRule ^(?i)vendor/.*$ index.php [QSA,L]
+RewriteRule ^(?i)composer\.(json|lock)$ index.php [QSA,L]
+
+# Si la petición apunta a un archivo estático REAL (CSS, JS, imágenes, etc.) se carga normalmente
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Si la ruta no existe físicamente, se la inyectamos al Front Controller
+RewriteRule ^(.*)$ index.php [QSA,L]
