@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Helpers\UrlHelper;
+
 class AuthMiddleware
 {
     public static function verifyLogin(): void
@@ -42,14 +44,19 @@ class AuthMiddleware
 
     public static function authorize(array $allowedRoles): void
     {
-        // 2. Capturamos el rol del usuario de la sesión
         $userRole = (int)($_SESSION['user_role'] ?? 0);
 
-        // 3. Verificación estricta: Si no estás en la lista, vas para afuera
         if (!in_array($userRole, $allowedRoles, true)) {
             $_SESSION['auth_error'] = "No tiene permisos suficientes para acceder a esta sección.";
 
-            header('Location:' . UrlHelper::to('/dashboard'));
+            $referer = $_SERVER['HTTP_REFERER'] ?? '';
+            $baseUrl = ($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+            if ($referer !== '' && str_starts_with($referer, $baseUrl)) {
+                header('Location: ' . $referer);
+            } else {
+                header('Location:' . UrlHelper::to('/dashboard'));
+            }
             exit;
         }
     }
