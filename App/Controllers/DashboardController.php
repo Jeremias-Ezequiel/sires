@@ -19,6 +19,9 @@ class DashboardController
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
         $rolMap = [
             Rol::ADMINISTRADOR => 'Administrador',
             Rol::RECEPCIONISTA => 'Recepcionista',
