@@ -132,6 +132,16 @@
                                     <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
                                         <button type="button"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="finalize"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-url="<?= url('/dashboard/booking/finalize?id=' . $res['id']) ?>"
+                                            title="Finalizar Reserva">
+                                            <i class="fas fa-flag-checkered"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <button type="button"
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="cancel"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
@@ -242,6 +252,12 @@
                     modalTitle.innerText = 'Confirmar Reserva';
                     modalText.innerHTML = `¿Está seguro de que desea confirmar la <br><strong>${reservaName}</strong>?`;
                     modalIcon.className = 'fas fa-check';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'finalize') {
+                    modalTitle.innerText = 'Finalizar Reserva';
+                    modalText.innerHTML = `¿Está seguro de que desea finalizar la <br><strong>${reservaName}</strong>? Se liberará la habitación.`;
+                    modalIcon.className = 'fas fa-flag-checkered';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 }

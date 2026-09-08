@@ -107,6 +107,7 @@ if (!empty($habitaciones)) {
                 <div class="form__group">
                     <label class="form__label" for="cantidad_huespedes">Cantidad de Huéspedes *</label>
                     <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? $reserva['cantidad_huespedes'])) ?>" min="1" max="10" required>
+                    <small id="precio-ocupacion-ayuda" style="display:block; margin-top:6px; color:#6b7280;">Seleccione una habitación para ver el precio.</small>
                 </div>
             </div>
         </div>
@@ -150,8 +151,20 @@ if (!empty($habitaciones)) {
             'tipo'     => $h['tipo'] ?? '',
             'estado'   => $h['estado'] ?? '',
             'precio'   => (float)($h['precio_noche_base'] ?? 0),
+            'capacidad'=> \App\Models\Habitacion::capacidadParaTipo((int)($h['id_tipo_habitacion'] ?? 0)),
         ];
-    }, $habitaciones ?? [])) ?>;
+    }, array_values($habitaciones ?? []))) ?>;
+
+    var RESERVAS = <?= json_encode(array_map(function (array $r) {
+        return [
+            'id'         => (int)$r['id'],
+            'habitacion' => (int)$r['id_habitacion'],
+            'entrada'    => $r['fecha_entrada'],
+            'salida'     => $r['fecha_salida'],
+        ];
+    }, $reservasActivas ?? [])) ?>;
+
+    var RESERVA_ID_A_IGNORAR = <?= (int)($reserva['id'] ?? 0) ?>;
 
     document.addEventListener('DOMContentLoaded', function() {
         var searchInput = document.getElementById('cliente-search');
@@ -334,10 +347,79 @@ if (!empty($habitaciones)) {
         var roomConfirmedId = parseInt(roomHidden.value) || null;
         var roomHighlightIdx = -1;
 
+        var guestInput = document.getElementById('cantidad_huespedes');
+        var entrada = document.getElementById('fecha_entrada');
+        var salida = document.getElementById('fecha_salida');
+
+        var RESERVAS_POR_HABITACION = {};
+        RESERVAS.forEach(function(r) {
+            if (!RESERVAS_POR_HABITACION[r.habitacion]) {
+                RESERVAS_POR_HABITACION[r.habitacion] = [];
+            }
+            RESERVAS_POR_HABITACION[r.habitacion].push(r);
+        });
+
+        function fechasSeSolapan(e1, s1, e2, s2) {
+            return e1 < s2 && s1 > e2;
+        }
+
+        function habitacionOcupadaEnFechas(r) {
+            var e = entrada && entrada.value;
+            var s = salida && salida.value;
+            if (!e || !s) return false;
+            var res = RESERVAS_POR_HABITACION[r.id] || [];
+            for (var i = 0; i < res.length; i++) {
+                if (res[i].id === RESERVA_ID_A_IGNORAR) continue;
+                if (fechasSeSolapan(e, s, res[i].entrada, res[i].salida)) return true;
+            }
+            return false;
+        }
+
+        var DESCUENTOS_TABLA = { 4: {1: 30, 2: 20, 3: 10, 4: 0}, 3: {1: 25, 2: 10, 3: 0}, 2: {1: 15, 2: 0} };
+
+        function descuentoOcupacion(capacidad, huespedes) {
+            var cap = DESCUENTOS_TABLA[capacidad];
+            if (!cap) return 0;
+            return (huespedes in cap) ? cap[huespedes] : 0;
+        }
+
+        function actualizarPrecioOcupacion() {
+            if (!guestInput || !roomConfirmedId) return;
+            var r = ROOMS.find(function(x) { return x.id === roomConfirmedId; });
+            var ayuda = document.getElementById('precio-ocupacion-ayuda');
+            var precioNocheEl = document.getElementById('room-precio-noche');
+            if (!r) return;
+            var huespedes = parseInt(guestInput.value, 10) || 1;
+            var dsc = descuentoOcupacion(r.capacidad, huespedes);
+            var precio = r.precio * (1 - dsc / 100);
+            if (ayuda) {
+                ayuda.textContent = 'Descuento por ocupación: ' + dsc + '% — Precio/noche: $' + precio.toFixed(2);
+            }
+            if (precioNocheEl) {
+                precioNocheEl.textContent = '$' + precio.toFixed(2) + (dsc > 0 ? ' (-' + dsc + '%)' : '');
+            }
+        }
+
+        function aplicarCapacidad(r) {
+            if (!guestInput || !r || !r.capacidad) return;
+            guestInput.max = r.capacidad;
+            var val = parseInt(guestInput.value, 10) || 1;
+            if (val > r.capacidad) {
+                guestInput.value = r.capacidad;
+            }
+            actualizarPrecioOcupacion();
+        }
+
+        if (guestInput) {
+            guestInput.addEventListener('input', actualizarPrecioOcupacion);
+            guestInput.addEventListener('change', actualizarPrecioOcupacion);
+        }
+
         if (roomConfirmedId) {
             var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
             if (match) {
                 showRoomConfirmCard(match);
+                aplicarCapacidad(match);
             }
         }
 
@@ -347,6 +429,7 @@ if (!empty($habitaciones)) {
             var exact = [];
             var partial = [];
             ROOMS.forEach(function(r) {
+                if (habitacionOcupadaEnFechas(r)) return;
                 var num = String(r.numero);
                 var label = '#' + r.numero + ' - piso ' + r.piso + ' (' + r.tipo.toLowerCase() + ')';
                 if (num === q || '#' + num === q) {
@@ -381,6 +464,7 @@ if (!empty($habitaciones)) {
                 item.dataset.tipo = r.tipo;
                 item.dataset.estado = r.estado;
                 item.dataset.precio = r.precio;
+                item.dataset.capacidad = r.capacidad;
                 var label = '#' + r.numero + ' - Piso ' + r.piso;
                 item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>';
                 item.addEventListener('click', function() {
@@ -398,6 +482,7 @@ if (!empty($habitaciones)) {
             roomSearch.setCustomValidity('');
             roomDropdown.classList.remove('open');
             showRoomConfirmCard(r);
+            aplicarCapacidad(r);
         }
 
         function showRoomConfirmCard(r) {
@@ -410,8 +495,9 @@ if (!empty($habitaciones)) {
                     '<div class="confirm-field"><span class="confirm-field-label">Habitación</span><span class="confirm-field-value">#' + escHtml(String(r.numero)) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Piso</span><span class="confirm-field-value">' + escHtml(String(r.piso)) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Tipo</span><span class="confirm-field-value">' + escHtml(r.tipo) + '</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Estado</span><span class="confirm-field-value">' + escHtml(r.estado) + '</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value">$' + escHtml(r.precio.toFixed(2)) + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Capacidad</span><span class="confirm-field-value">' + escHtml(String(r.capacidad)) + ' personas</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value">' + escHtml('Disponible para las fechas ingresadas') + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0.00</span></div>' +
                 '</div>';
             roomConfirmCard.style.display = 'block';
             roomDropdown.classList.remove('open');
@@ -466,7 +552,8 @@ if (!empty($habitaciones)) {
                         piso: parseInt(item.dataset.piso),
                         tipo: item.dataset.tipo,
                         estado: item.dataset.estado,
-                        precio: parseFloat(item.dataset.precio)
+                        precio: parseFloat(item.dataset.precio),
+                        capacidad: parseInt(item.dataset.capacidad) || 2
                     });
                 } else if (roomConfirmedId) {
                     e.preventDefault();
@@ -528,8 +615,18 @@ if (!empty($habitaciones)) {
             this.setCustomValidity('');
         });
 
-        var entrada = document.getElementById('fecha_entrada');
-        var salida = document.getElementById('fecha_salida');
+        function actualizarDisponibilidadHabitaciones() {
+            if (roomConfirmedId !== null) {
+                var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
+                if (match && habitacionOcupadaEnFechas(match)) {
+                    roomConfirmedId = null;
+                    roomHidden.value = '';
+                    roomSearch.value = '';
+                    roomConfirmCard.style.display = 'none';
+                    alert('La habitación seleccionada ya no está disponible para las fechas ingresadas.');
+                }
+            }
+        }
 
         if (entrada && salida) {
             entrada.addEventListener('change', function() {
@@ -539,6 +636,7 @@ if (!empty($habitaciones)) {
                     salida.value = nextDay.toISOString().split('T')[0];
                 }
                 salida.min = this.value;
+                actualizarDisponibilidadHabitaciones();
             });
 
             salida.addEventListener('change', function() {
@@ -546,6 +644,7 @@ if (!empty($habitaciones)) {
                     alert('La fecha de salida debe ser posterior a la fecha de entrada.');
                     this.value = '';
                 }
+                actualizarDisponibilidadHabitaciones();
             });
         }
     });
