@@ -49,6 +49,61 @@ class Reserva extends Model
         }
     }
 
+    public function getReservasActivas(): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT id, id_habitacion, fecha_entrada, fecha_salida
+                 FROM Reservas
+                 WHERE id_estado_reserva IN (:pendiente, :confirmada)
+                 ORDER BY fecha_entrada ASC"
+            );
+            $stmt->execute([
+                ':pendiente'  => self::ESTADO_PENDIENTE,
+                ':confirmada' => self::ESTADO_CONFIRMADA,
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::getReservasActivas: " . $e->getMessage());
+            throw new Exception("Error al consultar las reservas activas.");
+        }
+    }
+
+    public function existeSolapamiento(
+        int $idHabitacion,
+        string $fechaEntrada,
+        string $fechaSalida,
+        ?int $exceptoId = null
+    ): bool {
+        try {
+            $sql = "SELECT COUNT(*) FROM Reservas
+                    WHERE id_habitacion = :id_habitacion
+                      AND fecha_entrada < :fecha_salida
+                      AND fecha_salida > :fecha_entrada
+                      AND id_estado_reserva IN (:pendiente, :confirmada)";
+
+            $params = [
+                ':id_habitacion' => $idHabitacion,
+                ':fecha_entrada' => $fechaEntrada,
+                ':fecha_salida'  => $fechaSalida,
+                ':pendiente'     => self::ESTADO_PENDIENTE,
+                ':confirmada'    => self::ESTADO_CONFIRMADA,
+            ];
+
+            if ($exceptoId !== null) {
+                $sql .= " AND id <> :excepto_id";
+                $params[':excepto_id'] = $exceptoId;
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::existeSolapamiento: " . $e->getMessage());
+            throw new Exception("Error al verificar la disponibilidad de la habitación.");
+        }
+    }
+
     public function getAllWithFilters(
         ?string $search,
         ?string $estado,
@@ -180,6 +235,7 @@ class Reserva extends Model
                            c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
                            c.dni_pasaporte AS cliente_dni, c.mail AS cliente_email, c.telefono AS cliente_telefono,
                            h.numero AS habitacion_numero, h.piso AS habitacion_piso, h.precio_noche_base,
+                           h.id_tipo_habitacion,
                            th.descripcion AS tipo_habitacion_descripcion,
                            er.descripcion AS estado_descripcion,
                            co.descripcion AS canal_descripcion,
