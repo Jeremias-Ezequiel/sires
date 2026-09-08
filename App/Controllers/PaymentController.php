@@ -7,6 +7,7 @@ use App\Models\Reserva;
 use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
 use App\Models\MetodoPago;
+use App\Models\Habitacion;
 use App\Helpers\UrlHelper;
 
 class PaymentController
@@ -215,13 +216,21 @@ class PaymentController
 
     /**
      * Genera el Resumen_Pago de una reserva calculando el total por noches
-     * usando el precio base de la habitación. Retorna null si no es calculable.
+     * usando el precio base de la habitación y el descuento por ocupación.
+     * Retorna null si no es calculable. Es idempotente: si la reserva ya
+     * tiene resumen, lo devuelve sin duplicarlo.
      */
-    private function generarResumen(array $reserva): ?ResumenPago
+    public static function generarResumen(array $reserva): ?ResumenPago
     {
         try {
             if ((int)$reserva['id_estado_reserva'] === Reserva::ESTADO_CANCELADA) {
                 return null;
+            }
+
+            $resumenModel = new ResumenPago();
+            $existente = $resumenModel->getByReserva((int)$reserva['id']);
+            if ($existente !== null) {
+                return $existente;
             }
 
             $entrada = new \DateTime($reserva['fecha_entrada']);
@@ -232,7 +241,12 @@ class PaymentController
             }
 
             $noches = $entrada->diff($salida)->days;
-            $total  = (float)$reserva['precio_noche_base'] * $noches;
+            $precioNoche = Habitacion::precioNocheParaTipo(
+                (int)$reserva['id_tipo_habitacion'],
+                (float)$reserva['precio_noche_base'],
+                (int)$reserva['cantidad_huespedes']
+            );
+            $total = $precioNoche * $noches;
 
             if ($total <= 0) {
                 throw new Exception("No se pudo calcular un total válido para la reserva.");
@@ -245,12 +259,12 @@ class PaymentController
             $resumen->setMontoPagado(0.0);
             $resumen->setSaldoPendiente($total);
 
-            $saved = (new ResumenPago())->save($resumen);
+            $saved = $resumenModel->save($resumen);
             if (!$saved) {
                 throw new Exception("No se pudo crear el resumen de pago.");
             }
 
-            return (new ResumenPago())->getByReserva((int)$reserva['id']);
+            return $resumenModel->getByReserva((int)$reserva['id']);
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";

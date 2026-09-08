@@ -92,7 +92,10 @@
                         } elseif (strpos($reservaEstadoLower, 'cancel') !== false) {
                             $reservaStatusClass = 'badge--ocupada';
                         }
+
+                        $saldoPago = isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? (float)$pag['saldo_pendiente'] : 0.0;
                         ?>
+
                         <tr>
                             <td><strong>#<?= htmlspecialchars((string)$pag['id']) ?></strong></td>
                             <td><?= htmlspecialchars($pag['cliente_nombre'] . ' ' . $pag['cliente_apellido']) ?></td>
@@ -107,12 +110,17 @@
                             </td>
                             <td><?= isset($pag['monto_total']) && $pag['monto_total'] !== null ? '$' . number_format((float)$pag['monto_total'], 2, ',', '.') : '-' ?></td>
                             <td><?= isset($pag['monto_cobrado']) && $pag['monto_cobrado'] !== null ? '$' . number_format((float)$pag['monto_cobrado'], 2, ',', '.') : '-' ?></td>
-                            <td><?= isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? '$' . number_format((float)$pag['saldo_pendiente'], 2, ',', '.') : '-' ?></td>
+                            <td><?= isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? '$' . number_format($saldoPago, 2, ',', '.') : '-' ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
-                                    <a href="<?= url('/dashboard/payments/detail?id=' . $pag['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver y Registrar Pago">
-                                        <i class="fas fa-money-bill-wave"></i>
+                                    <a href="<?= url('/dashboard/payments/detail?id=' . $pag['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
+                                        <i class="fas fa-eye"></i>
                                     </a>
+                                    <?php if ($saldoPago > 0 && mb_strpos($reservaEstadoLower, 'cancel') === false): ?>
+                                        <a href="<?= url('/dashboard/payments/detail?id=' . $pag['id'] . '#registrar-nuevo-pago') ?>" class="btn btn--icon btn--icon-success" title="Registrar Nuevo Pago">
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

@@ -30,6 +30,13 @@ class Habitacion extends Model
         4 => [3],    // Suite
     ];
 
+    // Regla de negocio: descuento por ocupación según capacidad y cantidad de huéspedes (%)
+    public const DESCUENTOS_POR_CAPACIDAD = [
+        4 => [1 => 30, 2 => 20, 3 => 10, 4 => 0],
+        3 => [1 => 25, 2 => 10, 3 => 0],
+        2 => [1 => 15, 2 => 0],
+    ];
+
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
     {
         $conditions = [];
@@ -231,6 +238,20 @@ class Habitacion extends Model
         }
     }
 
+    public function cambiarEstado(int $id, int $nuevoEstado): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "UPDATE Habitaciones SET id_estado_habitacion = :nuevo WHERE id = :id"
+            );
+            $stmt->execute([':nuevo' => $nuevoEstado, ':id' => $id]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::cambiarEstado: " . $e->getMessage());
+            throw new Exception("Error interno al actualizar el estado de la habitación.");
+        }
+    }
+
     public function countByEstado(int $idEstado): int
     {
         try {
@@ -288,6 +309,32 @@ class Habitacion extends Model
     private function tiposPorCapacidad(int $capacidad): array
     {
         return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];
+    }
+
+    public static function capacidadParaTipo(int $idTipoHabitacion): int
+    {
+        foreach (self::TIPOS_POR_CAPACIDAD as $capacidad => $tipos) {
+            if (in_array($idTipoHabitacion, $tipos, true)) {
+                return $capacidad;
+            }
+        }
+        return 2;
+    }
+
+    public static function descuentoParaTipo(int $idTipoHabitacion, int $cantidadHuespedes): int
+    {
+        $capacidad = self::capacidadParaTipo($idTipoHabitacion);
+        return self::DESCUENTOS_POR_CAPACIDAD[$capacidad][$cantidadHuespedes] ?? 0;
+    }
+
+    public static function aplicarDescuento(float $precioBase, int $descuento): float
+    {
+        return round($precioBase - ($precioBase * $descuento / 100), 2);
+    }
+
+    public static function precioNocheParaTipo(int $idTipoHabitacion, float $precioBase, int $cantidadHuespedes): float
+    {
+        return self::aplicarDescuento($precioBase, self::descuentoParaTipo($idTipoHabitacion, $cantidadHuespedes));
     }
 
     // =====================================================================

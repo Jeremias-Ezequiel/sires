@@ -218,6 +218,54 @@ class ResumenPago extends Model
         }
     }
 
+    public function recalcular(array $reserva): bool
+    {
+        $resumen = $this->getByReserva((int)$reserva['id']);
+        if ($resumen === null) {
+            return false;
+        }
+
+        $entrada = new \DateTime($reserva['fecha_entrada']);
+        $salida  = new \DateTime($reserva['fecha_salida']);
+        $noches  = $entrada->diff($salida)->days;
+
+        $precioNoche = Habitacion::precioNocheParaTipo(
+            (int)$reserva['id_tipo_habitacion'],
+            (float)$reserva['precio_noche_base'],
+            (int)$reserva['cantidad_huespedes']
+        );
+        $nuevoTotal = $precioNoche * $noches;
+        $montoPagado = $resumen->getMontoPagado();
+        $nuevoSaldo = $nuevoTotal - $montoPagado;
+
+        if ($nuevoTotal <= 0) {
+            throw new Exception("No se pudo calcular un total válido para la reserva.");
+        }
+
+        if ($nuevoSaldo < 0) {
+            throw new Exception(
+                "El nuevo total ($" . number_format($nuevoTotal, 2, ',', '.') .
+                ") es menor a lo ya cobrado ($" . number_format($montoPagado, 2, ',', '.') .
+                "). No se puede recalcular la reserva."
+            );
+        }
+
+        if ($resumen->getIdEstadoPago() !== self::ESTADO_REEMBOLSADO) {
+            if ($nuevoSaldo <= 0 && $montoPagado > 0) {
+                $resumen->setIdEstadoPago(self::ESTADO_PAGADO_TOTAL);
+            } elseif ($montoPagado > 0) {
+                $resumen->setIdEstadoPago(self::ESTADO_PAGO_PARCIAL);
+            } else {
+                $resumen->setIdEstadoPago(self::ESTADO_PENDIENTE);
+            }
+        }
+
+        $resumen->setTotal($nuevoTotal);
+        $resumen->setSaldoPendiente($nuevoSaldo);
+
+        return $this->update($resumen);
+    }
+
     public function getId(): int
     {
         return $this->id;
