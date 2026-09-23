@@ -85,11 +85,6 @@ class Usuario extends Model
             $params['search_apellido'] = $search;
         }
 
-        if ($is_active !== null) {
-            $conditions[] = "u.is_active = :is_active";
-            $params['is_active'] = (int)$is_active;
-        }
-
         if ($role !== null) {
             $conditions[] = "u.id_rol = :role";
             $params['role'] = (int)$role;
@@ -103,7 +98,7 @@ class Usuario extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
-        $sql .= " ORDER BY u.is_active DESC, u.id ASC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY u.id ASC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -143,11 +138,6 @@ class Usuario extends Model
             $conditions[] = "(nombre LIKE :search OR apellido LIKE :search_apellido)";
             $params['search'] = $search;
             $params['search_apellido'] = $search;
-        }
-
-        if ($is_active !== null) {
-            $conditions[] = "is_active = :is_active";
-            $params['is_active'] = (int)$is_active;
         }
 
         if ($role !== null) {
@@ -354,18 +344,7 @@ class Usuario extends Model
     {
         try {
 
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-            }
-                if (strlen($newPassword) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-            }
+            $this->validarPassword($newPassword);
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
@@ -391,19 +370,7 @@ class Usuario extends Model
     {
         try {
 
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-            }
-            if (strlen($newPassword) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-
-            }
+            $this->validarPassword($newPassword);
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -591,10 +558,12 @@ class Usuario extends Model
     }
     public function setPassword(string $password): void
     {
+        $this->validarPassword($password);
+        $this->password = password_hash($password, PASSWORD_BCRYPT);
+    }
 
-        if (strlen($password) < 5) {
-            throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-        }
+    private function validarPassword(string $password): void
+    {
         if (strlen($password) < 8) {
             throw new Exception("La contraseña debe tener al menos 8 caracteres.");
         }
@@ -603,10 +572,7 @@ class Usuario extends Model
         }
         if (!preg_match('/\d/', $password)) {
             throw new Exception("La contraseña debe contener al menos un número.");
-
         }
-
-        $this->password = password_hash($password, PASSWORD_BCRYPT);
     }
 
     // =====================================================================

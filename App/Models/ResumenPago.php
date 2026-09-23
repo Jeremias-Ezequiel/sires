@@ -13,8 +13,8 @@ class ResumenPago extends Model
     private int $id = 0;
     private int $id_reserva = 0;
     private int $id_estado_pago = 0;
-    private float $total = 0.0;
-    private float $monto_pagado = 0.0;
+    private float $monto_total = 0.0;
+    private float $monto_cobrado = 0.0;
     private float $saldo_pendiente = 0.0;
 
     public const ESTADO_PENDIENTE = 1;
@@ -38,6 +38,22 @@ class ResumenPago extends Model
         }
     }
 
+    public function getByReservaForUpdate(int $id_reserva): ?ResumenPago
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM Resumen_Pago WHERE id_reserva = :id_reserva FOR UPDATE");
+            $stmt->execute([':id_reserva' => $id_reserva]);
+
+            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, ResumenPago::class);
+            $resumen = $stmt->fetch();
+
+            return $resumen ?: null;
+        } catch (PDOException $e) {
+            error_log("Error in getByReservaForUpdate resumen: " . $e->getMessage());
+            throw new Exception("Database error during resumen lookup.");
+        }
+    }
+
     public function save(ResumenPago $resumen): bool
     {
         try {
@@ -47,11 +63,12 @@ class ResumenPago extends Model
                 throw new Exception("La reserva ya tiene un resumen de pago asociado.");
             }
 
-            $sql = "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
-                    VALUES (:id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
+            $sql = "INSERT INTO Resumen_Pago (id, id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
+                    VALUES (:id, :id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
+                ':id'               => $this->nextId('Resumen_Pago'),
                 ':id_reserva'       => $resumen->getIdReserva(),
                 ':id_estado_pago'   => $resumen->getIdEstadoPago(),
                 ':monto_total'      => $resumen->getTotal(),
@@ -126,7 +143,7 @@ class ResumenPago extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
 
-        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY r.fecha_creacion DESC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -301,26 +318,26 @@ class ResumenPago extends Model
 
     public function getTotal(): float
     {
-        return $this->total;
+        return $this->monto_total;
     }
     public function setTotal(float $total): void
     {
         if ($total < 0) {
             throw new Exception("El total no puede ser negativo.");
         }
-        $this->total = $total;
+        $this->monto_total = $total;
     }
 
     public function getMontoPagado(): float
     {
-        return $this->monto_pagado;
+        return $this->monto_cobrado;
     }
     public function setMontoPagado(float $monto_pagado): void
     {
         if ($monto_pagado < 0) {
             throw new Exception("El monto pagado no puede ser negativo.");
         }
-        $this->monto_pagado = $monto_pagado;
+        $this->monto_cobrado = $monto_pagado;
     }
 
     public function getSaldoPendiente(): float

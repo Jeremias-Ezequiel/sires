@@ -139,11 +139,12 @@ class Clientes extends Model
                 throw new Exception("El email ya se encuentra registrado.");
             }
 
-            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, mail, observaciones)
-                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :mail, :observaciones)";
+            $sql = "INSERT INTO Clientes (id, id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, mail, observaciones)
+                    VALUES (:id, :id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :mail, :observaciones)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
+                ':id'              => $this->nextId('Clientes'),
                 ':id_nacionalidad' => $cliente->getIdNacionalidad(),
                 ':id_localidad'    => $cliente->getIdLocalidad(),
                 ':id_provincia'    => $cliente->getIdProvincia(),

@@ -33,3 +33,18 @@ function csrf_check(): void {
         throw new \Exception("Token de seguridad inválido. Intente nuevamente.");
     }
 }
+
+function csrf_check_query(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $token = $_GET['_csrf_token'] ?? '';
+    $expected = $_SESSION['_csrf_token'] ?? '';
+    if (empty($expected) || !hash_equals($expected, $token)) {
+        throw new \Exception("Token de seguridad inválido. Intente nuevamente.");
+    }
+}
+
+function csrf_token_query(string $url): string {
+    return str_contains($url, '?') ? $url . '&_csrf_token=' . csrf_token() : $url . '?_csrf_token=' . csrf_token();
+}

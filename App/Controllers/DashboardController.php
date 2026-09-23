@@ -66,6 +66,26 @@ class DashboardController
 
         $fecha_formateada = date('d/m/Y');
 
+        $esAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        if ($esAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'      => empty($errorMessage),
+                'fecha'        => $fecha_formateada,
+                'habitaciones' => array_map(static function (array $room): array {
+                    return [
+                        'numero' => $room['numero'],
+                        'piso'   => $room['piso'],
+                        'estado' => $room['estado'],
+                        'tipo'   => $room['tipo'],
+                    ];
+                }, $habitaciones),
+            ]);
+            exit;
+        }
+
         $contentView = __DIR__ . '/../views/dashboard/home.phtml';
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }

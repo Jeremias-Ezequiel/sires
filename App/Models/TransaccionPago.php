@@ -52,11 +52,12 @@ class TransaccionPago extends Model
                 throw new Exception("El monto a abonar debe ser mayor a 0.");
             }
 
-            $sql = "INSERT INTO Transacciones_Pago (id_resumen_pago, id_metodo_pago, monto_abonado, registrado_por)
-                    VALUES (:id_resumen_pago, :id_metodo_pago, :monto_abonado, :registrado_por)";
+            $sql = "INSERT INTO Transacciones_Pago (id, id_resumen_pago, id_metodo_pago, monto_abonado, fecha_hora, registrado_por)
+                    VALUES (:id, :id_resumen_pago, :id_metodo_pago, :monto_abonado, NOW(), :registrado_por)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
+                ':id'               => $this->nextId('Transacciones_Pago'),
                 ':id_resumen_pago'  => $transaccion->getIdResumenPago(),
                 ':id_metodo_pago'   => $transaccion->getIdMetodoPago(),
                 ':monto_abonado'    => $transaccion->getMontoAbonado(),

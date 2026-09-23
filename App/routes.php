@@ -283,6 +283,12 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
+    $r->addRoute('GET', '/dashboard/booking/checkin', [
+        'action' => [BookingController::class, 'checkinBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
     // Pagos
     $r->addRoute('GET', '/dashboard/payments', [
         'action' => [PaymentController::class, 'showPayments'],

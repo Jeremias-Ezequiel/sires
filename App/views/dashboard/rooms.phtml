@@ -124,7 +124,7 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="deactivate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/deactivate?id=' . $room['id']) ?>"
+                                            data-url="<?= url(csrf_token_query('/dashboard/rooms/deactivate?id=' . $room['id'])) ?>"
                                             title="Bloquear Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
@@ -133,7 +133,7 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="activate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/activate?id=' . $room['id']) ?>"
+                                            data-url="<?= url(csrf_token_query('/dashboard/rooms/activate?id=' . $room['id'])) ?>"
                                             title="Reactivar Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>

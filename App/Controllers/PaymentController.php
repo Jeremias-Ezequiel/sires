@@ -150,53 +150,67 @@ class PaymentController
             }
 
             $resumenModel = new ResumenPago();
-            $resumen = $resumenModel->getByReserva($idReserva);
+            $db = $resumenModel->getConnection();
+            $db->beginTransaction();
 
-            if ($resumen === null) {
-                $resumen = $this->generarResumen($reserva);
-            }
+            try {
+                $resumen = $resumenModel->getByReservaForUpdate($idReserva);
 
-            if ($resumen === null) {
-                throw new Exception("No se pudo generar el resumen de pago de la reserva.");
-            }
+                if ($resumen === null) {
+                    $resumen = self::generarResumen($reserva, $resumenModel);
+                }
 
-            if ($resumen->getSaldoPendiente() <= 0) {
-                throw new Exception("La reserva ya se encuentra totalmente pagada.");
-            }
+                if ($resumen === null) {
+                    throw new Exception("No se pudo generar el resumen de pago de la reserva.");
+                }
 
-            if ($montoAbonado > $resumen->getSaldoPendiente()) {
-                throw new Exception("El monto ingresado supera el saldo pendiente de $" . number_format($resumen->getSaldoPendiente(), 2, ',', '.') . ".");
-            }
+                if ($resumen->getSaldoPendiente() <= 0) {
+                    throw new Exception("La reserva ya se encuentra totalmente pagada.");
+                }
 
-            $transaccion = new TransaccionPago();
-            $transaccion->setIdResumenPago($resumen->getId());
-            $transaccion->setIdMetodoPago($idMetodoPago);
-            $transaccion->setMontoAbonado($montoAbonado);
-            $transaccion->setRegistradoPor((int)($_SESSION['user_id'] ?? 0));
+                if ($montoAbonado > $resumen->getSaldoPendiente()) {
+                    throw new Exception("El monto ingresado supera el saldo pendiente de $" . number_format($resumen->getSaldoPendiente(), 2, ',', '.') . ".");
+                }
 
-            $success = (new TransaccionPago())->save($transaccion);
-            if (!$success) {
-                throw new Exception("No se pudo registrar la transacción de pago.");
-            }
+                $transaccion = new TransaccionPago();
+                $transaccion->setIdResumenPago($resumen->getId());
+                $transaccion->setIdMetodoPago($idMetodoPago);
+                $transaccion->setMontoAbonado($montoAbonado);
+                $transaccion->setRegistradoPor((int)($_SESSION['user_id'] ?? 0));
 
-            $nuevoMontoPagado = $resumen->getMontoPagado() + $montoAbonado;
-            $nuevoSaldo       = $resumen->getSaldoPendiente() - $montoAbonado;
+                $transaccionModel = new TransaccionPago();
+                $transaccionModel->setConnection($db);
+                $success = $transaccionModel->save($transaccion);
+                if (!$success) {
+                    throw new Exception("No se pudo registrar la transacción de pago.");
+                }
 
-            if ($nuevoSaldo <= 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
-            } elseif ($nuevoMontoPagado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
-            } else {
-                $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
-            }
+                $nuevoMontoPagado = $resumen->getMontoPagado() + $montoAbonado;
+                $nuevoSaldo       = $resumen->getSaldoPendiente() - $montoAbonado;
 
-            $resumen->setIdEstadoPago($nuevoEstado);
-            $resumen->setMontoPagado($nuevoMontoPagado);
-            $resumen->setSaldoPendiente($nuevoSaldo);
+                if ($nuevoSaldo <= 0) {
+                    $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
+                } elseif ($nuevoMontoPagado > 0) {
+                    $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
+                } else {
+                    $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
+                }
 
-            $updated = $resumenModel->update($resumen);
-            if (!$updated) {
-                throw new Exception("No se pudo actualizar el resumen de pago.");
+                $resumen->setIdEstadoPago($nuevoEstado);
+                $resumen->setMontoPagado($nuevoMontoPagado);
+                $resumen->setSaldoPendiente($nuevoSaldo);
+
+                $updated = $resumenModel->update($resumen);
+                if (!$updated) {
+                    throw new Exception("No se pudo actualizar el resumen de pago.");
+                }
+
+                $db->commit();
+            } catch (Exception $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                throw $e;
             }
 
             $_SESSION['flash_message'] = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
@@ -220,14 +234,14 @@ class PaymentController
      * Retorna null si no es calculable. Es idempotente: si la reserva ya
      * tiene resumen, lo devuelve sin duplicarlo.
      */
-    public static function generarResumen(array $reserva): ?ResumenPago
+    public static function generarResumen(array $reserva, ?ResumenPago $resumenModel = null): ?ResumenPago
     {
         try {
             if ((int)$reserva['id_estado_reserva'] === Reserva::ESTADO_CANCELADA) {
                 return null;
             }
 
-            $resumenModel = new ResumenPago();
+            $resumenModel = $resumenModel ?? new ResumenPago();
             $existente = $resumenModel->getByReserva((int)$reserva['id']);
             if ($existente !== null) {
                 return $existente;

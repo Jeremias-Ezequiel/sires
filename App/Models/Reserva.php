@@ -132,7 +132,7 @@ class Reserva extends Model
         }
 
         $sql = "SELECT r.id, r.fecha_entrada, r.fecha_salida, r.cantidad_huespedes,
-                       r.observaciones, r.fecha_alta,
+                       r.observaciones, r.fecha_creacion,
                        c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
                        h.numero AS habitacion_numero,
                        er.descripcion AS estado_descripcion,
@@ -148,7 +148,7 @@ class Reserva extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
 
-        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY r.fecha_creacion DESC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -268,11 +268,12 @@ class Reserva extends Model
                 throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
             }
 
-            $sql = "INSERT INTO Reservas (id_cliente, id_habitacion, id_estado_reserva, id_canal_origen, fecha_entrada, fecha_salida, cantidad_huespedes, observaciones, creado_por, fecha_alta)
-                    VALUES (:id_cliente, :id_habitacion, :id_estado_reserva, :id_canal_origen, :fecha_entrada, :fecha_salida, :cantidad_huespedes, :observaciones, :creado_por, NOW())";
+            $sql = "INSERT INTO Reservas (id, id_cliente, id_habitacion, id_estado_reserva, id_canal_origen, fecha_entrada, fecha_salida, cantidad_huespedes, observaciones, creado_por, fecha_creacion)
+                    VALUES (:id, :id_cliente, :id_habitacion, :id_estado_reserva, :id_canal_origen, :fecha_entrada, :fecha_salida, :cantidad_huespedes, :observaciones, :creado_por, NOW())";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
+                ':id'                 => $this->nextId('Reservas'),
                 ':id_cliente'         => $reserva->getIdCliente(),
                 ':id_habitacion'      => $reserva->getIdHabitacion(),
                 ':id_estado_reserva'  => self::ESTADO_PENDIENTE,

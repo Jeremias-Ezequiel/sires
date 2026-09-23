@@ -20,4 +20,16 @@ abstract class Model
     {
         return $this->db;
     }
+
+    public function setConnection(PDO $db): void
+    {
+        $this->db = $db;
+    }
+
+    protected function nextId(string $table): int
+    {
+        $stmt = $this->db->prepare("SELECT COALESCE(MAX(id), 0) + 1 FROM {$table}");
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
 }

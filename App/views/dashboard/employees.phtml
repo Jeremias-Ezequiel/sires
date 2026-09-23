@@ -146,7 +146,7 @@
                                             class="emp-action-btn btn-deactivate-hover open-sires-modal" 
                                             data-action="deactivate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="<?= url('/dashboard/employees/deactivate?id=' . $emp->getId()) ?>"
+                                            data-url="<?= url(csrf_token_query('/dashboard/employees/deactivate?id=' . $emp->getId())) ?>"
                                             title="Dar de Baja Empleado">
                                             <i class="fas fa-user-minus"></i>
                                         </button>
@@ -156,7 +156,7 @@
                                             class="emp-action-btn btn-activate-hover open-sires-modal" 
                                             data-action="activate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="<?= url('/dashboard/employees/activate?id=' . $emp->getId()) ?>"
+                                            data-url="<?= url(csrf_token_query('/dashboard/employees/activate?id=' . $emp->getId())) ?>"
                                             title="Reactivar Empleado">
                                             <i class="fas fa-user-plus"></i>
                                         </button>

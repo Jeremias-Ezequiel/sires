@@ -8,7 +8,14 @@
             <a href="<?= url('/dashboard/booking/edit?id=' . $reserva['id']) ?>" class="btn btn--primary">
                 <i class="fas fa-edit"></i> Editar
             </a>
-            <a href="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>" class="btn btn--primary">
+        <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+            <a href="<?= url(csrf_token_query('/dashboard/booking/checkin?id=' . $reserva['id'])) ?>" class="btn btn--primary">
+                <i class="fas fa-sign-in-alt"></i> Check-in
+            </a>
+        <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+            <a href="<?= url(csrf_token_query('/dashboard/booking/finalize?id=' . $reserva['id'])) ?>" class="btn btn--primary">
                 <i class="fas fa-flag-checkered"></i> Finalizar
             </a>
         <?php endif; ?>
@@ -80,7 +87,7 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
                 </tr>
                 <tr>
                     <td class="detail-label">Fecha de Alta</td>
-                    <td class="detail-value"><?= htmlspecialchars($reserva['fecha_alta'] ?? '') ?></td>
+                    <td class="detail-value"><?= htmlspecialchars($reserva['fecha_creacion'] ?? '') ?></td>
                 </tr>
                 <tr>
                     <td class="detail-label">Fecha de Entrada</td>

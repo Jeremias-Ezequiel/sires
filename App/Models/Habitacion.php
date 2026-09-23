@@ -127,11 +127,12 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
 
-            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+            $sql = "INSERT INTO Habitaciones (id, numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
+                    VALUES (:id, :numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
+                ':id'                   => $this->nextId('Habitaciones'),
                 ':numero'               => $habitacion->getNumero(),
                 ':piso'                 => $habitacion->getPiso(),
                 ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
@@ -250,6 +251,35 @@ class Habitacion extends Model
             error_log("Error en Habitacion::cambiarEstado: " . $e->getMessage());
             throw new Exception("Error interno al actualizar el estado de la habitación.");
         }
+    }
+
+    /**
+     * Lee el estado actual de una habitación dentro de la conexión/transacción recibida.
+     */
+    public static function estadoEn(\PDO $db, int $id): int
+    {
+        $stmt = $db->prepare("SELECT id_estado_habitacion FROM Habitaciones WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Cambia el estado de una habitación dentro de la conexión/transacción recibida,
+     * opcionalmente solo si el estado actual coincide con $soloSiEstaEn.
+     */
+    public static function cambiarEstadoEn(\PDO $db, int $id, int $nuevoEstado, ?int $soloSiEstaEn = null): bool
+    {
+        $sql = "UPDATE Habitaciones SET id_estado_habitacion = :nuevo WHERE id = :id";
+        $params = [':nuevo' => $nuevoEstado, ':id' => $id];
+
+        if ($soloSiEstaEn !== null) {
+            $sql .= " AND id_estado_habitacion = :actual";
+            $params[':actual'] = $soloSiEstaEn;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount() > 0;
     }
 
     public function countByEstado(int $idEstado): int

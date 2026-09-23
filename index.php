@@ -11,6 +11,14 @@ use App\Core\ErrorHandler;
 
 ErrorHandler::register();
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => !empty($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Strict'
+]);
+
 try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
@@ -55,7 +63,7 @@ try {
             $vars = $routeInfo[2];
 
             foreach ($_GET as $key => $value) {
-                if ($key !== 'route') {
+                if ($key !== 'route' && !isset($vars[$key]) && !is_array($value)) {
                     $vars[$key] = $value;
                 }
             }
