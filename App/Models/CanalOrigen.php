@@ -12,7 +12,7 @@ class CanalOrigen extends Model
 {
     private int $id;
     private string $descripcion;
-    private int $is_active = 1;
+    private int $is_active;
 
     public const BOOKING = 1;
     public const WEB_PROPIA = 2;
@@ -22,7 +22,7 @@ class CanalOrigen extends Model
     public function getAll(): ?array
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, descripcion FROM Canal_Origen ORDER BY id ASC");
+            $stmt = $this->db->prepare("SELECT id, descripcion, is_active FROM Canal_Origen ORDER BY id ASC");
             $stmt->execute();
 
             $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, CanalOrigen::class);

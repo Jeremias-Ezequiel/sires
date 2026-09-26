@@ -90,6 +90,11 @@ class Usuario extends Model
             $params['role'] = (int)$role;
         }
 
+        if ($is_active !== null) {
+            $conditions[] = "u.is_active = :is_active";
+            $params['is_active'] = (int)$is_active;
+        }
+
         // Construcción de la SQL con límites de paginación
         $sql = "SELECT u.*, r.descripcion AS rol_descripcion
                 FROM Usuarios u
@@ -98,7 +103,7 @@ class Usuario extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
-        $sql .= " ORDER BY u.id ASC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY u.is_active DESC, u.id ASC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -143,6 +148,11 @@ class Usuario extends Model
         if ($role !== null) {
             $conditions[] = "id_rol = :role";
             $params['role'] = (int)$role;
+        }
+
+        if ($is_active !== null) {
+            $conditions[] = "is_active = :is_active";
+            $params['is_active'] = (int)$is_active;
         }
 
         $sql = "SELECT COUNT(*) FROM Usuarios";

@@ -127,12 +127,11 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
 
-            $sql = "INSERT INTO Habitaciones (id, numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                    VALUES (:id, :numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
+                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                ':id'                   => $this->nextId('Habitaciones'),
                 ':numero'               => $habitacion->getNumero(),
                 ':piso'                 => $habitacion->getPiso(),
                 ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),

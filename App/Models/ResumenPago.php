@@ -63,12 +63,11 @@ class ResumenPago extends Model
                 throw new Exception("La reserva ya tiene un resumen de pago asociado.");
             }
 
-            $sql = "INSERT INTO Resumen_Pago (id, id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
-                    VALUES (:id, :id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
+            $sql = "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
+                    VALUES (:id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                ':id'               => $this->nextId('Resumen_Pago'),
                 ':id_reserva'       => $resumen->getIdReserva(),
                 ':id_estado_pago'   => $resumen->getIdEstadoPago(),
                 ':monto_total'      => $resumen->getTotal(),
@@ -143,7 +142,7 @@ class ResumenPago extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
 
-        $sql .= " ORDER BY r.fecha_creacion DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);

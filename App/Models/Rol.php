@@ -15,7 +15,7 @@ class Rol extends Model
     // =====================================================================
     private int $id;
     private string $descripcion;
-    private int $is_active = 1; // ⚡ Flag de control para habilitar/deshabilitar roles
+    private int $is_active; // ⚡ Flag de control para habilitar/deshabilitar roles
 
     // Constantes de negocio de SIRES (Se mantienen idénticas y firmes)
     public const ADMINISTRADOR = 1;
@@ -34,7 +34,10 @@ class Rol extends Model
     public function getAll(bool $onlyActive = true): ?array
     {
         try {
-            $sql = "SELECT id, descripcion FROM Roles";
+            $sql = "SELECT id, descripcion, is_active FROM Roles";
+            if ($onlyActive) {
+                $sql .= " WHERE is_active = 1";
+            }
             $sql .= " ORDER BY id ASC";
 
             $stmt = $this->db->prepare($sql);

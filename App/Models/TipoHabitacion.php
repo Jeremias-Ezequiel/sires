@@ -12,7 +12,7 @@ class TipoHabitacion extends Model
 {
     private int $id;
     private string $descripcion;
-    private int $is_active = 1;
+    private int $is_active;
 
     public const SIMPLE = 1;
     public const DOBLE = 2;
@@ -22,7 +22,7 @@ class TipoHabitacion extends Model
     public function getAll(): ?array
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, descripcion FROM Tipos_Habitacion ORDER BY id ASC");
+            $stmt = $this->db->prepare("SELECT id, descripcion, is_active FROM Tipos_Habitacion ORDER BY id ASC");
             $stmt->execute();
 
             $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, TipoHabitacion::class);
