@@ -53,6 +53,57 @@
   margin-bottom: 15px;
 }
 
+.form__hint {
+  display: block;
+  font-size: 12px;
+  color: var(--texto-gris);
+  margin-top: -4px;
+  line-height: 1.5;
+}
+
+.form__hint i {
+  margin-right: 5px;
+}
+
+/* ===== Password checklist (requisitos en vivo) ===== */
+.password-checklist {
+  list-style: none;
+  margin: 6px 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.password-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--texto-gris);
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.password-checklist li::marker {
+  content: none;
+}
+
+.password-checklist li i {
+  font-size: 11px;
+  color: var(--texto-gris);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.password-checklist li.is-valid,
+.password-checklist li.is-valid i {
+  color: var(--color-success);
+}
+
+.password-checklist li.is-valid i {
+  transform: scale(1.15);
+}
+
 .form__row {
   display: flex;
   gap: 15px;
@@ -71,6 +122,13 @@
 
 .form__grid--3 {
   grid-template-columns: repeat(3, 1fr);
+}
+
+/* Fila de credenciales: 2 columnas equilibradas con separacion vertical */
+.form__grid--credentials {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  margin-top: 24px;
 }
 
 .form__section-title {

@@ -20,4 +20,9 @@ abstract class Model
     {
         return $this->db;
     }
+
+    public function setConnection(PDO $db): void
+    {
+        $this->db = $db;
+    }
 }

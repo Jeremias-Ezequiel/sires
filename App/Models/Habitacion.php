@@ -252,6 +252,35 @@ class Habitacion extends Model
         }
     }
 
+    /**
+     * Lee el estado actual de una habitación dentro de la conexión/transacción recibida.
+     */
+    public static function estadoEn(\PDO $db, int $id): int
+    {
+        $stmt = $db->prepare("SELECT id_estado_habitacion FROM Habitaciones WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Cambia el estado de una habitación dentro de la conexión/transacción recibida,
+     * opcionalmente solo si el estado actual coincide con $soloSiEstaEn.
+     */
+    public static function cambiarEstadoEn(\PDO $db, int $id, int $nuevoEstado, ?int $soloSiEstaEn = null): bool
+    {
+        $sql = "UPDATE Habitaciones SET id_estado_habitacion = :nuevo WHERE id = :id";
+        $params = [':nuevo' => $nuevoEstado, ':id' => $id];
+
+        if ($soloSiEstaEn !== null) {
+            $sql .= " AND id_estado_habitacion = :actual";
+            $params[':actual'] = $soloSiEstaEn;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount() > 0;
+    }
+
     public function countByEstado(int $idEstado): int
     {
         try {

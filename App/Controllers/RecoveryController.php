@@ -44,6 +44,8 @@ class RecoveryController
         }
 
         try {
+            csrf_check();
+
             $userModel = new Usuario();
             $usuario = $userModel->findByEmail($email);
 
@@ -114,7 +116,8 @@ class RecoveryController
             exit;
         } catch (Exception $e) {
             // Atrapamos cualquier error de PHPMailer o Base de datos y lo mostramos en el formulario
-            $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Detalle: " . $mail->ErrorInfo;
+            $detalle = (isset($mail) && is_object($mail)) ? $mail->ErrorInfo : $e->getMessage();
+            $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Detalle: " . $detalle;
             header('Location: ' . UrlHelper::to('/password/recovery'));
             exit;
         }
@@ -149,6 +152,14 @@ class RecoveryController
         $token           = $_POST['token'] ?? '';
         $password        = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        try {
+            csrf_check();
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
+            exit;
+        }
 
         // 1. Validaciones básicas de la interfaz de usuario
         if (empty($password) || empty($confirmPassword)) {

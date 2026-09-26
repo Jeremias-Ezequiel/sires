@@ -68,6 +68,12 @@ include __DIR__ . '/../partials/head.phtml';
                         <input type="password" name="confirm_password" placeholder="••••••••" required class="form__input">
                     </div>
                 </div>
+                <p class="form__hint"><i class="fa-solid fa-circle-info"></i> La contraseña debe cumplir:</p>
+                <ul class="password-checklist" id="password-checklist">
+                    <li id="ruleLength"><i class="fa-solid fa-circle"></i> Mínimo 8 caracteres</li>
+                    <li id="ruleUpper"><i class="fa-solid fa-circle"></i> Una letra mayúscula</li>
+                    <li id="ruleNumber"><i class="fa-solid fa-circle"></i> Al menos un número</li>
+                </ul>
 
                 <label class="form__label">Asignar Rol del Sistema</label>
                 <select name="rol" required class="form__select">
@@ -145,6 +151,19 @@ include __DIR__ . '/../partials/head.phtml';
                     confirmPassword.style.borderColor = '';
                 });
             });
+
+            // ✅ Checklist en vivo de requisitos de contraseña
+            const checklist = document.getElementById('password-checklist');
+            function actualizarChecklist() {
+                const val = password.value;
+                document.getElementById('ruleLength').classList.toggle('is-valid', val.length >= 8);
+                document.getElementById('ruleUpper').classList.toggle('is-valid', /[A-Z]/.test(val));
+                document.getElementById('ruleNumber').classList.toggle('is-valid', /\d/.test(val));
+            }
+            if (checklist) {
+                password.addEventListener('input', actualizarChecklist);
+                actualizarChecklist();
+            }
         });
     </script>
 

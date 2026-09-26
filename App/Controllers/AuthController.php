@@ -27,6 +27,19 @@ class AuthController
             // 0. Verificamos el token CSRF para prevenir falsificación de solicitudes
             csrf_check();
 
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+
+            // Throttle: máximo 5 intentos fallidos cada 15 minutos por sesión
+            $intentos = (int)($_SESSION['login_attempts'] ?? 0);
+            $ultimo   = (int)($_SESSION['login_attempt_time'] ?? 0);
+
+            if ($intentos >= 5 && (time() - $ultimo) < 900) {
+                $espera = 900 - (time() - $ultimo);
+                throw new Exception("Demasiados intentos fallidos. Intente nuevamente en " . (int)ceil($espera / 60) . " minuto(s).");
+            }
+
             // 1. Capturamos los datos crudos del formulario directamente
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
@@ -57,10 +70,10 @@ class AuthController
                 throw new Exception("Su cuenta se encuentra desactivada. Contacte a un administrador.");
             }
 
-            // 8. Iniciar sesión exitosa si todo salió bien
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
+            // 8. Iniciar sesión exitosa si todo salió bien y renovamos la sesión
+            session_regenerate_id(true);
+
+            unset($_SESSION['login_attempts'], $_SESSION['login_attempt_time']);
 
             $_SESSION['user_name'] = $user->getNombre();
             $_SESSION['user_id'] = $user->getId();
@@ -74,6 +87,9 @@ class AuthController
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+
+            $_SESSION['login_attempts'] = (int)($_SESSION['login_attempts'] ?? 0) + 1;
+            $_SESSION['login_attempt_time'] = time();
 
             $_SESSION['auth_error'] = $e->getMessage();
             header('Location:' . UrlHelper::to('/login'));

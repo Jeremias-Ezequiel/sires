@@ -142,25 +142,29 @@
             <div></div>
         </div>
 
-        <!-- Fila Inferior: Contraseñas desglosadas -->
-        <div class="form__grid form__grid--3" style="margin-top: 15px;">
+        <!-- Fila Inferior: Contraseñas en 2 columnas -->
+        <div class="form__grid form__grid--credentials">
             <div class="form__group">
-                <label class="form__label" for="password">Contraseña</label>
+                <label class="form__label" for="password">Nueva Contraseña</label>
                 <div class="form__password">
-                    <input type="password" id="password" name="password" placeholder="Mínimo 5 carac." required class="form__input">
-                    <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--texto-gris);"></i>
+                    <input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" required class="form__input" autocomplete="new-password">
+                    <i class="fa-solid fa-eye" id="togglePassword"></i>
                 </div>
+                <p class="form__hint"><i class="fa-solid fa-circle-info"></i> La contraseña debe cumplir:</p>
+                <ul class="password-checklist" id="password-checklist">
+                    <li id="ruleLength"><i class="fa-solid fa-circle"></i> Mínimo 8 caracteres</li>
+                    <li id="ruleUpper"><i class="fa-solid fa-circle"></i> Una letra mayúscula</li>
+                    <li id="ruleNumber"><i class="fa-solid fa-circle"></i> Al menos un número</li>
+                </ul>
             </div>
 
             <div class="form__group">
-                <label class="form__label" for="confirm_password">Confirmar Contraseña</label>
+                <label class="form__label" for="confirm_password">Confirmar Nueva Contraseña</label>
                 <div class="form__password">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Repetir clave" required class="form__input">
-                    <i class="fa-solid fa-eye" id="toggleConfirmPassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--texto-gris);"></i>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Repita la contraseña" required class="form__input" autocomplete="new-password">
+                    <i class="fa-solid fa-eye" id="toggleConfirmPassword"></i>
                 </div>
             </div>
-
-            <div></div>
         </div>
 
         <div class="form-actions-footer">
@@ -182,7 +186,33 @@
         const inputFecha = document.getElementById('fecha_nacimiento');
         const inputCuil = document.getElementById('cuil');
         const inputPass = document.getElementById('password');
+
+        // Checklist en vivo de requisitos de contraseña
+        const checklist = {
+            'ruleLength': { fn: v => v.length >= 8, elem: document.getElementById('ruleLength') },
+            'ruleUpper':  { fn: v => /[A-Z]/.test(v), elem: document.getElementById('ruleUpper') },
+            'ruleNumber': { fn: v => /\d/.test(v), elem: document.getElementById('ruleNumber') }
+        };
+
+        function actualizarChecklistPassword() {
+            const val = inputPass?.value ?? '';
+            Object.keys(checklist).forEach(function(id) {
+                const item = checklist[id];
+                if (!item || !item.elem) return;
+                const ok = item.fn(val);
+                item.elem.classList.toggle('is-valid', ok);
+                const icon = item.elem.querySelector('i');
+                if (icon) icon.className = 'fa-solid ' + (ok ? 'fa-circle-check' : 'fa-circle');
+            });
+        }
+
+        if (inputPass) {
+            inputPass.addEventListener('input', actualizarChecklistPassword);
+            actualizarChecklistPassword();
+        }
+
         const inputConfirmPass = document.getElementById('confirm_password');
+
         const selectRol = document.getElementById('id_rol');
         const selectNacionalidad = document.getElementById('id_nacionalidad');
         const selectProvincia = document.getElementById('id_provincia');
