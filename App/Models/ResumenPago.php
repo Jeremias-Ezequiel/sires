@@ -66,9 +66,8 @@ class ResumenPago extends Model
      *
      * Hospedaje: precio por noche ya descontado por ocupacion, por la cantidad
      * de noches. Consumos: la suma de los consumos cargados a la reserva.
-     * Impuestos: se calculan sobre el subtotal (hospedaje + consumos).
      *
-     * @return array{hospedaje: float, consumos: float, impuestos: float, total: float}
+     * @return array{hospedaje: float, consumos: float, total: float}
      */
     public function calcularDesglose(array $reserva): array
     {
@@ -94,34 +93,12 @@ class ResumenPago extends Model
 
         $hospedaje = round($precioNoche * $noches, 2);
         $consumos  = $this->totalConsumosDe((int)$reserva['id']);
-        $subtotal  = round($hospedaje + $consumos, 2);
-
-        // Calcular impuestos sobre el subtotal
-        $impuestos = $this->calcularImpuestos($subtotal);
 
         return [
             'hospedaje' => $hospedaje,
             'consumos'  => $consumos,
-            'impuestos' => $impuestos,
-            'total'     => round($subtotal + $impuestos, 2),
+            'total'     => round($hospedaje + $consumos, 2),
         ];
-    }
-
-    /**
-     * Calcular el total de impuestos sobre un subtotal.
-     *
-     * Suma todos los impuestos activos del sistema.
-     */
-    public function calcularImpuestos(float $subtotal): float
-    {
-        try {
-            $stmt = $this->db->query("SELECT COALESCE(SUM(porcentaje), 0) FROM Impuestos WHERE is_active = 1");
-            $porcentajeTotal = (float)$stmt->fetchColumn();
-            return round($subtotal * $porcentajeTotal / 100, 2);
-        } catch (PDOException $e) {
-            error_log("Error en ResumenPago::calcularImpuestos: " . $e->getMessage());
-            return 0.0;
-        }
     }
 
     /**
