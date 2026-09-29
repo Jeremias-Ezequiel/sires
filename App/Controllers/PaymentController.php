@@ -6,8 +6,8 @@ use Exception;
 use App\Models\Reserva;
 use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
+use App\Models\Auditoria;
 use App\Models\MetodoPago;
-use App\Models\Habitacion;
 use App\Helpers\UrlHelper;
 
 class PaymentController
@@ -140,6 +140,16 @@ class PaymentController
                 throw new Exception("El monto a abonar debe ser mayor a 0.");
             }
 
+            // Clave de idempotencia. La manda el hidden input del formulario y
+            // sirve para que un reenvio (doble click, F5, respuesta perdida)
+            // no cobre dos veces. Si viene vacia o con formato raro, se genera
+            // una aca: peor que no proteger, pero nunca romper el pago legitimo
+            // de alguien con la pagina cacheada.
+            $idempotencyKey = self::normalizarClave($_POST['idempotency_key'] ?? null);
+            if ($idempotencyKey === null) {
+                $idempotencyKey = bin2hex(random_bytes(16));
+            }
+
             $reserva = (new Reserva())->findById($idReserva);
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
@@ -172,18 +182,37 @@ class PaymentController
                     throw new Exception("El monto ingresado supera el saldo pendiente de $" . number_format($resumen->getSaldoPendiente(), 2, ',', '.') . ".");
                 }
 
+                // Estado previo del resumen, para que la bitacora guarde el diff
+                // y no solo el valor final. Se toma aca, todavia dentro de la
+                // transaccion y antes de que $resumen se modifique.
+                $montoAntes = $resumen->getMontoPagado();
+                $saldoAntes = $resumen->getSaldoPendiente();
+                $estadoAntes = $resumen->getIdEstadoPago();
+
                 $transaccion = new TransaccionPago();
                 $transaccion->setIdResumenPago($resumen->getId());
                 $transaccion->setIdMetodoPago($idMetodoPago);
                 $transaccion->setMontoAbonado($montoAbonado);
                 $transaccion->setRegistradoPor((int)($_SESSION['user_id'] ?? 0));
+                $transaccion->setIdempotencyKey($idempotencyKey);
 
                 $transaccionModel = new TransaccionPago();
                 $transaccionModel->setConnection($db);
+
+                // Chequeo previo para el caso normal de un reenvio. Va dentro de
+                // la transaccion y sobre la misma conexion para no abrir una
+                // segunda. El indice unico sigue cubriendo la carrera entre dos
+                // requests simultaneos, que esta consulta no puede evitar.
+                if ($transaccionModel->existeClave($idempotencyKey)) {
+                    throw new Exception("Este pago ya fue registrado. No se cobró dos veces.");
+                }
+
                 $success = $transaccionModel->save($transaccion);
                 if (!$success) {
                     throw new Exception("No se pudo registrar la transacción de pago.");
                 }
+
+                $nuevoIdTransaccion = (int) $db->lastInsertId();
 
                 $nuevoMontoPagado = $resumen->getMontoPagado() + $montoAbonado;
                 $nuevoSaldo       = $resumen->getSaldoPendiente() - $montoAbonado;
@@ -213,6 +242,22 @@ class PaymentController
                 throw $e;
             }
 
+            // La auditoria va DESPUES del commit, y por eso solo en el camino
+            // de exito. Adentro de la transaccion un rollback borraria el
+            // registro junto con el pago, y quedaria el rastro de un cobro que
+            // en realidad no ocurrio.
+            (new Auditoria())->registrar(
+                Auditoria::PAGO,
+                'transacciones_pago',
+                $nuevoIdTransaccion,
+                "Abono de $" . number_format($montoAbonado, 2, ',', '.')
+                    . " sobre la reserva #{$idReserva} (saldo: $"
+                    . number_format($saldoAntes, 2, ',', '.') . " -> $"
+                    . number_format($nuevoSaldo, 2, ',', '.') . ")",
+                ['monto_pagado' => $montoAntes, 'saldo_pendiente' => $saldoAntes, 'estado' => $estadoAntes],
+                ['monto_pagado' => $nuevoMontoPagado, 'saldo_pendiente' => $nuevoSaldo, 'estado' => $nuevoEstado]
+            );
+
             $_SESSION['flash_message'] = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
             $_SESSION['flash_status']  = "success";
 
@@ -226,6 +271,32 @@ class PaymentController
             header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . (int)($_POST['id_reserva'] ?? 0)));
             exit;
         }
+    }
+
+    /**
+     * Valida la clave que manda el navegador. Solo pasa el hex de 32 a 64
+     * caracteres, que es lo que genera bin2hex(random_bytes(16)).
+     * Devuelve null si no es valida, para que el llamador genere una propia.
+     */
+    public static function normalizarClave(mixed $cruda): ?string
+    {
+        if (!is_string($cruda)) {
+            return null;
+        }
+
+        $limpia = strtolower(trim($cruda));
+
+        return preg_match('/^[0-9a-f]{32,64}$/', $limpia) === 1 ? $limpia : null;
+    }
+
+    /**
+     * Genera el valor del hidden input idempotency_key del formulario de pago.
+     * Se llama desde la vista en cada render, asi que un formulario nuevo
+     * siempre arranca con una clave nueva.
+     */
+    public static function nuevaClaveIdempotencia(): string
+    {
+        return bin2hex(random_bytes(16));
     }
 
     /**
@@ -247,20 +318,13 @@ class PaymentController
                 return $existente;
             }
 
-            $entrada = new \DateTime($reserva['fecha_entrada']);
-            $salida  = new \DateTime($reserva['fecha_salida']);
-
-            if ($salida <= $entrada) {
-                throw new Exception("La reserva no tiene fechas válidas para calcular el total.");
-            }
-
-            $noches = $entrada->diff($salida)->days;
-            $precioNoche = Habitacion::precioNocheParaTipo(
-                (int)$reserva['id_tipo_habitacion'],
-                (float)$reserva['precio_noche_base'],
-                (int)$reserva['cantidad_huespedes']
-            );
-            $total = $precioNoche * $noches;
+            // El desglose lo calcula el modelo: hospedaje por noches mas los
+            // consumos cargados. Si se armara el total aca a mano, el detalle
+            // volveria a quedar en 0 y el CHECK de la base lo rechazaria.
+            // calcularDesglose() tambien valida que la salida sea posterior a
+            // la entrada y avisa con un mensaje si las fechas no cierran.
+            $desglose = $resumenModel->calcularDesglose($reserva);
+            $total = $desglose['total'];
 
             if ($total <= 0) {
                 throw new Exception("No se pudo calcular un total válido para la reserva.");
@@ -269,7 +333,7 @@ class PaymentController
             $resumen = new ResumenPago();
             $resumen->setIdReserva((int)$reserva['id']);
             $resumen->setIdEstadoPago(ResumenPago::ESTADO_PENDIENTE);
-            $resumen->setTotal($total);
+            $resumen->setDesglose($desglose['hospedaje'], $desglose['consumos']);
             $resumen->setMontoPagado(0.0);
             $resumen->setSaldoPendiente($total);
 

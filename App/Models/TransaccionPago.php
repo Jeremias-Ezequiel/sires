@@ -16,6 +16,7 @@ class TransaccionPago extends Model
     private float $monto_abonado;
     private string $fecha_hora;
     private int $registrado_por;
+    private ?string $idempotency_key = null;
 
     public const ESTADO_PENDIENTE = 1;
     public const ESTADO_PAGO_PARCIAL = 2;
@@ -52,19 +53,59 @@ class TransaccionPago extends Model
                 throw new Exception("El monto a abonar debe ser mayor a 0.");
             }
 
-            $sql = "INSERT INTO Transacciones_Pago (id_resumen_pago, id_metodo_pago, monto_abonado, registrado_por)
-                    VALUES (:id_resumen_pago, :id_metodo_pago, :monto_abonado, :registrado_por)";
+            $sql = "INSERT INTO Transacciones_Pago (id_resumen_pago, id_metodo_pago, monto_abonado, registrado_por, idempotency_key)
+                    VALUES (:id_resumen_pago, :id_metodo_pago, :monto_abonado, :registrado_por, :idempotency_key)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 ':id_resumen_pago'  => $transaccion->getIdResumenPago(),
                 ':id_metodo_pago'   => $transaccion->getIdMetodoPago(),
                 ':monto_abonado'    => $transaccion->getMontoAbonado(),
-                ':registrado_por'   => $transaccion->getRegistradoPor()
+                ':registrado_por'   => $transaccion->getRegistradoPor(),
+                ':idempotency_key'  => $transaccion->getIdempotencyKey()
             ]);
         } catch (PDOException $e) {
+            // 23000 = violation de integridad. La unica que puede aparecer aca en
+            // la practica es el indice unico ux_transacciones_idempotencia: el
+            // cliente reenvio el formulario (doble click, F5, respuesta perdida).
+            // Es justo lo que la clave debe evitar, asi que no es una falla del
+            // servidor sino un reenvio del usuario.
+            if (self::esClaveDuplicada($e)) {
+                error_log("Pago duplicado bloqueado por idempotency_key: " . $e->getMessage());
+                throw new Exception("Este pago ya fue registrado. No se cobró dos veces.");
+            }
+
             error_log("Error en TransaccionPago::save: " . $e->getMessage());
             throw new Exception("Error interno al registrar la transacción.");
+        }
+    }
+
+    /**
+     * SQLSTATE 23000 con codigo MySQL 1062 = valor duplicado en indice unico.
+     */
+    public static function esClaveDuplicada(PDOException $e): bool
+    {
+        return $e->getCode() === '23000'
+            && isset($e->errorInfo[1])
+            && (int)$e->errorInfo[1] === 1062;
+    }
+
+    /**
+     * Chequeo previo del indice unico, para dar un mensaje claro en el caso
+     * normal de un reenvio del formulario. El indice unico sigue siendo la
+     * garantia real contra dos requests simultaneos con la misma clave.
+     */
+    public function existeClave(string $idempotency_key): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT 1 FROM Transacciones_Pago WHERE idempotency_key = :clave LIMIT 1"
+            );
+            $stmt->execute([':clave' => $idempotency_key]);
+            return $stmt->fetchColumn() !== false;
+        } catch (PDOException $e) {
+            error_log("Error en TransaccionPago::existeClave: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -154,5 +195,34 @@ class TransaccionPago extends Model
             throw new Exception("El usuario registrador no es válido.");
         }
         $this->registrado_por = $registrado_por;
+    }
+
+    public function getIdempotencyKey(): ?string
+    {
+        return $this->idempotency_key;
+    }
+
+    /**
+     * La clave viene del navegador, asi que no se confía en ella: solo se
+     * aceptan hex de 32 a 64 caracteres, que es lo que genera
+     * bin2hex(random_bytes(16)) (32) con margen para ampliarlo.
+     * Cualquier otra cosa es NULL, y NULL no activa el indice unico, asi que
+     * un cliente hostil no puede romper el sistema mandando basura.
+     */
+    public function setIdempotencyKey(?string $idempotency_key): void
+    {
+        if ($idempotency_key === null) {
+            $this->idempotency_key = null;
+            return;
+        }
+
+        $limpia = strtolower(trim($idempotency_key));
+
+        if (!preg_match('/^[0-9a-f]{32,64}$/', $limpia)) {
+            $this->idempotency_key = null;
+            return;
+        }
+
+        $this->idempotency_key = $limpia;
     }
 }

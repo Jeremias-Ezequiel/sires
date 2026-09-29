@@ -24,6 +24,21 @@ class Reserva extends Model
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
+    // Desglose de huespedes y duracion.
+    //
+    // Estas tres columnas existen en la base desde el principio pero no las
+    // escribia NINGUN codigo: quedaban siempre con su valor por defecto
+    // (adultos=1, ninos=0, noches=1) aunque la reserva fuera de 4 personas y
+    // 7 noches. El reporte de ocupacion y el CHECK de la base dependian de
+    // datos que nadie alimentaba.
+    //
+    // noches no se pide en el formulario a proposito: se deriva de las fechas,
+    // que son la unica fuente de verdad. Si se pidiera, dos personas podrian
+    // cargar 3 noches para un tramo de 2.
+    private int $adultos = 1;
+    private int $ninos = 0;
+    private int $noches = 1;
+
     public const ESTADO_PENDIENTE = 1;
     public const ESTADO_CONFIRMADA = 2;
     public const ESTADO_CANCELADA = 3;
@@ -268,8 +283,26 @@ class Reserva extends Model
                 throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
             }
 
-            $sql = "INSERT INTO Reservas (id_cliente, id_habitacion, id_estado_reserva, id_canal_origen, fecha_entrada, fecha_salida, cantidad_huespedes, observaciones, creado_por, fecha_alta)
-                    VALUES (:id_cliente, :id_habitacion, :id_estado_reserva, :id_canal_origen, :fecha_entrada, :fecha_salida, :cantidad_huespedes, :observaciones, :creado_por, NOW())";
+            // noches se deriva de las fechas acá adentro, no viene del
+            // formulario. El CHECK de la base (noches >= 1) igual lo revisa,
+            // pero es mejor fallar con este mensaje que con un error de MySQL.
+            $reserva->setNoches($reserva->calcularNoches());
+
+            $adultos = $reserva->getAdultos();
+            $ninos = $reserva->getNinos();
+            if ($adultos + $ninos < 1) {
+                throw new Exception("La reserva debe tener al menos un huésped.");
+            }
+            if ($adultos + $ninos !== $reserva->getCantidadHuespedes()) {
+                throw new Exception(
+                    "El desglose de huéspedes no coincide con el total: "
+                    . "{$adultos} adultos + {$ninos} niños no suman "
+                    . "{$reserva->getCantidadHuespedes()} huéspedes."
+                );
+            }
+
+            $sql = "INSERT INTO Reservas (id_cliente, id_habitacion, id_estado_reserva, id_canal_origen, fecha_entrada, fecha_salida, cantidad_huespedes, noches, adultos, ninos, observaciones, creado_por, fecha_alta)
+                    VALUES (:id_cliente, :id_habitacion, :id_estado_reserva, :id_canal_origen, :fecha_entrada, :fecha_salida, :cantidad_huespedes, :noches, :adultos, :ninos, :observaciones, :creado_por, NOW())";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -280,6 +313,9 @@ class Reserva extends Model
                 ':fecha_entrada'      => $reserva->getFechaEntrada(),
                 ':fecha_salida'       => $reserva->getFechaSalida(),
                 ':cantidad_huespedes' => $reserva->getCantidadHuespedes(),
+                ':noches'             => $reserva->getNoches(),
+                ':adultos'            => $reserva->getAdultos(),
+                ':ninos'              => $reserva->getNinos(),
                 ':observaciones'      => $reserva->getObservaciones(),
                 ':creado_por'         => $reserva->getCreadoPor()
             ]);
@@ -296,6 +332,23 @@ class Reserva extends Model
                 throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
             }
 
+            // Al editar, las noches se vuelven a derivar: si el usuario cambia
+            // las fechas y no el campo noches, este tiene que ajustarse solo.
+            $reserva->setNoches($reserva->calcularNoches());
+
+            $adultos = $reserva->getAdultos();
+            $ninos = $reserva->getNinos();
+            if ($adultos + $ninos < 1) {
+                throw new Exception("La reserva debe tener al menos un huésped.");
+            }
+            if ($adultos + $ninos !== $reserva->getCantidadHuespedes()) {
+                throw new Exception(
+                    "El desglose de huéspedes no coincide con el total: "
+                    . "{$adultos} adultos + {$ninos} niños no suman "
+                    . "{$reserva->getCantidadHuespedes()} huéspedes."
+                );
+            }
+
             $sql = "UPDATE Reservas
                     SET id_cliente = :id_cliente,
                         id_habitacion = :id_habitacion,
@@ -303,6 +356,9 @@ class Reserva extends Model
                         fecha_entrada = :fecha_entrada,
                         fecha_salida = :fecha_salida,
                         cantidad_huespedes = :cantidad_huespedes,
+                        noches = :noches,
+                        adultos = :adultos,
+                        ninos = :ninos,
                         observaciones = :observaciones
                     WHERE id = :id AND id_estado_reserva IN (:pendiente, :confirmada)";
 
@@ -315,6 +371,9 @@ class Reserva extends Model
                 ':fecha_entrada'     => $reserva->getFechaEntrada(),
                 ':fecha_salida'      => $reserva->getFechaSalida(),
                 ':cantidad_huespedes'=> $reserva->getCantidadHuespedes(),
+                ':noches'            => $reserva->getNoches(),
+                ':adultos'           => $reserva->getAdultos(),
+                ':ninos'             => $reserva->getNinos(),
                 ':observaciones'     => $reserva->getObservaciones(),
                 ':pendiente'         => self::ESTADO_PENDIENTE,
                 ':confirmada'        => self::ESTADO_CONFIRMADA
@@ -436,6 +495,92 @@ class Reserva extends Model
             throw new Exception("La cantidad de huéspedes debe ser al menos 1.");
         }
         $this->cantidad_huespedes = $cantidad_huespedes;
+    }
+
+    public function getAdultos(): int
+    {
+        return $this->adultos;
+    }
+    public function setAdultos(int $adultos): void
+    {
+        if ($adultos < 0) {
+            throw new Exception("La cantidad de adultos no puede ser negativa.");
+        }
+        $this->adultos = $adultos;
+    }
+
+    public function getNinos(): int
+    {
+        return $this->ninos;
+    }
+    public function setNinos(int $ninos): void
+    {
+        if ($ninos < 0) {
+            throw new Exception("La cantidad de niños no puede ser negativa.");
+        }
+        $this->ninos = $ninos;
+    }
+
+    public function getNoches(): int
+    {
+        return $this->noches;
+    }
+    public function setNoches(int $noches): void
+    {
+        if ($noches < 1) {
+            throw new Exception("La reserva debe durar al menos una noche.");
+        }
+        $this->noches = $noches;
+    }
+
+    /**
+     * Cantidad de noches entre la entrada y la salida.
+     *
+     * Es la unica fuente de verdad de "noches". Los dos campos son strings
+     * Y-m-d que ya valido setFechaEntrada/setFechaSalida al cargar, pero un
+     * DateTime lanza la excepcion si el formato fuera raro, que es preferible
+     * a que DATEDIFF devuelva NULL en silencio.
+     */
+    public function calcularNoches(): int
+    {
+        $entrada = new \DateTime($this->fecha_entrada);
+        $salida  = new \DateTime($this->fecha_salida);
+
+        // diff() devuelve la diferencia en valor absoluto: con la salida antes
+        // que la entrada daria un numero positivo y la reserva pasaria como si
+        // fuera una estadia de N noches. Se compara el orden antes de restar.
+        if ($salida <= $entrada) {
+            throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
+        }
+
+        $noches = $entrada->diff($salida)->days;
+
+        if ($noches < 1) {
+            throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
+        }
+
+        return $noches;
+    }
+
+    /**
+     * Fija el desglose de huespedes a partir de los dos campos que si pide el
+     * formulario (adultos y ninos) y deja cantidad_huespedes como la suma.
+     *
+     * cantidad_huespedes se deriva en vez de aceptarse por separado: si los
+     * tres se pidieran sueltos, "3 adultos + 1 nio" con 5 huespedes pasaria la
+     * validacion y el reporte contaria gente de mas.
+     */
+    public function setDistribucionHuespedes(int $adultos, int $ninos): void
+    {
+        $this->setAdultos($adultos);
+        $this->setNinos($ninos);
+
+        $total = $adultos + $ninos;
+        if ($total < 1) {
+            throw new Exception("La reserva debe tener al menos un huésped.");
+        }
+
+        $this->setCantidadHuespedes($total);
     }
 
     public function getObservaciones(): ?string

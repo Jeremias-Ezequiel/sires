@@ -1,0 +1,111 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Historial de Huésped</h1>
+        <p>Reservas de <?= htmlspecialchars($cliente['nombre'] . ' ' . $cliente['apellido']) ?></p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/clients') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver a Clientes
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section">
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <tbody>
+                <tr>
+                    <td class="detail-label">Cliente</td>
+                    <td class="detail-value"><strong><?= htmlspecialchars($cliente['nombre'] . ' ' . $cliente['apellido']) ?></strong></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">DNI/Pasaporte</td>
+                    <td class="detail-value"><?= htmlspecialchars($cliente['dni_pasaporte']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Teléfono</td>
+                    <td class="detail-value"><?= htmlspecialchars($cliente['telefono'] ?? 'No registrado') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Email</td>
+                    <td class="detail-value"><?= htmlspecialchars($cliente['mail'] ?? 'No registrado') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Total de Reservas</td>
+                    <td class="detail-value"><?= count($reservas) ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<?php if (!empty($reservas)): ?>
+    <section class="details-section">
+        <h3 style="margin-bottom: 15px;">Reservas</h3>
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Habitación</th>
+                        <th>Fecha Entrada</th>
+                        <th>Fecha Salida</th>
+                        <th>Noches</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($reservas as $reserva):
+                        $estadoLower = mb_strtolower($reserva['estado_reserva'] ?? '', 'UTF-8');
+                        $statusClass = 'badge--disponible';
+                        if (strpos($estadoLower, 'pendient') !== false) {
+                            $statusClass = 'badge--pendiente';
+                        } elseif (strpos($estadoLower, 'confirm') !== false) {
+                            $statusClass = 'badge--reservada';
+                        } elseif (strpos($estadoLower, 'cancel') !== false) {
+                            $statusClass = 'badge--ocupada';
+                        } elseif (strpos($estadoLower, 'finaliz') !== false) {
+                            $statusClass = 'badge--disponible';
+                        }
+
+                        $saldo = isset($reserva['saldo_pendiente']) && $reserva['saldo_pendiente'] !== null ? (float)$reserva['saldo_pendiente'] : 0.0;
+                        $noches = (new DateTime($reserva['fecha_entrada']))->diff(new DateTime($reserva['fecha_salida']))->days;
+                    ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$reserva['id']) ?></strong></td>
+                            <td>#<?= htmlspecialchars((string)$reserva['habitacion_numero']) ?> (Piso <?= htmlspecialchars((string)$reserva['habitacion_piso']) ?>)</td>
+                            <td><?= htmlspecialchars($reserva['fecha_entrada']) ?></td>
+                            <td><?= htmlspecialchars($reserva['fecha_salida']) ?></td>
+                            <td><?= $noches ?></td>
+                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($reserva['estado_reserva']) ?></span></td>
+                            <td><?= isset($reserva['monto_total']) && $reserva['monto_total'] !== null ? '$' . number_format((float)$reserva['monto_total'], 2, ',', '.') : '-' ?></td>
+                            <td style="<?= $saldo > 0 ? 'color: #dc3545; font-weight: bold;' : 'color: #28a745;' ?>">
+                                <?= isset($reserva['saldo_pendiente']) && $reserva['saldo_pendiente'] !== null ? '$' . number_format($saldo, 2, ',', '.') : '-' ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-history"></i>
+            </div>
+            <h3>Sin reservas</h3>
+            <p>Este cliente no tiene reservas registradas.</p>
+        </div>
+    </section>
+<?php endif; ?>

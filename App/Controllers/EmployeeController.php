@@ -339,6 +339,30 @@ class EmployeeController
     /**
      * Procesa la baja lógica de un empleado (Inactivación)
      */
+    /**
+     * Lee el id del empleado de una peticion que cambia estado.
+     *
+     * Activar y desactivar empleados son rutas POST, no GET. Con GET, un
+     * <img src=".../employees/deactivate?id=3"> pegado en cualquier pagina
+     * alcanzaba para dar de baja a un compañero, y ademas estas acciones no
+     * tenian ninguna verificacion CSRF. El token va en el cuerpo del POST y el
+     * id tambien, para que no se pueda disparar desde otro origen.
+     */
+    private function idDeEmpleado(array $vars): int
+    {
+        $id = $_POST['id'] ?? $vars['id'] ?? null;
+
+        if ($id === null || $id === '') {
+            throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
+        }
+
+        if (filter_var($id, FILTER_VALIDATE_INT) === false) {
+            throw new Exception("El ID tiene que ser estrictamente un número entero.");
+        }
+
+        return (int)$id;
+    }
+
     public function deactivateEmployee(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -346,18 +370,13 @@ class EmployeeController
         }
 
         try {
-            $idToDeactivate = $vars['id'] ?? '';
-            
-            if (empty($idToDeactivate)) {
-                throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
-            }
+            csrf_check();
 
-            if (filter_var($idToDeactivate, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
+            $idToDeactivate = $this->idDeEmpleado($vars);
+
             $userModel = new Usuario();            
             // Si ya estaba inactivo o no existe, el modelo devuelve false usando rowCount()
-            if (!$userModel->deactivate((int)$idToDeactivate)) {
+            if (!$userModel->deactivate($idToDeactivate)) {
                 throw new Exception("El empleado no existe o ya se encuentra inactivo en el sistema.");
             }
 
@@ -386,19 +405,13 @@ class EmployeeController
         }
 
         try {
-            $idToActivate = $vars['id'] ?? '';
-            
-            if (empty($idToActivate)) {
-                throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
-            }
+            csrf_check();
 
-            if (filter_var($idToActivate, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
-            
+            $idToActivate = $this->idDeEmpleado($vars);
+
             $userModel = new Usuario();            
             // Si ya estaba activo o no existe, el modelo devuelve false usando rowCount()
-            if (!$userModel->activate((int)$idToActivate)) {
+            if (!$userModel->activate($idToActivate)) {
                 throw new Exception("El empleado no existe o ya se encuentra activo en el sistema.");
             }
 

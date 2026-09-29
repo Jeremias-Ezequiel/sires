@@ -51,8 +51,16 @@ include __DIR__ . '/../partials/head.phtml';
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'rooms.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-bed"></i>Habitaciones
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
+                        <li>
+                            <a href="<?= url('/dashboard/housekeeping') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'housekeeping.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-broom"></i>Housekeeping
                             </a>
                         </li>
                     <?php endif; ?>
@@ -66,9 +74,15 @@ include __DIR__ . '/../partials/head.phtml';
                     <?php endif; ?>
 
                     <li>
-                        <a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;">
-                            <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
-                        </a>
+                        <!-- El cierre de sesion va por POST: con un GET, un
+                             <img src="/logout"> en cualquier pagina alcanzaba
+                             para cerrarle la sesion al usuario. -->
+                        <form method="POST" action="<?= url('/logout') ?>" class="nav-form">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="nav-link nav-link--button" style="color: #ef4444;">
+                                <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </nav>

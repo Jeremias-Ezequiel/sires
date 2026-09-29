@@ -23,6 +23,37 @@ function csrf_field(): string {
     return '<input type="hidden" name="_csrf_token" value="' . csrf_token() . '">';
 }
 
+/**
+ * IP real del cliente, para throttling y auditoria.
+ *
+ * Solo se lee REMOTE_ADDR a proposito: X-Forwarded-For lo manda el cliente y
+ * cualquier visitante lo puede forjar para esquivar el limite de intentos. Si
+ * algun dia se pone la app detras de un proxy, hay que corregir esto a mano
+ * con la IP real del proxy, no confiando en la cabecera.
+ *
+ * @return string|null null solo en CLI, donde no hay request.
+ */
+function client_ip(): ?string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+    if (!is_string($ip) || $ip === '') {
+        return null;
+    }
+    // 45 es el largo maximo de una IPv6 con zona.
+    return substr($ip, 0, 45);
+}
+
+/**
+ * User-Agent recortado, solo para auditoria. Viene del cliente, asi que se
+ * acota el largo para no guardarle basura gigante en la base.
+ */
+function client_user_agent(int $max = 255): ?string {
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
+    if (!is_string($ua) || $ua === '') {
+        return null;
+    }
+    return substr($ua, 0, $max);
+}
+
 function csrf_check(): void {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();

@@ -71,6 +71,10 @@
                             <td><?= htmlspecialchars($cli->getMail() ?? '') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
+                                    <a href="<?= url('/dashboard/clients/history?id=' . $cli->getId()) ?>"
+                                        class="btn btn--icon btn--icon-pass" title="Ver Historial">
+                                        <i class="fas fa-history"></i>
+                                    </a>
                                     <a href="<?= url('/dashboard/clients/edit?id=' . $cli->getId()) ?>"
                                         class="btn btn--icon btn--icon-edit" title="Modificar Datos">
                                         <i class="fas fa-edit"></i>

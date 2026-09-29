@@ -97,6 +97,7 @@
                         <th>Tipo</th>
                         <th>Estado</th>
                         <th>Precio/Noche</th>
+                        <th>Descripción</th>
                         <th class="col-actions">Acciones</th>
                     </tr>
                 </thead>
@@ -111,6 +112,7 @@
                             <td><?= htmlspecialchars($room['tipo']) ?></td>
                             <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
+                            <td class="col-descripcion"><?= htmlspecialchars($room['descripcion'] ?? '') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
                                     <a href="<?= url('/dashboard/rooms/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
@@ -124,7 +126,8 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="deactivate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/rooms/deactivate?id=' . $room['id'])) ?>"
+                                            data-url="<?= url('/dashboard/rooms/deactivate') ?>"
+                                    data-id="<?= (int)$room['id'] ?>"
                                             title="Bloquear Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
@@ -133,7 +136,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="activate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/rooms/activate?id=' . $room['id'])) ?>"
+                                            data-url="<?= url('/dashboard/rooms/activate') ?>"
+                                    data-id="<?= (int)$room['id'] ?>"
                                             title="Reactivar Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
@@ -165,6 +169,16 @@
 <?php endif; ?>
 
 <!-- MODAL DE CONFIRMACIÓN SIRES -->
+<!--
+    Bloqueo y desbloqueo de habitaciones por POST. Antes eran enlaces GET sin
+    verificacion CSRF: un <img src=".../rooms/deactivate?id=8"> en cualquier
+    pagina alcanzaba para dejar una habitacion fuera de servicio.
+-->
+<form method="POST" action="" id="sires-room-action-form" class="is-hidden">
+    <?= csrf_field() ?>
+    <input type="hidden" name="id" id="sires-room-action-id" value="">
+</form>
+
 <div id="sires-confirm-modal" class="modal">
     <div class="modal__box">
         <div id="modal-icon-frame" class="modal__icon">
@@ -174,7 +188,7 @@
         <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
         <div class="modal__actions">
             <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+            <button type="button" id="btn-modal-confirm" class="btn">Confirmar</button>
         </div>
     </div>
 </div>
@@ -188,6 +202,8 @@
         const modalText = document.getElementById('modal-description-text');
         const btnConfirm = document.getElementById('btn-modal-confirm');
         const btnCancel = document.getElementById('btn-modal-cancel');
+        const actionForm = document.getElementById('sires-room-action-form');
+        const actionId = document.getElementById('sires-room-action-id');
 
         const buttons = document.querySelectorAll('.open-sires-modal');
         buttons.forEach(button => {
@@ -213,10 +229,22 @@
                     btnConfirm.classList.add('btn--success');
                 }
 
-                btnConfirm.setAttribute('href', targetUrl);
+                // Dejamos el destino y el id listos en el formulario. El envio
+                // ocurre recien al confirmar, no al abrir el modal.
+                actionForm.action = targetUrl;
+                actionId.value = this.getAttribute('data-id');
 
                 modal.classList.add('is-active');
             });
+        });
+
+        // Antes el boton era un <a href> y navegaba. Ahora envia el formulario
+        // por POST, que es lo que aceptan estas rutas.
+        btnConfirm.addEventListener('click', function() {
+            if (!actionForm.action) {
+                return;
+            }
+            actionForm.submit();
         });
 
         btnCancel.addEventListener('click', function() {

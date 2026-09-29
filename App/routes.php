@@ -11,6 +11,7 @@ use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
+use App\Controllers\HousekeepingController;
 use App\Controllers\ApiController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
@@ -38,8 +39,10 @@ return function (RouteCollector $r) {
         'action' => [AuthController::class, 'login']
     ]);
 
-    // Cerrar sesión
-    $r->addRoute('GET', '/logout', [
+    // Cerrar sesión. Va por POST a propósito: con un GET se dispara solo desde
+    // un <img> o un link externo, y aunque no roba datos, sí alcanza para taparle
+    // la sesión al usuario a quien le rlantee la banda.
+    $r->addRoute('POST', '/logout', [
         'action' => [AuthController::class, 'logout']
     ]);
 
@@ -135,13 +138,13 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/deactivate', [
+    $r->addRoute('POST', '/dashboard/employees/deactivate', [
         'action' => [EmployeeController::class, 'deactivateEmployee'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/activate', [
+    $r->addRoute('POST', '/dashboard/employees/activate', [
         'action' => [EmployeeController::class, 'activateEmployee'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
@@ -216,13 +219,13 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
+    $r->addRoute('POST', '/dashboard/rooms/deactivate', [
         'action' => [RoomController::class, 'deactivateRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/activate', [
+    $r->addRoute('POST', '/dashboard/rooms/activate', [
         'action' => [RoomController::class, 'activateRoom'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
@@ -265,25 +268,25 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/cancel', [
+    $r->addRoute('POST', '/dashboard/booking/cancel', [
         'action' => [BookingController::class, 'cancelBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/confirm', [
+    $r->addRoute('POST', '/dashboard/booking/confirm', [
         'action' => [BookingController::class, 'confirmBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/finalize', [
+    $r->addRoute('POST', '/dashboard/booking/finalize', [
         'action' => [BookingController::class, 'finalizeBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/checkin', [
+    $r->addRoute('POST', '/dashboard/booking/checkin', [
         'action' => [BookingController::class, 'checkinBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
@@ -306,6 +309,62 @@ return function (RouteCollector $r) {
         'action' => [PaymentController::class, 'addPayment'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    // Housekeeping
+    $r->addRoute('GET', '/dashboard/housekeeping', [
+        'action' => [HousekeepingController::class, 'showHousekeeping'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/housekeeping/add', [
+        'action' => [HousekeepingController::class, 'showNewTaskForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/add/process', [
+        'action' => [HousekeepingController::class, 'addTask'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/housekeeping/detail', [
+        'action' => [HousekeepingController::class, 'showTaskDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/complete', [
+        'action' => [HousekeepingController::class, 'completeTask'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/inspect', [
+        'action' => [HousekeepingController::class, 'inspectTask'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/housekeeping/insumos', [
+        'action' => [HousekeepingController::class, 'showInsumos'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/insumos/update', [
+        'action' => [HousekeepingController::class, 'updateStock'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Historial de Huéspedes
+    $r->addRoute('GET', '/dashboard/clients/history', [
+        'action' => [ClienteController::class, 'showClientHistory'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
 };

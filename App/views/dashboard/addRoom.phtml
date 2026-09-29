@@ -32,6 +32,7 @@
             <div class="form__group">
                 <label class="form__label" for="numero">Número de Habitación</label>
                 <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
+                <small class="form__hint" id="sugerencia-numero"></small>
             </div>
 
             <div class="form__group">
@@ -75,6 +76,15 @@
                 <label class="form__label" for="precio_noche_base">Precio por Noche ($)</label>
                 <input type="number" id="precio_noche_base" name="precio_noche_base" placeholder="Ej: 15000.00" required class="form__input" autocomplete="off" min="0" step="0.01" value="<?= htmlspecialchars($_POST['precio_noche_base'] ?? $old['precio_noche_base'] ?? '') ?>">
             </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-align-left"></i> Descripción
+        </div>
+
+        <div class="form__group">
+            <label class="form__label" for="descripcion">Descripción de la Habitación</label>
+            <textarea id="descripcion" name="descripcion" placeholder="Ej: Habitación con vista al mar, cama king size, balcón privado..." class="form__textarea" rows="4"><?= htmlspecialchars($_POST['descripcion'] ?? $old['descripcion'] ?? '') ?></textarea>
         </div>
 
         <div class="form__actions">
@@ -165,6 +175,25 @@
                     });
                 }
             });
+        }
+
+        // Sugerencia de número consecutivo según piso
+        const sugerencias = <?= json_encode($sugerencias ?? []) ?>;
+        const sugerenciaNumero = document.getElementById('sugerencia-numero');
+
+        function actualizarSugerencia() {
+            const piso = inputPiso.value;
+            if (piso && sugerencias[piso]) {
+                sugerenciaNumero.textContent = `Sugerencia: habitación #${sugerencias[piso]} (consecutiva en piso ${piso})`;
+                sugerenciaNumero.style.color = '#10b981';
+            } else {
+                sugerenciaNumero.textContent = '';
+            }
+        }
+
+        if (inputPiso) {
+            inputPiso.addEventListener('change', actualizarSugerencia);
+            inputPiso.addEventListener('input', actualizarSugerencia);
         }
     });
 </script>

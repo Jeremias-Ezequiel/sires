@@ -42,6 +42,12 @@ class RoomController
         $estados = $roomModel->getEstadosHabitacion();
         $pisos = $roomModel->getPisos();
 
+        // Obtener sugerencia de número para cada piso
+        $sugerencias = [];
+        foreach ($pisos as $piso) {
+            $sugerencias[$piso] = $roomModel->siguienteNumeroSugerido((int)$piso);
+        }
+
         $contentView = __DIR__ . '/../views/dashboard/rooms.phtml';
 
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
@@ -71,6 +77,13 @@ class RoomController
         $roomModel = new Habitacion();
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();
+        $pisos = $roomModel->getPisos();
+
+        // Obtener sugerencia de número para cada piso
+        $sugerencias = [];
+        foreach ($pisos as $piso) {
+            $sugerencias[$piso] = $roomModel->siguienteNumeroSugerido((int)$piso);
+        }
 
         $contentView = __DIR__ . '/../views/dashboard/addRoom.phtml';
 
@@ -89,6 +102,7 @@ class RoomController
             $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
             $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
             $precioNoche = $_POST['precio_noche_base'] ?? '';
+            $descripcion = $_POST['descripcion'] ?? '';
 
             if (empty($numero) || (int)$numero <= 0) {
                 throw new Exception("El número de habitación es obligatorio y debe ser mayor a 0.");
@@ -110,12 +124,20 @@ class RoomController
                 throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
             }
 
+            // Validar consecutividad
+            $habitacionModel = new Habitacion();
+            $validacion = $habitacionModel->validarConsecutividad((int)$numero, (int)$piso);
+            if (!$validacion['es_consecutivo']) {
+                throw new Exception($validacion['mensaje']);
+            }
+
             $habitacion = new Habitacion();
             $habitacion->setNumero((int)$numero);
             $habitacion->setPiso((int)$piso);
             $habitacion->setIdTipoHabitacion((int)$idTipo);
             $habitacion->setIdEstadoHabitacion((int)$idEstado);
             $habitacion->setPrecioNocheBase((float)$precioNoche);
+            $habitacion->setDescripcion($descripcion);
 
             $success = $habitacion->save($habitacion);
 
@@ -201,6 +223,7 @@ class RoomController
             $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
             $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
             $precioNoche = $_POST['precio_noche_base'] ?? '';
+            $descripcion = $_POST['descripcion'] ?? '';
 
             if (empty($id) || (int)$id <= 0) {
                 throw new Exception("Ocurrió un error al seleccionar la habitación.");
@@ -226,6 +249,13 @@ class RoomController
                 throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
             }
 
+            // Validar consecutividad (excluyendo la habitación actual)
+            $habitacionModel = new Habitacion();
+            $validacion = $habitacionModel->validarConsecutividad((int)$numero, (int)$piso, (int)$id);
+            if (!$validacion['es_consecutivo']) {
+                throw new Exception($validacion['mensaje']);
+            }
+
             $habitacion = new Habitacion();
             $habitacion->setId((int)$id);
             $habitacion->setNumero((int)$numero);
@@ -233,6 +263,7 @@ class RoomController
             $habitacion->setIdTipoHabitacion((int)$idTipo);
             $habitacion->setIdEstadoHabitacion((int)$idEstado);
             $habitacion->setPrecioNocheBase((float)$precioNoche);
+            $habitacion->setDescripcion($descripcion);
 
             $success = $habitacion->update($habitacion);
 
@@ -293,6 +324,29 @@ class RoomController
         }
     }
 
+    /**
+     * Lee el id de la habitacion de una peticion que cambia estado.
+     *
+     * Bloquear y desbloquear habitaciones son rutas POST. Con GET, un
+     * <img src=".../rooms/deactivate?id=8"> desde cualquier pagina alcanzaba
+     * para dejar fuera de servicio una habitacion, y estas acciones tampoco
+     * tenian verificacion CSRF.
+     */
+    private function idDeHabitacion(array $vars): int
+    {
+        $id = $_POST['id'] ?? $vars['id'] ?? null;
+
+        if ($id === null || $id === '') {
+            throw new Exception("Ocurrió un error al seleccionar la habitación. Intente nuevamente.");
+        }
+
+        if (filter_var($id, FILTER_VALIDATE_INT) === false) {
+            throw new Exception("El ID tiene que ser estrictamente un número entero.");
+        }
+
+        return (int)$id;
+    }
+
     public function deactivateRoom(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -300,18 +354,12 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            csrf_check();
 
-            if (empty($id)) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación. Intente nuevamente.");
-            }
-
-            if (filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
+            $id = $this->idDeHabitacion($vars);
 
             $roomModel = new Habitacion();
-            if (!$roomModel->deactivate((int)$id)) {
+            if (!$roomModel->deactivate($id)) {
                 throw new Exception("La habitación no existe, ya se encuentra bloqueada o no está disponible.");
             }
 
@@ -337,18 +385,12 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            csrf_check();
 
-            if (empty($id)) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación. Intente nuevamente.");
-            }
-
-            if (filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
+            $id = $this->idDeHabitacion($vars);
 
             $roomModel = new Habitacion();
-            if (!$roomModel->activate((int)$id)) {
+            if (!$roomModel->activate($id)) {
                 throw new Exception("La habitación no existe o ya se encuentra disponible.");
             }
 

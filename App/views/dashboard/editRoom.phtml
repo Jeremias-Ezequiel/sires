@@ -77,6 +77,15 @@
             </div>
         </div>
 
+        <div class="form__section-title">
+            <i class="fas fa-align-left"></i> Descripción
+        </div>
+
+        <div class="form__group">
+            <label class="form__label" for="descripcion">Descripción de la Habitación</label>
+            <textarea id="descripcion" name="descripcion" placeholder="Ej: Habitación con vista al mar, cama king size, balcón privado..." class="form__textarea" rows="4"><?= htmlspecialchars($_POST['descripcion'] ?? $old['descripcion'] ?? $habitacion['descripcion'] ?? '') ?></textarea>
+        </div>
+
         <div class="form__actions">
             <button type="submit" class="btn btn--primary">
                 <i class="fas fa-save"></i> Guardar Cambios

@@ -171,6 +171,14 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
         <?= \App\Helpers\UrlHelper::openForm('/dashboard/payments/add/process', 'POST', 'payment-form') ?>
             <?= csrf_field() ?>
             <input type="hidden" name="id_reserva" value="<?= (int)$reserva['id'] ?>">
+            <?php
+            // Clave de idempotencia del formulario. Se genera en cada render
+            // y NUNCA se rehidrata desde $old/$_POST: si el pago falla y el
+            // usuario reintenta, tiene que valer como un envio nuevo. Solo se
+            // conserva cuando el reenvio es del mismo formulario ya enviado
+            // (doble click, F5), que es justo lo que se quiere bloquear.
+            ?>
+            <input type="hidden" name="idempotency_key" value="<?= \App\Controllers\PaymentController::nuevaClaveIdempotencia() ?>">
 
             <div class="form__grid form__grid--3">
                 <div class="form__group">

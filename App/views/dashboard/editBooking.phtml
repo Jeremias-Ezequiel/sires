@@ -110,6 +110,17 @@ if (!empty($habitaciones)) {
                     <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? $reserva['cantidad_huespedes'])) ?>" min="1" max="10" required>
                     <small id="precio-ocupacion-ayuda" style="display:block; margin-top:6px; color:#6b7280;">Seleccione una habitación para ver el precio.</small>
                 </div>
+
+                <!--
+                    Ver addBooking.phtml: se pregunta solo cuantos son ninos y
+                    los adultos se derivan por resta. Asi los tres campos que
+                    deben sumar lo mismo nunca se desincronizan a mano.
+                -->
+                <div class="form__group">
+                    <label class="form__label" for="ninos">De los cuales, niños</label>
+                    <input type="number" name="ninos" id="ninos" class="form__input" value="<?= htmlspecialchars((string)($old['ninos'] ?? ($reserva['ninos'] ?? 0))) ?>" min="0" max="10">
+                    <small style="display:block; margin-top:6px; color:#6b7280;">El resto se registra como adultos.</small>
+                </div>
             </div>
         </div>
 

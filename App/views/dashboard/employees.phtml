@@ -146,7 +146,8 @@
                                             class="emp-action-btn btn-deactivate-hover open-sires-modal" 
                                             data-action="deactivate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/employees/deactivate?id=' . $emp->getId())) ?>"
+                                            data-url="<?= url('/dashboard/employees/deactivate') ?>"
+                                            data-id="<?= (int)$emp->getId() ?>"
                                             title="Dar de Baja Empleado">
                                             <i class="fas fa-user-minus"></i>
                                         </button>
@@ -156,7 +157,8 @@
                                             class="emp-action-btn btn-activate-hover open-sires-modal" 
                                             data-action="activate"
                                             data-name="<?= htmlspecialchars($emp->getNombre() . ' ' . $emp->getApellido()) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/employees/activate?id=' . $emp->getId())) ?>"
+                                            data-url="<?= url('/dashboard/employees/activate') ?>"
+                                            data-id="<?= (int)$emp->getId() ?>"
                                             title="Reactivar Empleado">
                                             <i class="fas fa-user-plus"></i>
                                         </button>
@@ -238,6 +240,17 @@
         </div>
     </section>
 <?php endif; ?>
+<!--
+    Alta y baja de empleados por POST. Antes eran enlaces GET sin verificacion
+    CSRF: un <img src=".../employees/deactivate?id=3"> en cualquier pagina
+    alcanzaba para dar de baja a un compañero. El token y el id van en el
+    cuerpo del POST.
+-->
+<form method="POST" action="" id="sires-employee-action-form" class="is-hidden">
+    <?= csrf_field() ?>
+    <input type="hidden" name="id" id="sires-employee-action-id" value="">
+</form>
+
 <!-- MODAL DE CONFIRMACIÓN SIRES -->
 <div id="sires-confirm-modal" class="sires-modal-overlay">
     <div class="sires-modal-box">
@@ -248,7 +261,7 @@
         <p id="modal-description-text">¿Estás seguro de que deseas continuar?</p>
         <div class="sires-modal-actions">
             <button type="button" id="btn-modal-cancel" class="sires-modal-btn btn-modal-cancel">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="sires-modal-btn">Confirmar</a>
+            <button type="button" id="btn-modal-confirm" class="sires-modal-btn">Confirmar</button>
         </div>
     </div>
 </div>
@@ -285,6 +298,8 @@
         const modalText = document.getElementById('modal-description-text');
         const btnConfirm = document.getElementById('btn-modal-confirm');
         const btnCancel = document.getElementById('btn-modal-cancel');
+        const actionForm = document.getElementById('sires-employee-action-form');
+        const actionId = document.getElementById('sires-employee-action-id');
 
         // Escuchamos los clics en los botones de Alta/Baja
         const buttons = document.querySelectorAll('.open-sires-modal');
@@ -312,12 +327,23 @@
                     btnConfirm.classList.add('btn-proceed-activate');
                 }
 
-                // Asignamos la URL real del controlador al botón "Confirmar"
-                btnConfirm.setAttribute('href', targetUrl);
+                // Dejamos el destino y el id listos en el formulario. El envio
+                // ocurre recien al confirmar, no al abrir el modal.
+                actionForm.action = targetUrl;
+                actionId.value = this.getAttribute('data-id');
                 
                 // Mostramos el modal añadiendo la clase active
                 modal.classList.add('active');
             });
+        });
+
+        // Antes el boton era un <a href> y navegaba. Ahora envia el formulario
+        // por POST, que es lo que aceptan estas rutas.
+        btnConfirm.addEventListener('click', function() {
+            if (!actionForm.action) {
+                return;
+            }
+            actionForm.submit();
         });
 
         // Cerrar modal al hacer clic en Cancelar

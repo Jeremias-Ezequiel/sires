@@ -125,7 +125,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="confirm"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/booking/confirm?id=' . $res['id'])) ?>"
+                                            data-url="<?= url('/dashboard/booking/confirm') ?>"
+                                            data-id="<?= (int)$res['id'] ?>"
                                             title="Confirmar Reserva">
                                             <i class="fas fa-check"></i>
                                         </button>
@@ -135,7 +136,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="finalize"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/booking/finalize?id=' . $res['id'])) ?>"
+                                            data-url="<?= url('/dashboard/booking/finalize') ?>"
+                                            data-id="<?= (int)$res['id'] ?>"
                                             title="Finalizar Reserva">
                                             <i class="fas fa-flag-checkered"></i>
                                         </button>
@@ -145,7 +147,8 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="cancel"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url(csrf_token_query('/dashboard/booking/cancel?id=' . $res['id'])) ?>"
+                                            data-url="<?= url('/dashboard/booking/cancel') ?>"
+                                            data-id="<?= (int)$res['id'] ?>"
                                             title="Cancelar Reserva">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -208,6 +211,19 @@
     </section>
 <?php endif; ?>
 
+<!--
+    Acciones de reserva (confirmar / finalizar / cancelar) por POST.
+
+    Antes eran enlaces GET, y con GET cualquiera desde otra pagina podia
+    dispararlas con un <img src=".../booking/cancel?id=5">. Este formulario
+    lleva el token CSRF y el id, asi que el navegador solo lo envia si el
+    usuario confirmo en el modal de aca.
+-->
+<form method="POST" action="" id="sires-booking-action-form" class="is-hidden">
+    <?= csrf_field() ?>
+    <input type="hidden" name="id" id="sires-booking-action-id" value="">
+</form>
+
 <div id="sires-confirm-modal" class="modal">
     <div class="modal__box">
         <div id="modal-icon-frame" class="modal__icon">
@@ -217,7 +233,7 @@
         <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
         <div class="modal__actions">
             <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+            <button type="button" id="btn-modal-confirm" class="btn">Confirmar</button>
         </div>
     </div>
 </div>
@@ -231,6 +247,8 @@
         const modalText = document.getElementById('modal-description-text');
         const btnConfirm = document.getElementById('btn-modal-confirm');
         const btnCancel = document.getElementById('btn-modal-cancel');
+        const actionForm = document.getElementById('sires-booking-action-form');
+        const actionId = document.getElementById('sires-booking-action-id');
 
         const buttons = document.querySelectorAll('.open-sires-modal');
         buttons.forEach(button => {
@@ -238,6 +256,7 @@
                 const actionType = this.getAttribute('data-action');
                 const targetUrl = this.getAttribute('data-url');
                 const reservaName = this.getAttribute('data-name');
+                const reservaId = this.getAttribute('data-id');
 
                 modalIconFrame.className = 'modal__icon';
                 btnConfirm.className = 'btn';
@@ -262,9 +281,21 @@
                     btnConfirm.classList.add('btn--success');
                 }
 
-                btnConfirm.setAttribute('href', targetUrl);
+                // Se deja el destino y el id listos en el formulario; el envio
+                // ocurre recién al confirmar, no al abrir el modal.
+                actionForm.action = targetUrl;
+                actionId.value = reservaId;
                 modal.classList.add('is-active');
             });
+        });
+
+        // Antes el boton era un <a href> y navigate al URL. Ahora envia el
+        // formulario por POST, que es lo que las rutas de reserva aceptan.
+        btnConfirm.addEventListener('click', function() {
+            if (!actionForm.action) {
+                return;
+            }
+            actionForm.submit();
         });
 
         btnCancel.addEventListener('click', function() {

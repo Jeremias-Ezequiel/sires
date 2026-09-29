@@ -1,0 +1,91 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Insumos de Limpieza</h1>
+        <p>Inventario de insumos para housekeeping</p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/housekeeping') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver a Housekeeping
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($insumos) && is_array($insumos)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Descripción</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Unidad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($insumos as $insumo):
+                        $bajoStock = (int)$insumo['stock_actual'] <= (int)$insumo['stock_minimo'];
+                    ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$insumo['id']) ?></strong></td>
+                            <td><?= htmlspecialchars($insumo['descripcion']) ?></td>
+                            <td><?= htmlspecialchars((string)$insumo['stock_actual']) ?></td>
+                            <td><?= htmlspecialchars((string)$insumo['stock_minimo']) ?></td>
+                            <td><?= htmlspecialchars($insumo['unidad_medida']) ?></td>
+                            <td>
+                                <?php if ($bajoStock): ?>
+                                    <span class="badge badge--pendiente">Bajo stock</span>
+                                <?php else: ?>
+                                    <span class="badge badge--disponible">OK</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="details-section">
+        <h3 style="margin-bottom: 15px;">Actualizar Stock</h3>
+        <form method="POST" action="<?= url('/dashboard/housekeeping/insumos/update') ?>" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <?= csrf_field() ?>
+            <div class="form__group" style="flex: 1; min-width: 200px;">
+                <label class="form__label">Insumo</label>
+                <select name="id_insumo" required class="form__select">
+                    <option value="">Seleccione un insumo</option>
+                    <?php foreach ($insumos as $insumo): ?>
+                        <option value="<?= (int)$insumo['id'] ?>"><?= htmlspecialchars($insumo['descripcion']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form__group" style="width: 150px;">
+                <label class="form__label">Cantidad</label>
+                <input type="number" name="cantidad" required class="form__input" placeholder="Ej: 10">
+            </div>
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-plus"></i> Actualizar
+            </button>
+        </form>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <h3>No se encontraron insumos</h3>
+            <p>No existen registros de insumos de limpieza.</p>
+        </div>
+    </section>
+<?php endif; ?>

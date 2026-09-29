@@ -8,6 +8,7 @@ use App\Models\Habitacion;
 use App\Models\Clientes;
 use App\Models\CanalOrigen;
 use App\Models\ResumenPago;
+use App\Models\Auditoria;
 use App\Helpers\UrlHelper;
 
 class BookingController
@@ -110,6 +111,7 @@ class BookingController
             $fechaEntrada   = trim($_POST['fecha_entrada'] ?? '');
             $fechaSalida    = trim($_POST['fecha_salida'] ?? '');
             $cantHuespedes  = (int)($_POST['cantidad_huespedes'] ?? 1);
+            $cantNinos      = (int)($_POST['ninos'] ?? 0);
             $observaciones  = trim($_POST['observaciones'] ?? '');
 
             if (empty($fechaEntrada)) {
@@ -137,6 +139,18 @@ class BookingController
                     " según la capacidad de la habitación seleccionada."
                 );
             }
+            // Los dos casos van separados porque son errores distintos: con un
+            // solo mensaje, un -3 recibia un cartel que hablaba de "no puede ser
+            // mayor", que no es lo que paso.
+            if ($cantNinos < 0) {
+                throw new Exception("La cantidad de niños no puede ser negativa.");
+            }
+            if ($cantNinos > $cantHuespedes) {
+                throw new Exception(
+                    "La cantidad de niños no puede ser mayor que la cantidad total de huéspedes (" .
+                    $cantHuespedes . ")."
+                );
+            }
 
             $reserva = new Reserva();
             $reserva->setIdCliente($idCliente);
@@ -144,7 +158,7 @@ class BookingController
             $reserva->setIdCanalOrigen($idCanal);
             $reserva->setFechaEntrada($fechaEntrada);
             $reserva->setFechaSalida($fechaSalida);
-            $reserva->setCantidadHuespedes($cantHuespedes);
+            $reserva->setDistribucionHuespedes($cantHuespedes - $cantNinos, $cantNinos);
             $reserva->setObservaciones($observaciones ?: null);
             $reserva->setCreadoPor($_SESSION['user_id'] ?? 0);
 
@@ -183,6 +197,46 @@ class BookingController
         }
     }
 
+    /**
+     * Lee el id de la reserva de una peticion que cambia estado.
+     *
+     * Estas cuatro acciones (check-in, checkout, confirmar, anular) son POST y
+     * no GET. Con GET, un <img src=".../checkin?id=5"> pegado en cualquier
+     * pagina ajena alcanza para disparar el check-in de una reserva: el
+     * navegador pide la URL solo, sin que el usuario haga nada. Por eso el id
+     * viene del cuerpo del POST y no de la query.
+     *
+     * Se acepta tambien $vars para no romper si algun llamado legitimo sigue
+     * pasando la ruta.
+     */
+    private function idDeReserva(array $vars): int
+    {
+        $id = $_POST['id'] ?? $vars['id'] ?? null;
+
+        if ($id === null || $id === '' || filter_var($id, FILTER_VALIDATE_INT) === false) {
+            throw new Exception("ID de reserva inválido.");
+        }
+
+        return (int)$id;
+    }
+
+    /**
+     * Numero visible de la habitacion para los mensajes de auditoria.
+     *
+     * Sin esto la bitacora mezcla "#201" (numero) con "#3" (id) segun la accion,
+     * y eso hace imposible seguir una habitacion en la bitacora.
+     * Si la habitacion no se puede leer, cae al id en vez de romper la operacion.
+     */
+    private function numeroDeHabitacion(Habitacion $roomModel, int $idHabitacion): string
+    {
+        $habitacion = $roomModel->findById($idHabitacion);
+        if ($habitacion === null || !isset($habitacion['numero'])) {
+            return (string)$idHabitacion;
+        }
+
+        return (string)$habitacion['numero'];
+    }
+
     public function checkinBooking(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -190,12 +244,9 @@ class BookingController
         }
 
         try {
-            csrf_check_query();
+            csrf_check();
 
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDeReserva($vars);
 
             $reserva = (new Reserva())->findById((int)$id);
             if ($reserva === null) {
@@ -204,6 +255,19 @@ class BookingController
 
             if ((int)$reserva['id_estado_reserva'] !== Reserva::ESTADO_CONFIRMADA) {
                 throw new Exception("Solo se puede hacer check-in de reservas confirmadas.");
+            }
+
+            // Verificar que el pago esté completo antes del check-in
+            $resumen = (new ResumenPago())->getByReserva((int)$id);
+            if ($resumen === null) {
+                throw new Exception("La reserva no tiene un resumen de pago asociado. Contacte al administrador.");
+            }
+            if ($resumen->getSaldoPendiente() > 0) {
+                throw new Exception(
+                    "No se puede realizar el check-in: la reserva tiene un saldo pendiente de $"
+                    . number_format($resumen->getSaldoPendiente(), 2, ',', '.')
+                    . ". Por favor, regularice el pago antes del check-in."
+                );
             }
 
             $idHabitacion = (int)$reserva['id_habitacion'];
@@ -226,6 +290,15 @@ class BookingController
 
             $roomModel = new Habitacion();
             $roomModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_OCUPADA);
+
+            (new Auditoria())->registrar(
+                Auditoria::CHECKIN,
+                'reservas',
+                (int)$id,
+                "Check-in de la reserva #{$id} en la habitación #{$habitacion['numero']}",
+                ['estado_reserva' => (int)$reserva['id_estado_reserva'], 'estado_habitacion' => (int)$habitacion['id_estado_habitacion']],
+                ['estado_reserva' => (int)$reserva['id_estado_reserva'], 'estado_habitacion' => Habitacion::ESTADO_OCUPADA]
+            );
 
             $_SESSION['flash_message'] = "Check-in realizado: la habitación #{$habitacion['numero']} fue marcada como ocupada.";
             $_SESSION['flash_status']  = "success";
@@ -319,6 +392,7 @@ class BookingController
             $fechaEntrada   = trim($_POST['fecha_entrada'] ?? '');
             $fechaSalida    = trim($_POST['fecha_salida'] ?? '');
             $cantHuespedes  = (int)($_POST['cantidad_huespedes'] ?? 1);
+            $cantNinos      = (int)($_POST['ninos'] ?? 0);
             $observaciones  = trim($_POST['observaciones'] ?? '');
 
             if ($id <= 0) {
@@ -343,6 +417,18 @@ class BookingController
                 throw new Exception(
                     "La cantidad de huéspedes debe ser entre 1 y " . $capacidadHabitacion .
                     " según la capacidad de la habitación seleccionada."
+                );
+            }
+            // Los dos casos van separados porque son errores distintos: con un
+            // solo mensaje, un -3 recibia un cartel que hablaba de "no puede ser
+            // mayor", que no es lo que paso.
+            if ($cantNinos < 0) {
+                throw new Exception("La cantidad de niños no puede ser negativa.");
+            }
+            if ($cantNinos > $cantHuespedes) {
+                throw new Exception(
+                    "La cantidad de niños no puede ser mayor que la cantidad total de huéspedes (" .
+                    $cantHuespedes . ")."
                 );
             }
 
@@ -373,7 +459,7 @@ class BookingController
                 $reserva->setIdCanalOrigen($idCanal);
                 $reserva->setFechaEntrada($fechaEntrada);
                 $reserva->setFechaSalida($fechaSalida);
-                $reserva->setCantidadHuespedes($cantHuespedes);
+                $reserva->setDistribucionHuespedes($cantHuespedes - $cantNinos, $cantNinos);
                 $reserva->setObservaciones($observaciones ?: null);
 
                 $success = $reservaModel->update($reserva);
@@ -469,12 +555,9 @@ class BookingController
         }
 
         try {
-            csrf_check_query();
+            csrf_check();
 
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDeReserva($vars);
 
             $reservaModel = new Reserva();
             $reservaData = $reservaModel->findById((int)$id);
@@ -499,6 +582,15 @@ class BookingController
                 $roomModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_DISPONIBLE);
             }
 
+            (new Auditoria())->registrar(
+                Auditoria::ANULAR,
+                'reservas',
+                (int)$id,
+                "Reserva #{$id} cancelada (habitacion #{$this->numeroDeHabitacion($roomModel, $idHabitacion)})",
+                ['estado_reserva' => (int)$reservaData['id_estado_reserva']],
+                ['estado_reserva' => Reserva::ESTADO_CANCELADA]
+            );
+
             $_SESSION['flash_message'] = "Reserva cancelada exitosamente.";
             $_SESSION['flash_status']  = "success";
 
@@ -521,12 +613,9 @@ class BookingController
         }
 
         try {
-            csrf_check_query();
+            csrf_check();
 
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDeReserva($vars);
 
             $reservaModel = new Reserva();
             $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_CONFIRMADA, Reserva::ESTADO_PENDIENTE);
@@ -562,12 +651,9 @@ class BookingController
         }
 
         try {
-            csrf_check_query();
+            csrf_check();
 
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDeReserva($vars);
 
             $reservaModel = new Reserva();
             $reservaData = $reservaModel->findById((int)$id);
@@ -596,6 +682,15 @@ class BookingController
             if ($roomModel->estadoEn($reservaModel->getConnection(), $idHabitacion) === Habitacion::ESTADO_OCUPADA) {
                 $roomModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_DISPONIBLE);
             }
+
+            (new Auditoria())->registrar(
+                Auditoria::CHECKOUT,
+                'reservas',
+                (int)$id,
+                "Check-out de la reserva #{$id} (habitacion #{$this->numeroDeHabitacion($roomModel, $idHabitacion)})",
+                ['estado_reserva' => (int)$reservaData['id_estado_reserva']],
+                ['estado_reserva' => Reserva::ESTADO_FINALIZADA]
+            );
 
             $_SESSION['flash_message'] = "Reserva finalizada exitosamente.";
             $_SESSION['flash_status']  = "success";

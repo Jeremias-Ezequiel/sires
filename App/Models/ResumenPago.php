@@ -17,10 +17,123 @@ class ResumenPago extends Model
     private float $monto_cobrado = 0.0;
     private float $saldo_pendiente = 0.0;
 
+    // Desglose del total. monto_total SIEMPRE es la suma de los dos. Antes
+    // estas dos columnas no las escribia nadie: quedaban en 0.00 y el "total"
+    // no se podia explicar. Con el CHECK de la base, un save/update que no
+    // las llene revienta con un error de SQL opaco, asi que se llenan aqui.
+    private float $monto_hospedaje = 0.0;
+    private float $monto_consumos = 0.0;
+
     public const ESTADO_PENDIENTE = 1;
     public const ESTADO_PAGO_PARCIAL = 2;
     public const ESTADO_PAGADO_TOTAL = 3;
     public const ESTADO_REEMBOLSADO = 4;
+
+    /**
+     * Reparte un total entre hospedaje y consumos.
+     *
+     * El CHECK de la base (monto_total = monto_hospedaje + monto_consumos) es
+     * la ultima linea de defensa. Esta funcion es la primera: si el desglose
+     * no cierra, se avisa con un mensaje claro en vez de dejar que reviente un
+     * INSERT con un error 3819 que nadie entiende.
+     *
+     * Se redondea a dos decimales porque los DECIMAL(12,2) de MySQL guardan
+     * centavos: sin round, 0.1+0.2Stored = 0.30000000000000004 y el CHECK
+     * rechazaria una operacion aritmeticamente correcta.
+     */
+    private function aplicarDesglose(float $hospedaje, float $consumos, float $total): void
+    {
+        $total = round($total, 2);
+        $hospedaje = round($hospedaje, 2);
+        $consumos = round($consumos, 2);
+
+        if (abs(round($hospedaje + $consumos, 2) - $total) > 0.009) {
+            throw new Exception(
+                "El desglose del resumen de pago no cierra: hospedaje $"
+                . number_format($hospedaje, 2, ',', '.') . " + consumos $"
+                . number_format($consumos, 2, ',', '.') . " no suma el total $"
+                . number_format($total, 2, ',', '.') . "."
+            );
+        }
+
+        $this->monto_hospedaje = $hospedaje;
+        $this->monto_consumos  = $consumos;
+        $this->monto_total     = $total;
+    }
+
+    /**
+     * Calcular el desglose de una reserva a partir de su fila.
+     *
+     * Hospedaje: precio por noche ya descontado por ocupacion, por la cantidad
+     * de noches. Consumos: la suma de los consumos cargados a la reserva.
+     *
+     * @return array{hospedaje: float, consumos: float, total: float}
+     */
+    public function calcularDesglose(array $reserva): array
+    {
+        $entrada = new \DateTime($reserva['fecha_entrada']);
+        $salida  = new \DateTime($reserva['fecha_salida']);
+
+        // diff() da la diferencia en valor absoluto: con la salida antes que la
+        // entrada calcularia unas noches positivas y un hospedaje fantasy.
+        if ($salida <= $entrada) {
+            throw new Exception(
+                "La reserva no tiene fechas válidas para calcular el total: "
+                . "la salida tiene que ser posterior a la entrada."
+            );
+        }
+
+        $noches = $entrada->diff($salida)->days;
+
+        $precioNoche = Habitacion::precioNocheParaTipo(
+            (int)$reserva['id_tipo_habitacion'],
+            (float)$reserva['precio_noche_base'],
+            (int)$reserva['cantidad_huespedes']
+        );
+
+        $hospedaje = round($precioNoche * $noches, 2);
+        $consumos  = $this->totalConsumosDe((int)$reserva['id']);
+
+        return [
+            'hospedaje' => $hospedaje,
+            'consumos'  => $consumos,
+            'total'     => round($hospedaje + $consumos, 2),
+        ];
+    }
+
+    /**
+     * Estados de Consumos.id_estado: 1 pendiente, 2 facturado, 3 anulado.
+     *
+     * Solo lo facturado entra en el total. Sumar los pendientes hacia que la
+     * reserva debe plata por consumos que todavia no se cobraron, y esos
+     * pueden anularse despues sin que el total baje.
+     */
+    public const CONSUMO_PENDIENTE  = 1;
+    public const CONSUMO_FACTURADO  = 2;
+    public const CONSUMO_ANULADO    = 3;
+
+    /**
+     * Suma de los consumos facturados de una reserva.
+     *
+     * El filtro por id_estado = 2 (facturado) tiene que coincidir con el de los
+     * triggers trg_consumos_* de la base, que recalculan monto_consumos solo
+     * con los facturados. Si el PHP sumara los pendientes, el total del resumen
+     * y el que mantienen los triggers no congenian.
+     */
+    public function totalConsumosDe(int $idReserva): float
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT COALESCE(SUM(subtotal), 0) FROM Consumos
+                 WHERE id_reserva = ? AND id_estado = ?"
+            );
+            $stmt->execute([$idReserva, self::CONSUMO_FACTURADO]);
+            return (float)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en ResumenPago::totalConsumosDe: " . $e->getMessage());
+            throw new Exception("Error al calcular los consumos de la reserva.");
+        }
+    }
 
     public function getByReserva(int $id_reserva): ?ResumenPago
     {
@@ -63,14 +176,16 @@ class ResumenPago extends Model
                 throw new Exception("La reserva ya tiene un resumen de pago asociado.");
             }
 
-            $sql = "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
-                    VALUES (:id_reserva, :id_estado_pago, :monto_total, :monto_cobrado, :saldo_pendiente)";
+            $sql = "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_hospedaje, monto_consumos, monto_cobrado, saldo_pendiente)
+                    VALUES (:id_reserva, :id_estado_pago, :monto_total, :monto_hospedaje, :monto_consumos, :monto_cobrado, :saldo_pendiente)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 ':id_reserva'       => $resumen->getIdReserva(),
                 ':id_estado_pago'   => $resumen->getIdEstadoPago(),
                 ':monto_total'      => $resumen->getTotal(),
+                ':monto_hospedaje'  => $resumen->getMontoHospedaje(),
+                ':monto_consumos'   => $resumen->getMontoConsumos(),
                 ':monto_cobrado'    => $resumen->getMontoPagado(),
                 ':saldo_pendiente'  => $resumen->getSaldoPendiente()
             ]);
@@ -89,6 +204,8 @@ class ResumenPago extends Model
             $sql = "UPDATE Resumen_Pago
                     SET id_estado_pago = :id_estado_pago,
                         monto_total    = :monto_total,
+                        monto_hospedaje = :monto_hospedaje,
+                        monto_consumos = :monto_consumos,
                         monto_cobrado  = :monto_cobrado,
                         saldo_pendiente = :saldo_pendiente
                     WHERE id = :id";
@@ -98,6 +215,8 @@ class ResumenPago extends Model
                 ':id'                => $resumen->getId(),
                 ':id_estado_pago'    => $resumen->getIdEstadoPago(),
                 ':monto_total'       => $resumen->getTotal(),
+                ':monto_hospedaje'   => $resumen->getMontoHospedaje(),
+                ':monto_consumos'    => $resumen->getMontoConsumos(),
                 ':monto_cobrado'     => $resumen->getMontoPagado(),
                 ':saldo_pendiente'   => $resumen->getSaldoPendiente()
             ]);
@@ -245,12 +364,10 @@ class ResumenPago extends Model
         $salida  = new \DateTime($reserva['fecha_salida']);
         $noches  = $entrada->diff($salida)->days;
 
-        $precioNoche = Habitacion::precioNocheParaTipo(
-            (int)$reserva['id_tipo_habitacion'],
-            (float)$reserva['precio_noche_base'],
-            (int)$reserva['cantidad_huespedes']
-        );
-        $nuevoTotal = $precioNoche * $noches;
+        // El total ya no es solo el hospedaje: tambien entra lo que la reserva
+        // consumio. Antes, recargar consumos a una reserva no movia el total.
+        $desglose = $this->calcularDesglose($reserva);
+        $nuevoTotal = $desglose['total'];
         $montoPagado = $resumen->getMontoPagado();
         $nuevoSaldo = $nuevoTotal - $montoPagado;
 
@@ -276,7 +393,10 @@ class ResumenPago extends Model
             }
         }
 
-        $resumen->setTotal($nuevoTotal);
+        // Ojo: el desglose se fija sobre $resumen, no sobre $this. update()
+        // lee los montos del objeto que recibe, asi que cambiar $this guardaria
+        // el desglose viejo y el CHECK de la base veria el reparto anterior.
+        $resumen->setDesglose($desglose['hospedaje'], $desglose['consumos']);
         $resumen->setSaldoPendiente($nuevoSaldo);
 
         return $this->update($resumen);
@@ -319,12 +439,64 @@ class ResumenPago extends Model
     {
         return $this->monto_total;
     }
+
+    /**
+     * Seteo del total "a pelo".
+     *
+     * Solo se usa al hidratar una fila que viene de la base (FETCH_CLASS), donde
+     * el CHECK ya garantiza que el desglose cierra. Para calcular un total
+     * nuevo hay que usar aplicarDesglose() con su reparto, o el CHECK va a
+     * rechazar el INSERT por desglose inconsistente.
+     */
     public function setTotal(float $total): void
     {
         if ($total < 0) {
             throw new Exception("El total no puede ser negativo.");
         }
         $this->monto_total = $total;
+    }
+
+    public function getMontoHospedaje(): float
+    {
+        return $this->monto_hospedaje;
+    }
+    public function setMontoHospedaje(float $monto): void
+    {
+        if ($monto < 0) {
+            throw new Exception("El monto de hospedaje no puede ser negativo.");
+        }
+        $this->monto_hospedaje = $monto;
+    }
+
+    public function getMontoConsumos(): float
+    {
+        return $this->monto_consumos;
+    }
+    public function setMontoConsumos(float $monto): void
+    {
+        if ($monto < 0) {
+            throw new Exception("El monto de consumos no puede ser negativo.");
+        }
+        $this->monto_consumos = $monto;
+    }
+
+    /**
+     * Fija el desglose completo de una vez.
+     *
+     * Es el metodo que deberia usar el codigo: garantiza que los tres montos
+     * queden consistentes entre si.
+     *
+     * @return array{hospedaje: float, consumos: float, total: float}
+     */
+    public function setDesglose(float $hospedaje, float $consumos): array
+    {
+        $this->aplicarDesglose($hospedaje, $consumos, $hospedaje + $consumos);
+
+        return [
+            'hospedaje' => $this->monto_hospedaje,
+            'consumos'  => $this->monto_consumos,
+            'total'     => $this->monto_total,
+        ];
     }
 
     public function getMontoPagado(): float

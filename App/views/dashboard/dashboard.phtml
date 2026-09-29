@@ -20,7 +20,16 @@ include __DIR__ . '/../partials/head.phtml';
                     <li><a href="<?= url('/dashboard/habitaciones') ?>" class="nav-link"><i class="fas fa-bed"></i>Habitaciones</a></li>
                     <li><a href="<?= url('/maintenance') ?>" class="nav-link"><i class="fas fa-money-bill-wave"></i>Pagos</a></li>
                     <li><a href="<?= url('/dashboard/employees') ?>" class="nav-link"><i class="fas fa-user-plus"></i>Empleados</a></li>
-                    <li><a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
+                    <li>
+                        <!-- Formulario POST y no link: el cierre de sesion no
+                             puede dispararse con un GET desde otra pagina. -->
+                        <form method="POST" action="<?= url('/logout') ?>" class="nav-form">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="nav-link nav-link--button" style="color: #ef4444;">
+                                <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+                            </button>
+                        </form>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -91,52 +100,31 @@ include __DIR__ . '/../partials/head.phtml';
 
             <section class="capacity-filter-grid">
                 <!-- Filtros por clicks reescritos con url() inyectando el parámetro query de forma prolija -->
-                <div class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=2') ?>'">
-                    <div class="capacity-card-header">
-                        <i class="fas fa-users"></i>
-                        <div>
-                            <span>Habitaciones</span>
-                            <h4>2 personas</h4>
+                <?php
+                // Se arman con las capacidades de la base, no con 2/3/4 fijos:
+                // un tipo de 5 personas aparece solo.
+                $iconosCapacidad = ['fas fa-users', 'fas fa-users-cog', 'fas fa-user-friends', 'fas fa-users'];
+                foreach ($capacidades as $i => $cap): ?>
+                    <div class="capacity-card <?= $capacidad_filtrada === $cap['capacidad'] ? 'active' : '' ?>"
+                         onclick="location.href='<?= url('/dashboard?capacidad=' . $cap['capacidad']) ?>'">
+                        <div class="capacity-card-header">
+                            <i class="<?= $iconosCapacidad[$i % count($iconosCapacidad)] ?>"></i>
+                            <div>
+                                <span>Habitaciones</span>
+                                <h4><?= $cap['capacidad'] ?> personas</h4>
+                            </div>
+                        </div>
+                        <div class="capacity-card-body">
+                            <strong><?= $cap['disponibles'] ?></strong>
+                            <p>Disponibles</p>
                         </div>
                     </div>
-                    <div class="capacity-card-body">
-                        <strong><?= $disp_2_personas ?></strong>
-                        <p>Disponibles</p>
-                    </div>
-                </div>
-
-                <div class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=3') ?>'">
-                    <div class="capacity-card-header">
-                        <i class="fas fa-users-cog"></i>
-                        <div>
-                            <span>Habitaciones</span>
-                            <h4>3 personas</h4>
-                        </div>
-                    </div>
-                    <div class="capacity-card-body">
-                        <strong><?= $disp_3_personas ?></strong>
-                        <p>Disponibles</p>
-                    </div>
-                </div>
-
-                <div class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>" onclick="location.href='<?= url('/dashboard?capacidad=4') ?>'">
-                    <div class="capacity-card-header">
-                        <i class="fas fa-user-friends"></i>
-                        <div>
-                            <span>Habitaciones</span>
-                            <h4>4 personas</h4>
-                        </div>
-                    </div>
-                    <div class="capacity-card-body">
-                        <strong><?= $disp_4_personas ?></strong>
-                        <p>Disponibles</p>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </section>
 
             <section class="details-section">
                 <div class="details-header">
-                    <h2>Habitaciones - <span style="color: #38bdf8;"><?= $capacidad_filtrada === 2 ? '2 personas' : ($capacidad_filtrada === 3 ? '3 personas' : '4 personas') ?></span></h2>
+                    <h2>Habitaciones - <span style="color: #38bdf8;"><?= $capacidad_filtrada ?> personas</span></h2>
                 </div>
 
                 <div class="details-table-wrapper">

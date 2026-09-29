@@ -1,0 +1,93 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Nueva Tarea de Housekeeping</h1>
+        <p>Asignación de limpieza o mantenimiento a una habitación</p>
+    </div>
+
+    <a href="<?= url('/dashboard/housekeeping') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<div id="alert-container">
+    <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+            <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+            <?= htmlspecialchars($flashMessage) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<section class="details-section form-container-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/housekeeping/add/process', 'POST', 'employee-form') ?>
+        <?= csrf_field() ?>
+
+        <div class="form__section-title">
+            <i class="fas fa-info-circle"></i> Información de la Tarea
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="id_habitacion">Habitación</label>
+                <select id="id_habitacion" name="id_habitacion" required class="form__select">
+                    <option value="" disabled <?= !isset($_POST['id_habitacion']) && !isset($old['id_habitacion']) ? 'selected' : '' ?>>Seleccione una Habitación</option>
+                    <?php if (!empty($habitaciones)): ?>
+                        <?php foreach ($habitaciones as $habitacion): ?>
+                            <?php $current_hab_id = $_POST['id_habitacion'] ?? $old['id_habitacion'] ?? ''; ?>
+                            <option value="<?= (int)$habitacion['id'] ?>" <?= (string)$current_hab_id === (string)$habitacion['id'] ? 'selected' : '' ?>>
+                                Habitación #<?= htmlspecialchars((string)$habitacion['numero']) ?> (Piso <?= htmlspecialchars((string)$habitacion['piso']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="tipo_tarea">Tipo de Tarea</label>
+                <select id="tipo_tarea" name="tipo_tarea" required class="form__select">
+                    <option value="" disabled <?= !isset($_POST['tipo_tarea']) && !isset($old['tipo_tarea']) ? 'selected' : '' ?>>Seleccione un Tipo</option>
+                    <?php if (!empty($tiposTarea)): ?>
+                        <?php foreach ($tiposTarea as $key => $value): ?>
+                            <?php $current_tipo = $_POST['tipo_tarea'] ?? $old['tipo_tarea'] ?? ''; ?>
+                            <option value="<?= htmlspecialchars($key) ?>" <?= $current_tipo === $key ? 'selected' : '' ?>><?= htmlspecialchars($value) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="fecha_asignada">Fecha de Asignación</label>
+                <input type="date" id="fecha_asignada" name="fecha_asignada" required class="form__input" value="<?= htmlspecialchars($_POST['fecha_asignada'] ?? $old['fecha_asignada'] ?? date('Y-m-d')) ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_empleado">Empleado Asignado (opcional)</label>
+                <select id="id_empleado" name="id_empleado" class="form__select">
+                    <option value="">Sin asignar</option>
+                    <?php if (!empty($empleados)): ?>
+                        <?php foreach ($empleados as $empleado): ?>
+                            <?php $current_emp_id = $_POST['id_empleado'] ?? $old['id_empleado'] ?? ''; ?>
+                            <option value="<?= (int)$empleado['id'] ?>" <?= (string)$current_emp_id === (string)$empleado['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($empleado['nombre'] . ' ' . $empleado['apellido']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="form__group">
+            <label class="form__label" for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" placeholder="Detalles adicionales sobre la tarea..." class="form__textarea" rows="4"><?= htmlspecialchars($_POST['observaciones'] ?? $old['observaciones'] ?? '') ?></textarea>
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Guardar Tarea
+            </button>
+        </div>
+
+    </form>
+</section>

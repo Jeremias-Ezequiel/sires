@@ -48,52 +48,32 @@
 </section>
 
 <section class="capacity-filter-grid">
-    <a href="<?= url('/dashboard?capacidad=2') ?>" id="btn-cap-2" class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>2 personas</h4>
+    <?php
+    // Las tarjetas se arman con las capacidades que devuelve la base, no con
+    // una lista fija: agregar un tipo de habitacion de 5 personas lo agrega al
+    // panel sin tocar esta vista.
+    $iconosCapacidad = ['fas fa-users', 'fas fa-users-cog', 'fas fa-user-friends', 'fas fa-users'];
+    foreach ($capacidades as $i => $cap): ?>
+        <a href="<?= url('/dashboard?capacidad=' . $cap['capacidad']) ?>" id="btn-cap-<?= $cap['capacidad'] ?>"
+           class="capacity-card <?= $capacidad_filtrada === $cap['capacidad'] ? 'active' : '' ?>">
+            <div class="capacity-card-header">
+                <i class="<?= $iconosCapacidad[$i % count($iconosCapacidad)] ?>"></i>
+                <div>
+                    <span>Habitaciones</span>
+                    <h4><?= $cap['capacidad'] ?> personas</h4>
+                </div>
             </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_2_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
-
-    <a href="<?= url('/dashboard?capacidad=3') ?>" id="btn-cap-3" class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users-cog"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>3 personas</h4>
+            <div class="capacity-card-body">
+                <strong><?= $cap['disponibles'] ?></strong>
+                <p>Disponibles</p>
             </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_3_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
-
-    <a href="<?= url('/dashboard?capacidad=4') ?>" id="btn-cap-4" class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>4 personas</h4>
-            </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_4_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
+        </a>
+    <?php endforeach; ?>
 </section>
 
 <section class="details-section">
     <div class="details-header">
-        <h2>Habitaciones - <span id="tabla-titulo-capacidad" class="room-type-highlight"><?= $capacidad_filtrada === 3 ? '3 personas' : ($capacidad_filtrada === 4 ? '4 personas' : '2 personas') ?></span></h2>
+        <h2>Habitaciones - <span id="tabla-titulo-capacidad" class="room-type-highlight"><?= $capacidad_filtrada ?> personas</span></h2>
     </div>
 
     <div class="details-table-wrapper">

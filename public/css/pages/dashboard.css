@@ -2,6 +2,40 @@
    📂 /public/css/dashboard.css
    ========================================================================== */
 
+/* --- [0. DESCRIPCIÓN DE HABITACIONES] --- */
+.col-descripcion {
+  max-width: 250px;
+  font-size: 0.85rem;
+  color: var(--texto-gris);
+  line-height: 1.4;
+}
+
+.form__textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--borde-input);
+  border-radius: 6px;
+  background-color: var(--fondo-input);
+  color: var(--texto-blanco);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.3s ease;
+}
+
+.form__textarea:focus {
+  outline: none;
+  border-color: var(--dorado-sires);
+}
+
+.form__hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--texto-gris);
+}
+
 /* --- [1. ARQUITECTURA GENERAL & LAYOUT] --- */
 .dashboard-container {
   display: flex;
@@ -749,6 +783,35 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Las acciones de reserva pasaron de <a> a <form method="POST">. Con
+   display: contents el form no genera caja propia y sus hijos se acomodan
+   directo en el flex del encabezado, igual que antes. Sin esto, cada boton
+   quedaria desalineado y con un margen extra. */
+.header-actions-container .inline-form {
+  display: contents;
+}
+
+/* Formulario oculto que usa el modal de confirmacion de reservas. */
+.is-hidden {
+  display: none !important;
+}
+
+/* El cierre de sesion es un <button> adentro de un <form> POST, no un <a>.
+   Sin esto el boton sale con el fondo y el borde del navegador y se ve distinto
+   de los demas links del menu. Con esto toma el mismo formato de .nav-link. */
+.nav-form {
+  margin: 0;
+}
+
+.nav-link--button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
 /* Botón principal "Registrar" de la cabecera del listado */

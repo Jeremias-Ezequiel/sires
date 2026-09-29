@@ -79,6 +79,8 @@
                             $pagoStatusClass = 'badge--pendiente';
                         } elseif (strpos($estadoPagoLower, 'parcial') !== false) {
                             $pagoStatusClass = 'badge--reservada';
+                        } elseif (strpos($estadoPagoLower, 'pagado') !== false) {
+                            $pagoStatusClass = 'badge--disponible';
                         } elseif (strpos($estadoPagoLower, 'reembols') !== false) {
                             $pagoStatusClass = 'badge--ocupada';
                         }
@@ -110,7 +112,9 @@
                             </td>
                             <td><?= isset($pag['monto_total']) && $pag['monto_total'] !== null ? '$' . number_format((float)$pag['monto_total'], 2, ',', '.') : '-' ?></td>
                             <td><?= isset($pag['monto_cobrado']) && $pag['monto_cobrado'] !== null ? '$' . number_format((float)$pag['monto_cobrado'], 2, ',', '.') : '-' ?></td>
-                            <td><?= isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? '$' . number_format($saldoPago, 2, ',', '.') : '-' ?></td>
+                            <td style="<?= $saldoPago > 0 ? 'color: #dc3545; font-weight: bold;' : 'color: #28a745;' ?>">
+                                <?= isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? '$' . number_format($saldoPago, 2, ',', '.') : '-' ?>
+                            </td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
                                     <a href="<?= url('/dashboard/payments/detail?id=' . $pag['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">

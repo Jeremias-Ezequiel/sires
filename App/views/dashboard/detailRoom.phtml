@@ -48,6 +48,10 @@
                     <td class="detail-label">Precio por Noche</td>
                     <td class="detail-value">$<?= number_format((float)($habitacion['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                 </tr>
+                <tr>
+                    <td class="detail-label">Descripción</td>
+                    <td class="detail-value"><?= nl2br(htmlspecialchars($habitacion['descripcion'] ?? '')) ?></td>
+                </tr>
             </tbody>
         </table>
     </div>

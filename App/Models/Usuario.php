@@ -41,8 +41,28 @@ class Usuario extends Model
     private ?string $reset_token = null;
     private ?string $reset_expires_at = null;
 
+    // 🔒 ATRIBUTOS DE PROTECCIÓN CONTRA FUERZA BRUTA
+    // Con defaults para que el objeto siga siendo usable si el SELECT no trae
+    // la columna (base vieja a medio migrar): sin default, un getter sobre una
+    // propiedad tipada sin inicializar revienta con Error.
+    private int $intentos_fallidos = 0;
+    private ?string $bloqueado_hasta = null;
+    private ?string $ultimo_acceso = null;
+    private ?string $ultimo_ip = null;
+
+    // Estado del bloqueo, calculado por MariaDB y no por PHP. Son alias del
+    // SELECT, no columnas reales: ver la nota de zona horaria en refrescarBloqueo().
+    private int $lock_activo = 0;
+    private int $lock_segundos = 0;
+
     public const ACTIVE = 1;
     public const INACTIVE = 0;
+
+    /** Fallos seguidos que bloquean la cuenta. */
+    public const MAX_INTENTOS_LOGIN = 5;
+
+    /** Minutos de bloqueo al pasarse. */
+    public const MINUTOS_BLOQUEO_LOGIN = 15;
 
     // =====================================================================
     // MÉTODOS DE NEGOCIO MÁSTER (FUSIONADOS)
@@ -54,7 +74,19 @@ class Usuario extends Model
             $cleanEmail = mb_strtolower(trim($email), 'UTF-8');
             $cleanEmail = filter_var($cleanEmail, FILTER_SANITIZE_EMAIL);
 
-            $sql = "SELECT * FROM Usuarios WHERE email = :email";
+            // Los dos ultimos campos no son columnas: los calcula la base para
+            // responder "esta bloqueado?" sin mezclar el reloj de MariaDB con el
+            // de PHP. Van en el SELECT para que el objeto que vuelve ya venga
+            // con el estado listo y nadie tenga que acordarse de refrescarlo.
+            $sql = "SELECT *,
+                           CASE WHEN bloqueado_hasta IS NOT NULL
+                                     AND bloqueado_hasta > NOW() THEN 1 ELSE 0 END AS lock_activo,
+                           CASE WHEN bloqueado_hasta IS NOT NULL
+                                     AND bloqueado_hasta > NOW()
+                                THEN TIMESTAMPDIFF(SECOND, NOW(), bloqueado_hasta)
+                                ELSE 0 END AS lock_segundos
+                      FROM Usuarios
+                     WHERE email = :email";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':email' => $cleanEmail]);
 
@@ -175,6 +207,199 @@ class Usuario extends Model
     public function verifyPassword(string $inputPassword): bool
     {
         return password_verify($inputPassword, $this->password);
+    }
+
+    /**
+     * El hash guardado, para que el controlador pueda correr el mismo
+     * password_verify contra un hash falso cuando el mail no existe y asi no
+     * delatar por tiempo de respuesta que cuentas estan registradas.
+     */
+    public function getPasswordHash(): string
+    {
+        return $this->password;
+    }
+
+    // =====================================================================
+    // 🔒 PROTECCIÓN CONTRA FUERZA BRUTA
+    // =====================================================================
+
+    /**
+     * Cuenta los fallos y bloquea al llegar al limite, en una sola sentencia.
+     *
+     * El contador va en un subquery a proposito. En un UPDATE de una sola tabla
+     * MySQL evalua las asignaciones de izquierda a derecha y la segunda ve el
+     * valor nuevo de la primera, asi que escribir
+     * "intentos_fallidos = intentos_fallidos + 1" y despues comparar
+     * "intentos_fallidos >= 5" en la misma sentencia contaria doble y
+     * bloquearia en el quinto fallo cuando la idea era en el quinto, con el
+     * numero corrido. Calculando el valor una vez en la subquery, el orden de
+     * evaluacion deja de importar y dos intentos simultaneos no se pisan.
+     *
+     * Si el bloqueo ya vencio, la cuenta arranca de nuevo en 1. Si el contador
+     * queda por debajo del limite, bloqueado_hasta se limpia para no dejar un
+     * sello viejo de una cuenta que nunca llego a bloquearse.
+     */
+    public function registrarFalloLogin(): void
+    {
+        try {
+            $sql = "UPDATE Usuarios u
+                    JOIN (
+                        SELECT id,
+                               CASE
+                                   WHEN bloqueado_hasta IS NOT NULL
+                                        AND bloqueado_hasta <= NOW() THEN 1
+                                   ELSE intentos_fallidos + 1
+                               END AS nuevos
+                          FROM Usuarios
+                         WHERE id = :id
+                    ) n ON n.id = u.id
+                    SET u.intentos_fallidos = n.nuevos,
+                        u.bloqueado_hasta  = CASE
+                                                WHEN n.nuevos >= :maximo
+                                                    THEN DATE_ADD(NOW(), INTERVAL :minutos MINUTE)
+                                                ELSE NULL
+                                            END
+                    WHERE u.id = :id2";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':id', $this->getId(), \PDO::PARAM_INT);
+            $stmt->bindValue(':id2', $this->getId(), \PDO::PARAM_INT);
+            $stmt->bindValue(':maximo', self::MAX_INTENTOS_LOGIN, \PDO::PARAM_INT);
+            $stmt->bindValue(':minutos', self::MINUTOS_BLOQUEO_LOGIN, \PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("No se pudo registrar el fallo de login: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deja la cuenta desbloqueada. Se llama en cada login exitoso.
+     */
+    public function resetIntentosLogin(): void
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE Usuarios
+                                        SET intentos_fallidos = 0, bloqueado_hasta = NULL
+                                        WHERE id = :id");
+            $stmt->bindValue(':id', $this->getId(), \PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("No se pudieron resetear los intentos de login: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Anota el acceso efectivo con fecha e IP. Va junto al reset porque las dos
+     * cosas pasan en el mismo instante.
+     */
+    public function registrarAcceso(?string $ip): void
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE Usuarios
+                                        SET ultimo_acceso = NOW(), ultimo_ip = :ip
+                                        WHERE id = :id");
+            $stmt->bindValue(':ip', $ip);
+            $stmt->bindValue(':id', $this->getId(), \PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("No se pudo registrar el acceso: " . $e->getMessage());
+        }
+    }
+
+    public function getIntentosFallidos(): int
+    {
+        return $this->intentos_fallidos;
+    }
+
+    public function getBloqueadoHasta(): ?string
+    {
+        return $this->bloqueado_hasta;
+    }
+
+    public function getUltimoAcceso(): ?string
+    {
+        return $this->ultimo_acceso;
+    }
+
+    public function getUltimoIp(): ?string
+    {
+        return $this->ultimo_ip;
+    }
+
+    /**
+     * Si la cuenta esta bloqueada ahora.
+     *
+     * La respuesta la da la base, no la comparacion con date(). En esta
+     * maquina MariaDB va 5 horas atras de PHP (NOW() 15:09 contra date()
+     * 20:09, porque el servidor de base esta en UTC-3 y PHP en Europe/Berlin),
+     * y bloqueado_hasta lo escribe un NOW() de la base. Si PHP lo comparara
+     * contra su propio reloj, el sello caeria siempre en el pasado y el
+     * bloqueo no se activaria nunca. Es un fallo silencioso: el throttle
+     * pareceria puesto y no frenaria a nadie.
+     */
+    public function estaBloqueado(): bool
+    {
+        return $this->lock_activo === 1;
+    }
+
+    /**
+     * Minutos que faltan para que se libere el bloqueo, redondeados hacia
+     * arriba. 0 si no esta bloqueada.
+     */
+    public function minutosRestantesBloqueo(): int
+    {
+        if (!$this->estaBloqueado()) {
+            return 0;
+        }
+
+        return max(1, (int) ceil($this->lock_segundos / 60));
+    }
+
+    /**
+     * Relee intentos y bloqueo, y recalcula en SQL si el bloqueo sigue vigente
+     * y cuanto le queda. Se llama despues de un lookup para no decidir con una
+     * copia vieja.
+     */
+    public function refrescarBloqueo(): void
+    {
+        try {
+            $sql = "SELECT intentos_fallidos,
+                           bloqueado_hasta,
+                           ultimo_acceso,
+                           ultimo_ip,
+                           CASE WHEN bloqueado_hasta IS NOT NULL
+                                     AND bloqueado_hasta > NOW() THEN 1 ELSE 0 END AS lock_activo,
+                           CASE WHEN bloqueado_hasta IS NOT NULL
+                                     AND bloqueado_hasta > NOW()
+                                THEN TIMESTAMPDIFF(SECOND, NOW(), bloqueado_hasta)
+                                ELSE 0 END AS lock_segundos
+                      FROM Usuarios
+                     WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':id', $this->getId(), \PDO::PARAM_INT);
+            $stmt->execute();
+            $fila = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($fila === false) {
+                return;
+            }
+
+            $this->intentos_fallidos = (int) $fila['intentos_fallidos'];
+            $this->bloqueado_hasta   = $fila['bloqueado_hasta'] !== null
+                ? (string) $fila['bloqueado_hasta']
+                : null;
+            $this->ultimo_acceso     = $fila['ultimo_acceso'] !== null
+                ? (string) $fila['ultimo_acceso']
+                : null;
+            $this->ultimo_ip         = $fila['ultimo_ip'] !== null
+                ? (string) $fila['ultimo_ip']
+                : null;
+            $this->lock_activo       = (int) $fila['lock_activo'];
+            $this->lock_segundos     = (int) $fila['lock_segundos'];
+        } catch (PDOException $e) {
+            error_log("No se pudo refrescar el bloqueo: " . $e->getMessage());
+        }
     }
 
     public function save(Usuario $usuario): bool
@@ -358,8 +583,17 @@ class Usuario extends Model
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
+            // El desbloqueo va en la misma sentencia, a proposito: si el login
+            // quedo bloqueado por intentos fallidos, la persona que Loguea
+            // recupera la clave por mail y al volver a entrar seguira trabada
+            // hasta que se le pase el plazo, sin entender por que. Aprovechar
+            // que demostro tener el mail de la cuenta es prueba suficiente.
             $sql = "UPDATE Usuarios 
-                    SET password = :password, reset_token = NULL, reset_expires_at = NULL 
+                    SET password = :password, 
+                        reset_token = NULL, 
+                        reset_expires_at = NULL,
+                        intentos_fallidos = 0,
+                        bloqueado_hasta = NULL
                     WHERE id = :id";
             
             $stmt = $this->db->prepare($sql);
@@ -385,7 +619,14 @@ class Usuario extends Model
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
-            $sql = "UPDATE Usuarios SET password = :password WHERE id = :id";
+            // Mismo criterio que en la recuperación: si un administrador
+            // redefine la clave, la cuenta queda usable de una, sin esperar
+            // que expire el bloqueo por intentos fallidos.
+            $sql = "UPDATE Usuarios
+                    SET password = :password,
+                        intentos_fallidos = 0,
+                        bloqueado_hasta = NULL
+                    WHERE id = :id";
             
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -730,5 +971,25 @@ class Usuario extends Model
     public function setResetExpiresAt(?string $expiresAt): void 
     { 
         $this->reset_expires_at = $expiresAt; 
+    }
+
+    /**
+     * Obtiene todos los usuarios con un rol específico.
+     */
+    public function getByRole(int $idRol): array
+    {
+        try {
+            $sql = "SELECT id, nombre, apellido, email, telefono, is_active
+                    FROM Usuarios
+                    WHERE id_rol = :id_rol
+                    ORDER BY apellido ASC, nombre ASC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id_rol' => $idRol]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Usuario::getByRole: " . $e->getMessage());
+            throw new Exception("Error al buscar usuarios por rol.");
+        }
     }
 }

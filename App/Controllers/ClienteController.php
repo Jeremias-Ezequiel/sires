@@ -303,4 +303,61 @@ class ClienteController
             exit;
         }
     }
+
+    public function showClientHistory(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de cliente inválido.");
+            }
+
+            $clienteModel = new Clientes();
+            $clienteObj = $clienteModel->getById((int)$id);
+
+            if (!$clienteObj) {
+                throw new Exception("El cliente no existe.");
+            }
+
+            // Convertir objeto a array para la vista
+            $cliente = [
+                'id' => $clienteObj->getId(),
+                'nombre' => $clienteObj->getNombre(),
+                'apellido' => $clienteObj->getApellido(),
+                'dni_pasaporte' => $clienteObj->getDniPasaporte(),
+                'telefono' => $clienteObj->getTelefono(),
+                'mail' => $clienteObj->getMail(),
+            ];
+
+            $reservas = $clienteModel->getReservasByCliente((int)$id);
+
+            $contentView = __DIR__ . '/../views/dashboard/historialHuesped.phtml';
+
+            require_once __DIR__ . '/../views/dashboard/layout.phtml';
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/clients'));
+            exit;
+        }
+    }
 }

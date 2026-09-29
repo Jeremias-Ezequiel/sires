@@ -360,4 +360,50 @@ class Clientes extends Model
         }
         $this->is_active = $is_active;
     }
+
+    /**
+     * Obtiene todas las reservas de un cliente (historial de huéspedes).
+     */
+    public function getReservasByCliente(int $idCliente): array
+    {
+        try {
+            $sql = "SELECT r.id, r.fecha_entrada, r.fecha_salida, r.cantidad_huespedes,
+                           r.observaciones, r.fecha_alta,
+                           h.numero AS habitacion_numero, h.piso AS habitacion_piso,
+                           th.descripcion AS tipo_habitacion,
+                           er.descripcion AS estado_reserva,
+                           rp.monto_total, rp.monto_cobrado, rp.saldo_pendiente,
+                           ep.descripcion AS estado_pago
+                    FROM Reservas r
+                    JOIN Habitaciones h ON r.id_habitacion = h.id
+                    JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                    JOIN Estados_Reserva er ON r.id_estado_reserva = er.id
+                    LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
+                    LEFT JOIN Estados_Pago ep ON rp.id_estado_pago = ep.id
+                    WHERE r.id_cliente = :id_cliente
+                    ORDER BY r.fecha_entrada DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id_cliente' => $idCliente]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Clientes::getReservasByCliente: " . $e->getMessage());
+            throw new Exception("Error al consultar el historial de reservas del cliente.");
+        }
+    }
+
+    /**
+     * Cuenta la cantidad de reservas de un cliente.
+     */
+    public function countReservasByCliente(int $idCliente): int
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM Reservas WHERE id_cliente = :id_cliente");
+            $stmt->execute([':id_cliente' => $idCliente]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en Clientes::countReservasByCliente: " . $e->getMessage());
+            return 0;
+        }
+    }
 }

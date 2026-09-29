@@ -1,0 +1,98 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Detalle de Tarea #<?= htmlspecialchars((string)($tarea['id'] ?? '')) ?></h1>
+        <p>Información completa de la tarea de housekeeping</p>
+    </div>
+
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/housekeeping') ?>" class="btn btn--ghost">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+</header>
+
+<section class="details-section">
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <tbody>
+                <tr>
+                    <td class="detail-label">ID</td>
+                    <td class="detail-value"><strong>#<?= htmlspecialchars((string)$tarea['id']) ?></strong></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Habitación</td>
+                    <td class="detail-value">#<?= htmlspecialchars((string)$tarea['habitacion_numero']) ?> (Piso <?= htmlspecialchars((string)$tarea['habitacion_piso']) ?>)</td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Tipo de Tarea</td>
+                    <td class="detail-value"><?= htmlspecialchars($tarea['tipo_tarea']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Estado</td>
+                    <td class="detail-value">
+                        <?php
+                        $estadoLower = mb_strtolower($tarea['estado_descripcion'] ?? '', 'UTF-8');
+                        $statusClass = 'badge--disponible';
+                        if (strpos($estadoLower, 'pendient') !== false) {
+                            $statusClass = 'badge--pendiente';
+                        } elseif (strpos($estadoLower, 'progreso') !== false) {
+                            $statusClass = 'badge--reservada';
+                        } elseif (strpos($estadoLower, 'completad') !== false) {
+                            $statusClass = 'badge--disponible';
+                        } elseif (strpos($estadoLower, 'inspeccion') !== false) {
+                            $statusClass = 'badge--ocupada';
+                        }
+                        ?>
+                        <span class="badge <?= $statusClass ?>"><?= htmlspecialchars($tarea['estado_descripcion']) ?></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha de Asignación</td>
+                    <td class="detail-value"><?= htmlspecialchars($tarea['fecha_asignada']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha de Finalización</td>
+                    <td class="detail-value"><?= $tarea['fecha_completada'] ? htmlspecialchars($tarea['fecha_completada']) : 'Pendiente' ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Empleado Asignado</td>
+                    <td class="detail-value"><?= $tarea['empleado_nombre'] ? htmlspecialchars($tarea['empleado_nombre'] . ' ' . $tarea['empleado_apellido']) : 'Sin asignar' ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Observaciones</td>
+                    <td class="detail-value"><?= nl2br(htmlspecialchars($tarea['observaciones'] ?? '')) ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<?php if ($tarea['id_estado_tarea'] == Housekeeping::ESTADO_PENDIENTE): ?>
+    <section class="details-section" id="iniciar">
+        <div style="text-align: center; padding: 20px;">
+            <a href="<?= url('/dashboard/housekeeping/complete?id=' . $tarea['id']) ?>" class="btn btn--primary" style="font-size: 16px; padding: 12px 24px;">
+                <i class="fas fa-play"></i> Iniciar Tarea
+            </a>
+        </div>
+    </section>
+<?php endif; ?>
+
+<?php if ($tarea['id_estado_tarea'] == Housekeeping::ESTADO_EN_PROGRESO): ?>
+    <section class="details-section" id="completar">
+        <div style="text-align: center; padding: 20px;">
+            <a href="<?= url('/dashboard/housekeeping/complete?id=' . $tarea['id']) ?>" class="btn btn--success" style="font-size: 16px; padding: 12px 24px;">
+                <i class="fas fa-check"></i> Completar Tarea
+            </a>
+        </div>
+    </section>
+<?php endif; ?>
+
+<?php if ($tarea['id_estado_tarea'] == Housekeeping::ESTADO_COMPLETADA): ?>
+    <section class="details-section" id="inspeccionar">
+        <div style="text-align: center; padding: 20px;">
+            <a href="<?= url('/dashboard/housekeeping/inspect?id=' . $tarea['id']) ?>" class="btn btn--primary" style="font-size: 16px; padding: 12px 24px;">
+                <i class="fas fa-clipboard-check"></i> Inspeccionar
+            </a>
+        </div>
+    </section>
+<?php endif; ?>

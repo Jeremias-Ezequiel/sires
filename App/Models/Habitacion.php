@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Config\Database;
 use PDO;
 use PDOException;
 use Exception;
@@ -16,6 +17,7 @@ class Habitacion extends Model
     private int $id_tipo_habitacion;
     private int $id_estado_habitacion;
     private float $precio_noche_base;
+    private string $descripcion;
 
     // Estados de habitación según Estados_Habitacion
     public const ESTADO_DISPONIBLE = 1;
@@ -23,19 +25,33 @@ class Habitacion extends Model
     public const ESTADO_MANTENIMIENTO = 3;
     public const ESTADO_BLOQUEADA = 4;
 
-    // Regla de negocio: tipos de habitación según capacidad de personas
-    public const TIPOS_POR_CAPACIDAD = [
-        2 => [1, 4], // Simple + Matrimonial
-        3 => [2],    // Doble
-        4 => [3],    // Suite
-    ];
-
+    // La capacidad de cada tipo de habitación vive en Tipos_Habitacion.capacidad.
+    // Antes estaba en el mapa TIPOS_POR_CAPACIDAD de esta clase, lo que hacia
+    // imposible cambiar la capacidad de un tipo sin tocar y desplegar codigo:
+    // cambiar "Suite" de 4 a 5 personas exigia modificar el fuente.
     // Regla de negocio: descuento por ocupación según capacidad y cantidad de huéspedes (%)
     public const DESCUENTOS_POR_CAPACIDAD = [
         4 => [1 => 30, 2 => 20, 3 => 10, 4 => 0],
         3 => [1 => 25, 2 => 10, 3 => 0],
         2 => [1 => 15, 2 => 0],
     ];
+
+    /**
+     * Cache de tipos por capacidad y capacidad por tipo.
+     *
+     * Estas consultas se disparan dentro de listados y del calculo de precios,
+     * una vez por habitacion y una vez por linea de detalle. Sin cache, cargar
+     * el panel con 50 habitaciones serian 50 idas a la base por lo mismo.
+     *
+     * Es estatico a proposito: los metodos que la usan son estaticos porque se
+     * llaman desde la Vista de precio sin instanciar el modelo.
+     *
+     * @var array<int, int[]>
+     */
+    private static array $cacheTiposPorCapacidad = [];
+
+    /** @var array<int, int> */
+    private static array $cacheCapacidadPorTipo = [];
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
     {
@@ -62,7 +78,17 @@ class Habitacion extends Model
             $params['floor'] = (int)$floor;
         }
 
-        $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
+        // Verificar si el campo descripcion existe (compatibilidad con versiones anteriores)
+        $hasDescripcion = false;
+        try {
+            $checkStmt = $this->db->query("SHOW COLUMNS FROM Habitaciones LIKE 'descripcion'");
+            $hasDescripcion = $checkStmt->fetch() !== false;
+        } catch (Exception $e) {
+            $hasDescripcion = false;
+        }
+
+        $descripcionField = $hasDescripcion ? "h.descripcion" : "NULL AS descripcion";
+        $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base, {$descripcionField},
                        th.descripcion AS tipo, eh.descripcion AS estado,
                        h.id_tipo_habitacion, h.id_estado_habitacion
                 FROM Habitaciones h
@@ -127,17 +153,40 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
 
-            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+            // Verificar si el campo descripcion existe
+            $hasDescripcion = false;
+            try {
+                $checkStmt = $this->db->query("SHOW COLUMNS FROM Habitaciones LIKE 'descripcion'");
+                $hasDescripcion = $checkStmt->fetch() !== false;
+            } catch (Exception $e) {
+                $hasDescripcion = false;
+            }
+
+            if ($hasDescripcion) {
+                $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base, descripcion)
+                        VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base, :descripcion)";
+                $params = [
+                    ':numero'               => $habitacion->getNumero(),
+                    ':piso'                 => $habitacion->getPiso(),
+                    ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
+                    ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
+                    ':precio_noche_base'    => $habitacion->getPrecioNocheBase(),
+                    ':descripcion'          => $habitacion->getDescripcion()
+                ];
+            } else {
+                $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
+                        VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+                $params = [
+                    ':numero'               => $habitacion->getNumero(),
+                    ':piso'                 => $habitacion->getPiso(),
+                    ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
+                    ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
+                    ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
+                ];
+            }
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':numero'               => $habitacion->getNumero(),
-                ':piso'                 => $habitacion->getPiso(),
-                ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
-                ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
-                ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
-            ]);
+            return $stmt->execute($params);
         } catch (PDOException $e) {
             error_log("Error en Habitacion::save: " . $e->getMessage());
             throw new Exception("Error interno al registrar la habitación.");
@@ -147,7 +196,17 @@ class Habitacion extends Model
     public function findById(int $id): ?array
     {
         try {
-            $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
+            // Verificar si el campo descripcion existe
+            $hasDescripcion = false;
+            try {
+                $checkStmt = $this->db->query("SHOW COLUMNS FROM Habitaciones LIKE 'descripcion'");
+                $hasDescripcion = $checkStmt->fetch() !== false;
+            } catch (Exception $e) {
+                $hasDescripcion = false;
+            }
+
+            $descripcionField = $hasDescripcion ? "h.descripcion" : "NULL AS descripcion";
+            $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base, {$descripcionField},
                            th.descripcion AS tipo, eh.descripcion AS estado,
                            h.id_tipo_habitacion, h.id_estado_habitacion
                     FROM Habitaciones h
@@ -174,22 +233,51 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya está en uso por otra habitación.");
             }
 
-            $sql = "UPDATE Habitaciones
-                    SET numero = :numero, piso = :piso,
-                        id_tipo_habitacion = :id_tipo_habitacion,
-                        id_estado_habitacion = :id_estado_habitacion,
-                        precio_noche_base = :precio_noche_base
-                    WHERE id = :id";
+            // Verificar si el campo descripcion existe
+            $hasDescripcion = false;
+            try {
+                $checkStmt = $this->db->query("SHOW COLUMNS FROM Habitaciones LIKE 'descripcion'");
+                $hasDescripcion = $checkStmt->fetch() !== false;
+            } catch (Exception $e) {
+                $hasDescripcion = false;
+            }
+
+            if ($hasDescripcion) {
+                $sql = "UPDATE Habitaciones
+                        SET numero = :numero, piso = :piso,
+                            id_tipo_habitacion = :id_tipo_habitacion,
+                            id_estado_habitacion = :id_estado_habitacion,
+                            precio_noche_base = :precio_noche_base,
+                            descripcion = :descripcion
+                        WHERE id = :id";
+                $params = [
+                    ':id'                   => $habitacion->getId(),
+                    ':numero'               => $habitacion->getNumero(),
+                    ':piso'                 => $habitacion->getPiso(),
+                    ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
+                    ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
+                    ':precio_noche_base'    => $habitacion->getPrecioNocheBase(),
+                    ':descripcion'          => $habitacion->getDescripcion()
+                ];
+            } else {
+                $sql = "UPDATE Habitaciones
+                        SET numero = :numero, piso = :piso,
+                            id_tipo_habitacion = :id_tipo_habitacion,
+                            id_estado_habitacion = :id_estado_habitacion,
+                            precio_noche_base = :precio_noche_base
+                        WHERE id = :id";
+                $params = [
+                    ':id'                   => $habitacion->getId(),
+                    ':numero'               => $habitacion->getNumero(),
+                    ':piso'                 => $habitacion->getPiso(),
+                    ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
+                    ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
+                    ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
+                ];
+            }
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':id'                   => $habitacion->getId(),
-                ':numero'               => $habitacion->getNumero(),
-                ':piso'                 => $habitacion->getPiso(),
-                ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
-                ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
-                ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
-            ]);
+            return $stmt->execute($params);
         } catch (PDOException $e) {
             error_log("Error en Habitacion::update: " . $e->getMessage());
             throw new Exception("Error interno al actualizar la habitación.");
@@ -295,9 +383,36 @@ class Habitacion extends Model
         }
     }
 
+    /**
+     * Capacidades que existen hoy en Tipos_Habitacion, de menor a mayor.
+     *
+     * El panel las usa para armar los filtros y los contadores. Si la lista
+     * viviera en el PHP, agregar un tipo de 5 personas obligaria a tocar el
+     * controller y las dos vistas: con esto, alcanza con dar de alta el tipo.
+     */
+    public function capacidadesExistentes(): array
+    {
+        try {
+            $stmt = $this->db->query(
+                "SELECT DISTINCT th.capacidad
+                 FROM Tipos_Habitacion th
+                 JOIN Habitaciones h ON h.id_tipo_habitacion = th.id
+                 WHERE th.capacidad > 0
+                 ORDER BY th.capacidad ASC"
+            );
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::capacidadesExistentes: " . $e->getMessage());
+            throw new Exception("Error al consultar las capacidades disponibles.");
+        }
+    }
+
     public function countDisponiblesPorCapacidad(int $capacidad): int
     {
         $tiposIds = $this->tiposPorCapacidad($capacidad);
+        if ($tiposIds === []) {
+            return 0;
+        }
         $placeholders = implode(',', array_fill(0, count($tiposIds), '?'));
 
         try {
@@ -316,6 +431,9 @@ class Habitacion extends Model
     public function getHabitacionesPorCapacidad(int $capacidad): array
     {
         $tiposIds = $this->tiposPorCapacidad($capacidad);
+        if ($tiposIds === []) {
+            return [];
+        }
         $placeholders = implode(',', array_fill(0, count($tiposIds), '?'));
 
         $sql = "SELECT h.numero, h.piso, th.descripcion AS tipo, eh.descripcion AS estado
@@ -335,21 +453,79 @@ class Habitacion extends Model
         }
     }
 
+    /**
+     * Ids de los tipos de habitacion con la capacidad pedida.
+     *
+     * Devuelve un array vacio si ningun tipo tiene esa capacidad. Antes el
+     * codigo caia a los tipos de 2 personas cuando la capacidad no existia, lo
+     * que hacia que un filtro de "5 personas" mostrara habitaciones dobles.
+     *
+     * @return int[]
+     */
     private function tiposPorCapacidad(int $capacidad): array
     {
-        return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];
+        if (isset(self::$cacheTiposPorCapacidad[$capacidad])) {
+            return self::$cacheTiposPorCapacidad[$capacidad];
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT id FROM Tipos_Habitacion WHERE capacidad = ? AND is_active = 1 ORDER BY id"
+            );
+            $stmt->execute([$capacidad]);
+
+            $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::tiposPorCapacidad: " . $e->getMessage());
+            throw new Exception("Error al consultar los tipos de habitación por capacidad.");
+        }
+
+        self::$cacheTiposPorCapacidad[$capacidad] = $ids;
+
+        return $ids;
     }
 
+    /**
+     * Capacidad de personas de un tipo de habitacion, leida de la base.
+     *
+     * @throws Exception si el tipo no existe. Antes devolvia 2 por defecto, y
+     * ese 2 silencioso se usaba para validar la cantidad de huespedes: un tipo
+     * mal configurado dejaba pasar sobreventa sin avisar.
+     */
     public static function capacidadParaTipo(int $idTipoHabitacion): int
     {
-        foreach (self::TIPOS_POR_CAPACIDAD as $capacidad => $tipos) {
-            if (in_array($idTipoHabitacion, $tipos, true)) {
-                return $capacidad;
-            }
+        if (isset(self::$cacheCapacidadPorTipo[$idTipoHabitacion])) {
+            return self::$cacheCapacidadPorTipo[$idTipoHabitacion];
         }
-        return 2;
+
+        try {
+            $db = (new Database())->getConnection();
+            $stmt = $db->prepare("SELECT capacidad FROM Tipos_Habitacion WHERE id = ?");
+            $stmt->execute([$idTipoHabitacion]);
+            $capacidad = $stmt->fetchColumn();
+
+            if ($capacidad === false) {
+                throw new Exception(
+                    "El tipo de habitación #{$idTipoHabitacion} no existe; "
+                    . "no se puede determinar su capacidad."
+                );
+            }
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::capacidadParaTipo: " . $e->getMessage());
+            throw new Exception("Error al consultar la capacidad del tipo de habitación.");
+        }
+
+        self::$cacheCapacidadPorTipo[$idTipoHabitacion] = (int)$capacidad;
+
+        return self::$cacheCapacidadPorTipo[$idTipoHabitacion];
     }
 
+    /**
+     * Descuento por ocupacion para un tipo de habitacion.
+     *
+     * El descuento sigue siendo una regla de negocio del codigo; lo que se movio
+     * a la base fue de que capacidad corresponde a cada tipo.
+     */
     public static function descuentoParaTipo(int $idTipoHabitacion, int $cantidadHuespedes): int
     {
         $capacidad = self::capacidadParaTipo($idTipoHabitacion);
@@ -437,5 +613,101 @@ class Habitacion extends Model
             throw new Exception("El precio por noche debe ser mayor a 0.");
         }
         $this->precio_noche_base = $precio_noche_base;
+    }
+
+    public function getDescripcion(): string
+    {
+        return $this->descripcion;
+    }
+    public function setDescripcion(string $descripcion): void
+    {
+        $this->descripcion = trim($descripcion);
+    }
+
+    /**
+     * Verifica si un número de habitación es consecutivo con las existentes en el mismo piso.
+     * 
+     * @param int $numero Número de habitación a verificar
+     * @param int $piso Piso de la habitación
+     * @param int|null $id ID de habitación a excluir (para ediciones)
+     * @return array ['es_consecutivo' => bool, 'sugerencia' => int|null, 'mensaje' => string]
+     */
+    public function validarConsecutividad(int $numero, int $piso, ?int $id = null): array
+    {
+        try {
+            $sql = "SELECT numero FROM Habitaciones WHERE piso = :piso";
+            $params = [':piso' => $piso];
+            
+            if ($id !== null) {
+                $sql .= " AND id != :id";
+                $params[':id'] = $id;
+            }
+            
+            $sql .= " ORDER BY numero ASC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $numeros = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+            
+            if (empty($numeros)) {
+                return [
+                    'es_consecutivo' => true,
+                    'sugerencia' => 1,
+                    'mensaje' => 'Es la primera habitación de este piso.'
+                ];
+            }
+            
+            $min = min($numeros);
+            $max = max($numeros);
+            
+            // Verificar si ya existe
+            if (in_array($numero, $numeros)) {
+                return [
+                    'es_consecutivo' => false,
+                    'sugerencia' => $max + 1,
+                    'mensaje' => "El número {$numero} ya existe en el piso {$piso}."
+                ];
+            }
+            
+            // Verificar consecutividad
+            if ($numero === $min - 1 || $numero === $max + 1) {
+                return [
+                    'es_consecutivo' => true,
+                    'sugerencia' => null,
+                    'mensaje' => "El número {$numero} es consecutivo con las habitaciones existentes."
+                ];
+            }
+            
+            // No es consecutivo
+            $sugerencia = $max + 1;
+            return [
+                'es_consecutivo' => false,
+                'sugerencia' => $sugerencia,
+                'mensaje' => "El número {$numero} no es consecutivo. Se sugiere usar {$sugerencia}."
+            ];
+            
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::validarConsecutividad: " . $e->getMessage());
+            throw new Exception("Error al validar la consecutividad de habitaciones.");
+        }
+    }
+
+    /**
+     * Obtiene el siguiente número de habitación sugerido para un piso.
+     */
+    public function siguienteNumeroSugerido(int $piso): int
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT MAX(numero) FROM Habitaciones WHERE piso = :piso"
+            );
+            $stmt->execute([':piso' => $piso]);
+            $max = $stmt->fetchColumn();
+            
+            return $max === null ? 1 : (int)$max + 1;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::siguienteNumeroSugerido: " . $e->getMessage());
+            return 1;
+        }
     }
 }

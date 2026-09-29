@@ -34,14 +34,12 @@ class DashboardController
         $errorMessage = '';
 
         $stats = [
-            'disponibles'     => 0,
-            'ocupadas'        => 0,
-            'reservadas'      => 0,
-            'ingresos_hoy'    => 0.0,
-            'disp_2_personas' => 0,
-            'disp_3_personas' => 0,
-            'disp_4_personas' => 0,
-            'habitaciones'    => [],
+            'disponibles'   => 0,
+            'ocupadas'      => 0,
+            'reservadas'    => 0,
+            'ingresos_hoy'  => 0.0,
+            'capacidades'   => [],
+            'habitaciones'  => [],
         ];
 
         try {
@@ -49,14 +47,31 @@ class DashboardController
             $reserva     = new Reserva();
             $transaccion = new TransaccionPago();
 
-            $stats['disponibles']     = $habitacion->countByEstado(Habitacion::ESTADO_DISPONIBLE);
-            $stats['ocupadas']        = $habitacion->countByEstado(Habitacion::ESTADO_OCUPADA);
-            $stats['reservadas']      = $reserva->countReservasHoy();
-            $stats['ingresos_hoy']    = $transaccion->sumIngresosDelDia();
-            $stats['disp_2_personas'] = $habitacion->countDisponiblesPorCapacidad(2);
-            $stats['disp_3_personas'] = $habitacion->countDisponiblesPorCapacidad(3);
-            $stats['disp_4_personas'] = $habitacion->countDisponiblesPorCapacidad(4);
-            $stats['habitaciones']    = $habitacion->getHabitacionesPorCapacidad($capacidad_filtrada);
+            $stats['disponibles']  = $habitacion->countByEstado(Habitacion::ESTADO_DISPONIBLE);
+            $stats['ocupadas']     = $habitacion->countByEstado(Habitacion::ESTADO_OCUPADA);
+            $stats['reservadas']   = $reserva->countReservasHoy();
+            $stats['ingresos_hoy'] = $transaccion->sumIngresosDelDia();
+
+            // Las capacidades vienen de Tipos_Habitacion, no de una lista fija
+            // en el PHP: si se da de alta un tipo de 5 personas, el panel lo
+            // muestra sin tocar este archivo.
+            $stats['capacidades'] = [];
+            foreach ($habitacion->capacidadesExistentes() as $capacidad) {
+                $stats['capacidades'][] = [
+                    'capacidad'   => $capacidad,
+                    'disponibles' => $habitacion->countDisponiblesPorCapacidad($capacidad),
+                ];
+            }
+
+            // Si piden una capacidad que no existe (un link viejo, un typo), se
+            // cae a la primera real en vez de mostrar una lista vacia sin
+            // explicar por que.
+            if ($stats['capacidades'] !== []
+                && !in_array($capacidad_filtrada, array_column($stats['capacidades'], 'capacidad'), true)) {
+                $capacidad_filtrada = $stats['capacidades'][0]['capacidad'];
+            }
+
+            $stats['habitaciones'] = $habitacion->getHabitacionesPorCapacidad($capacidad_filtrada);
         } catch (Exception $e) {
             error_log("Error en Dashboard: " . $e->getMessage());
             $errorMessage = "Error de datos.";
