@@ -65,6 +65,14 @@ include __DIR__ . '/../partials/head.phtml';
                         </li>
                     <?php endif; ?>
 
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
+                        <li>
+                            <a href="<?= url('/dashboard/consumos') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'consumos.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-shopping-cart"></i>Consumos
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
                         <li>
                             <a href="<?= url('/dashboard/payments') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">

@@ -543,6 +543,10 @@ class BookingController
                 throw new Exception("La reserva no existe.");
             }
 
+            // Obtener consumos de la reserva
+            $consumoModel = new Consumo();
+            $consumos = $consumoModel->getByReserva((int)$id);
+
             $contentView = __DIR__ . '/../views/dashboard/detailBooking.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 

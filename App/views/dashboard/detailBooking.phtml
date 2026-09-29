@@ -142,3 +142,53 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
         </table>
     </div>
 </section>
+
+<?php if (!empty($consumos) && is_array($consumos)): ?>
+    <section class="details-section">
+        <h2 class="form__section-title">
+            <i class="fas fa-shopping-cart"></i> Consumos de la Reserva
+        </h2>
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Descripción</th>
+                        <th>Subtotal</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($consumos as $consumo): ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$consumo['id']) ?></strong></td>
+                            <td><?= htmlspecialchars($consumo['descripcion']) ?></td>
+                            <td>$<?= number_format((float)$consumo['subtotal'], 2, ',', '.') ?></td>
+                            <td>
+                                <span class="badge <?= $consumo['id_estado'] == 2 ? 'badge--disponible' : ($consumo['id_estado'] == 3 ? 'badge--ocupada' : 'badge--pendiente') ?>">
+                                    <?= htmlspecialchars($consumo['estado_descripcion']) ?>
+                                </span>
+                            </td>
+                            <td><?= htmlspecialchars($consumo['fecha_hora']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 15px; text-align: center;">
+            <a href="<?= url('/dashboard/consumos/add?id_reserva=' . (int)$reserva['id']) ?>" class="btn btn--primary">
+                <i class="fas fa-plus"></i> Agregar Consumo
+            </a>
+        </div>
+    </section>
+<?php else: ?>
+    <section class="details-section">
+        <div style="text-align: center; padding: 20px;">
+            <p style="color: #6b7280; margin-bottom: 15px;">No hay consumos registrados para esta reserva.</p>
+            <a href="<?= url('/dashboard/consumos/add?id_reserva=' . (int)$reserva['id']) ?>" class="btn btn--primary">
+                <i class="fas fa-plus"></i> Agregar Consumo
+            </a>
+        </div>
+    </section>
+<?php endif; ?>

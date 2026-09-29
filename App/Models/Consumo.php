@@ -198,6 +198,24 @@ class Consumo extends Model
         }
     }
 
+    public function getByReserva(int $idReserva): array
+    {
+        try {
+            $sql = "SELECT c.*, ep.descripcion AS estado_descripcion
+                    FROM Consumos c
+                    JOIN Consumos_Estados ep ON c.id_estado = ep.id
+                    WHERE c.id_reserva = :id_reserva
+                    ORDER BY c.fecha_hora DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id_reserva' => $idReserva]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Consumo::getByReserva: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function getId(): int { return $this->id; }
     public function setId(int $id): void { $this->id = $id; }
 
