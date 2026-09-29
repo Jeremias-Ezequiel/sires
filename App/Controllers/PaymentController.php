@@ -333,7 +333,7 @@ class PaymentController
             $resumen = new ResumenPago();
             $resumen->setIdReserva((int)$reserva['id']);
             $resumen->setIdEstadoPago(ResumenPago::ESTADO_PENDIENTE);
-            $resumen->setDesglose($desglose['hospedaje'], $desglose['consumos']);
+            $resumen->setDesglose($desglose['hospedaje'], $desglose['consumos'], $desglose['total']);
             $resumen->setMontoPagado(0.0);
             $resumen->setSaldoPendiente($total);
 
