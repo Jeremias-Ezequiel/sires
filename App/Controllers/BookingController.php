@@ -152,6 +152,13 @@ class BookingController
                 );
             }
 
+            // Solución 2: Asegurar que cantidad_huespedes sea al menos la suma de adultos + niños
+            // Si el formulario envía cantidad_huespedes = 1 pero hay niños, ajustar automáticamente
+            $cantidadMinima = $cantNinos + 1; // Al menos 1 adulto + los niños
+            if ($cantHuespedes < $cantidadMinima) {
+                $cantHuespedes = $cantidadMinima;
+            }
+
             $reserva = new Reserva();
             $reserva->setIdCliente($idCliente);
             $reserva->setIdHabitacion($idHabitacion);
