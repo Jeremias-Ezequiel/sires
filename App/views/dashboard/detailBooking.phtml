@@ -134,28 +134,6 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
                     <td class="detail-value"><?= isset($reserva['saldo_pendiente']) ? '$' . number_format((float)$reserva['saldo_pendiente'], 2, ',', '.') : '-' ?></td>
                 </tr>
 
-                <?php if (isset($reserva['monto_total']) && (float)$reserva['monto_total'] > 0): ?>
-                    <?php
-                    // Calcular impuestos sobre el subtotal (hospedaje + consumos)
-                    $subtotal = (float)($reserva['monto_hospedaje'] ?? 0) + (float)($reserva['monto_consumos'] ?? 0);
-                    $resumenPagoModel = new \App\Models\ResumenPago();
-                    $impuestos = $resumenPagoModel->calcularImpuestos($subtotal);
-                    $totalConImpuestos = $subtotal + $impuestos;
-                    ?>
-                    <tr>
-                        <td class="detail-label">Subtotal (sin impuestos)</td>
-                        <td class="detail-value">$<?= number_format($subtotal, 2, ',', '.') ?></td>
-                    </tr>
-                    <tr>
-                        <td class="detail-label">Impuestos</td>
-                        <td class="detail-value">$<?= number_format($impuestos, 2, ',', '.') ?></td>
-                    </tr>
-                    <tr>
-                        <td class="detail-label"><strong>Total con Impuestos</strong></td>
-                        <td class="detail-value"><strong>$<?= number_format($totalConImpuestos, 2, ',', '.') ?></strong></td>
-                    </tr>
-                <?php endif; ?>
-
                 <tr>
                     <td class="detail-label">Observaciones</td>
                     <td class="detail-value"><?= !empty($reserva['observaciones']) ? htmlspecialchars($reserva['observaciones']) : '-' ?></td>
