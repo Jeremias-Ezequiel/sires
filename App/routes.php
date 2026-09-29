@@ -12,6 +12,7 @@ use App\Controllers\RoomController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\HousekeepingController;
+use App\Controllers\ImpuestoController;
 use App\Controllers\ApiController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
@@ -365,6 +366,43 @@ return function (RouteCollector $r) {
         'action' => [ClienteController::class, 'showClientHistory'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Impuestos
+    $r->addRoute('GET', '/dashboard/impuestos', [
+        'action' => [ImpuestoController::class, 'showImpuestos'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/impuestos/add', [
+        'action' => [ImpuestoController::class, 'showNewForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/impuestos/add/process', [
+        'action' => [ImpuestoController::class, 'addImpuesto'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/impuestos/edit', [
+        'action' => [ImpuestoController::class, 'showEditForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/impuestos/edit/process', [
+        'action' => [ImpuestoController::class, 'editImpuesto'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/impuestos/delete', [
+        'action' => [ImpuestoController::class, 'deleteImpuesto'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
     ]);
 
 };
