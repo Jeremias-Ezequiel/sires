@@ -1,0 +1,75 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Detalle de Consumo #<?= htmlspecialchars((string)($consumo['id'] ?? '')) ?></h1>
+        <p>Información completa del consumo</p>
+    </div>
+
+    <a href="<?= url('/dashboard/consumos') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<section class="details-section">
+    <div class="details-table-wrapper">
+        <table class="details-table">
+            <tbody>
+                <tr>
+                    <td class="detail-label">ID</td>
+                    <td class="detail-value"><strong>#<?= htmlspecialchars((string)$consumo['id']) ?></strong></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Reserva</td>
+                    <td class="detail-value">#<?= htmlspecialchars((string)$consumo['reserva_id']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Descripción</td>
+                    <td class="detail-value"><?= htmlspecialchars($consumo['descripcion']) ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Subtotal</td>
+                    <td class="detail-value">$<?= number_format((float)$consumo['subtotal'], 2, ',', '.') ?></td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Estado</td>
+                    <td class="detail-value">
+                        <span class="badge <?= $consumo['id_estado'] == 2 ? 'badge--disponible' : ($consumo['id_estado'] == 3 ? 'badge--ocupada' : 'badge--pendiente') ?>">
+                            <?= htmlspecialchars($consumo['estado_descripcion']) ?>
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="detail-label">Fecha y Hora</td>
+                    <td class="detail-value"><?= htmlspecialchars($consumo['fecha_hora']) ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<?php if ($consumo['id_estado'] == 1): ?>
+    <section class="details-section">
+        <div style="text-align: center; padding: 20px;">
+            <form method="POST" action="<?= url('/dashboard/consumos/facturar') ?>" style="display: inline;">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= (int)$consumo['id'] ?>">
+                <button type="submit" class="btn btn--success" style="font-size: 16px; padding: 12px 24px;">
+                    <i class="fas fa-check"></i> Facturar Consumo
+                </button>
+            </form>
+        </div>
+    </section>
+<?php endif; ?>
+
+<?php if ($consumo['id_estado'] != 3): ?>
+    <section class="details-section">
+        <div style="text-align: center; padding: 20px;">
+            <form method="POST" action="<?= url('/dashboard/consumos/anular') ?>" style="display: inline;" onsubmit="return confirm('¿Está seguro de anular este consumo?');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= (int)$consumo['id'] ?>">
+                <button type="submit" class="btn btn--danger" style="font-size: 16px; padding: 12px 24px;">
+                    <i class="fas fa-trash"></i> Anular Consumo
+                </button>
+            </form>
+        </div>
+    </section>
+<?php endif; ?>

@@ -1,0 +1,134 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Consumos</h1>
+        <p>Gestión de minibar y servicios</p>
+    </div>
+</header>
+
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<section class="details-section filter-section">
+    <form method="GET" action="<?= url('/dashboard/consumos') ?>" class="filter-form">
+        <div class="form-group-role">
+            <label class="form__label">Buscar</label>
+            <input type="text" name="search" class="form__input" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="Descripción o ID de reserva">
+        </div>
+        <div class="form-group-role">
+            <label class="form__label">Estado</label>
+            <select name="estado" class="form__select">
+                <option value="">Todos</option>
+                <option value="1" <?= ($estado ?? '') === '1' ? 'selected' : '' ?>>Pendiente</option>
+                <option value="2" <?= ($estado ?? '') === '2' ? 'selected' : '' ?>>Facturado</option>
+                <option value="3" <?= ($estado ?? '') === '3' ? 'selected' : '' ?>>Anulado</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn--primary">
+            <i class="fas fa-filter"></i> Filtrar
+        </button>
+    </form>
+</section>
+
+<?php if (!empty($consumos) && is_array($consumos)): ?>
+    <section class="details-section">
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th>Reserva</th>
+                        <th>Descripción</th>
+                        <th>Subtotal</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($consumos as $consumo): ?>
+                        <tr>
+                            <td><strong>#<?= htmlspecialchars((string)$consumo['id']) ?></strong></td>
+                            <td>#<?= htmlspecialchars((string)$consumo['reserva_id']) ?></td>
+                            <td><?= htmlspecialchars($consumo['descripcion']) ?></td>
+                            <td>$<?= number_format((float)$consumo['subtotal'], 2, ',', '.') ?></td>
+                            <td>
+                                <span class="badge <?= $consumo['id_estado'] == 2 ? 'badge--disponible' : ($consumo['id_estado'] == 3 ? 'badge--ocupada' : 'badge--pendiente') ?>">
+                                    <?= htmlspecialchars($consumo['estado_descripcion']) ?>
+                                </span>
+                            </td>
+                            <td><?= htmlspecialchars($consumo['fecha_hora']) ?></td>
+                            <td class="cell-actions">
+                                <div class="actions-group-container">
+                                    <a href="<?= url('/dashboard/consumos/detail?id=' . $consumo['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <?php if ($consumo['id_estado'] == 1): ?>
+                                        <form method="POST" action="<?= url('/dashboard/consumos/facturar') ?>" style="display: inline;">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="id" value="<?= (int)$consumo['id'] ?>">
+                                            <button type="submit" class="btn btn--icon btn--icon-success" title="Facturar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <?php if ($consumo['id_estado'] != 3): ?>
+                                        <form method="POST" action="<?= url('/dashboard/consumos/anular') ?>" style="display: inline;" onsubmit="return confirm('¿Está seguro de anular este consumo?');">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="id" value="<?= (int)$consumo['id'] ?>">
+                                            <button type="submit" class="btn btn--icon btn--icon-delete" title="Anular">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
+                <?php if ($currentPage > 1): ?>
+                    <a href="<?= url('/dashboard/consumos?page=' . ($currentPage - 1) . '&search=' . urlencode($search ?? '') . '&estado=' . urlencode($estado ?? '')) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+
+                <div class="pagination-numbers" style="display: flex; gap: 5px;">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <a href="<?= url('/dashboard/consumos?page=' . $i . '&search=' . urlencode($search ?? '') . '&estado=' . urlencode($estado ?? '')) ?>"
+                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
+                                  <?= $i === $currentPage
+                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;'
+                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;'
+                                  ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+
+                <?php if ($currentPage < $totalPages): ?>
+                    <a href="<?= url('/dashboard/consumos?page=' . ($currentPage + 1) . '&search=' . urlencode($search ?? '') . '&estado=' . urlencode($estado ?? '')) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+<?php else: ?>
+    <section class="details-section no-results-container">
+        <div class="no-results-content">
+            <div class="no-results-icon-frame">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h3>No se encontraron consumos</h3>
+            <p>No existen consumos registrados en el sistema.</p>
+        </div>
+    </section>
+<?php endif; ?>

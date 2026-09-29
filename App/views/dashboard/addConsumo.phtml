@@ -1,0 +1,47 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Nuevo Consumo</h1>
+        <p>Registrar minibar o servicio</p>
+    </div>
+
+    <a href="<?= url('/dashboard/consumos') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<div id="alert-container">
+    <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+            <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+            <?= htmlspecialchars($flashMessage) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<section class="details-section form-container-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/consumos/add/process', 'POST', 'employee-form') ?>
+        <?= csrf_field() ?>
+        <input type="hidden" name="id_reserva" value="<?= (int)$idReserva ?>">
+
+        <div class="form__section-title">
+            <i class="fas fa-info-circle"></i> Información del Consumo
+        </div>
+
+        <div class="form__group">
+            <label class="form__label" for="descripcion">Descripción</label>
+            <input type="text" id="descripcion" name="descripcion" required class="form__input" value="<?= htmlspecialchars($old['descripcion'] ?? '') ?>" placeholder="Ej: Minibar - Cerveza, Servicio de lavandería">
+        </div>
+
+        <div class="form__group">
+            <label class="form__label" for="subtotal">Subtotal ($)</label>
+            <input type="number" id="subtotal" name="subtotal" required class="form__input" step="0.01" min="0.01" value="<?= htmlspecialchars($old['subtotal'] ?? '') ?>" placeholder="Ej: 1500.00">
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Guardar Consumo
+            </button>
+        </div>
+
+    </form>
+</section>

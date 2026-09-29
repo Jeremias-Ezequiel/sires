@@ -12,6 +12,7 @@ use App\Controllers\RoomController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\HousekeepingController;
+use App\Controllers\ConsumoController;
 use App\Controllers\ApiController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
@@ -363,6 +364,43 @@ return function (RouteCollector $r) {
     // Historial de Huéspedes
     $r->addRoute('GET', '/dashboard/clients/history', [
         'action' => [ClienteController::class, 'showClientHistory'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Consumos (Minibar y Servicios)
+    $r->addRoute('GET', '/dashboard/consumos', [
+        'action' => [ConsumoController::class, 'showConsumos'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/consumos/add', [
+        'action' => [ConsumoController::class, 'showNewForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/consumos/add/process', [
+        'action' => [ConsumoController::class, 'addConsumo'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/consumos/detail', [
+        'action' => [ConsumoController::class, 'showDetail'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/consumos/facturar', [
+        'action' => [ConsumoController::class, 'facturar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/consumos/anular', [
+        'action' => [ConsumoController::class, 'anular'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
