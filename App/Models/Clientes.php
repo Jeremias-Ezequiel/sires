@@ -18,7 +18,7 @@ class Clientes extends Model
     private ?string $apellido = null;
     private ?string $dni_pasaporte = null;
     private ?string $telefono = null;
-    private ?string $mail = null;
+    private ?string $email = null;
     private ?string $observaciones = null;
     private ?int $is_active = 1;
 
@@ -133,14 +133,14 @@ class Clientes extends Model
                 throw new Exception("El DNI/Pasaporte ya se encuentra registrado.");
             }
 
-            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE mail = :mail");
-            $check->execute([':mail' => $cliente->getMail()]);
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE email = :email");
+            $check->execute([':email' => $cliente->getEmail()]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El email ya se encuentra registrado.");
             }
 
-            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, mail, observaciones)
-                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :mail, :observaciones)";
+            $sql = "INSERT INTO Clientes (id_nacionalidad, id_localidad, id_provincia, nombre, apellido, dni_pasaporte, telefono, email, observaciones)
+                    VALUES (:id_nacionalidad, :id_localidad, :id_provincia, :nombre, :apellido, :dni, :telefono, :email, :observaciones)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -151,7 +151,7 @@ class Clientes extends Model
                 ':apellido'        => $cliente->getApellido(),
                 ':dni'             => $cliente->getDniPasaporte(),
                 ':telefono'        => $cliente->getTelefono(),
-                ':mail'            => $cliente->getMail(),
+                ':email'            => $cliente->getEmail(),
                 ':observaciones'   => $cliente->getObservaciones()
             ]);
         } catch (PDOException $e) {
@@ -172,8 +172,8 @@ class Clientes extends Model
                 throw new Exception("El DNI/Pasaporte ya se encuentra registrado por otro cliente.");
             }
 
-            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE mail = :mail AND id != :id");
-            $check->execute([':mail' => $cliente->getMail(), ':id' => $cliente->getId()]);
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Clientes WHERE email = :email AND id != :id");
+            $check->execute([':email' => $cliente->getEmail(), ':id' => $cliente->getId()]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El email ya se encuentra registrado por otro cliente.");
             }
@@ -186,7 +186,7 @@ class Clientes extends Model
                         apellido        = :apellido,
                         dni_pasaporte   = :dni,
                         telefono        = :telefono,
-                        mail            = :mail,
+                        email            = :email,
                         observaciones   = :observaciones
                     WHERE id = :id";
 
@@ -199,7 +199,7 @@ class Clientes extends Model
                 ':apellido'        => $cliente->getApellido(),
                 ':dni'             => $cliente->getDniPasaporte(),
                 ':telefono'        => $cliente->getTelefono(),
-                ':mail'            => $cliente->getMail(),
+                ':email'            => $cliente->getEmail(),
                 ':observaciones'   => $cliente->getObservaciones(),
                 ':id'              => $cliente->getId()
             ]);
@@ -320,20 +320,20 @@ class Clientes extends Model
         $this->telefono = $clean;
     }
 
-    public function getMail(): ?string
+    public function getEmail(): ?string
     {
-        return $this->mail;
+        return $this->email;
     }
-    public function setMail(string $mail): void
+    public function setEmail(string $email): void
     {
-        $clean = htmlspecialchars(trim($mail), ENT_QUOTES, 'UTF-8');
+        $clean = htmlspecialchars(trim($email), ENT_QUOTES, 'UTF-8');
         if (empty($clean)) {
             throw new Exception("El email del cliente no puede estar vacío.");
         }
         if (!filter_var($clean, FILTER_VALIDATE_EMAIL)) {
             throw new Exception("El formato del email no es válido.");
         }
-        $this->mail = $clean;
+        $this->email = $clean;
     }
 
     public function getObservaciones(): ?string
