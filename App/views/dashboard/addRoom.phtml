@@ -129,7 +129,7 @@
         function actualizarPreview() {
             const piso = parseInt(selectPiso.value);
 
-            if (!piso || piso <= 0) {
+            if (isNaN(piso) || piso < 0) {
                 previewTitle.style.display = 'none';
                 roomPreview.style.display = 'none';
                 numeroGroup.style.display = 'none';
