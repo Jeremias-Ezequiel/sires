@@ -90,7 +90,7 @@ class ClienteController
             $observaciones = trim($_POST['observaciones'] ?? '');
             $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
+            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
 
             if (empty($nombre)) {
                 throw new Exception("El nombre es obligatorio.");
@@ -122,9 +122,6 @@ class ClienteController
             if ($idProvincia <= 0) {
                 throw new Exception("Debe seleccionar una provincia.");
             }
-            if ($idLocalidad <= 0) {
-                throw new Exception("Debe seleccionar una localidad.");
-            }
 
             if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
                 throw new Exception("El nombre solo puede contener letras y espacios.");
@@ -138,7 +135,7 @@ class ClienteController
             $cliente->setApellido($apellido);
             $cliente->setDniPasaporte($dni);
             $cliente->setTelefono($telefono);
-            $cliente->setMail($mail);
+            $cliente->setEmail($mail);
             $cliente->setObservaciones($observaciones !== '' ? $observaciones : null);
             $cliente->setIdNacionalidad($idNacionalidad);
             $cliente->setIdProvincia($idProvincia);
@@ -227,7 +224,7 @@ class ClienteController
             $observaciones = trim($_POST['observaciones'] ?? '');
             $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
+            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
 
             if (empty($nombre)) {
                 throw new Exception("El nombre es obligatorio.");
@@ -259,9 +256,6 @@ class ClienteController
             if ($idProvincia <= 0) {
                 throw new Exception("Debe seleccionar una provincia.");
             }
-            if ($idLocalidad <= 0) {
-                throw new Exception("Debe seleccionar una localidad.");
-            }
 
             if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
                 throw new Exception("El nombre solo puede contener letras y espacios.");
@@ -276,7 +270,7 @@ class ClienteController
             $cliente->setApellido($apellido);
             $cliente->setDniPasaporte($dni);
             $cliente->setTelefono($telefono);
-            $cliente->setMail($mail);
+            $cliente->setEmail($mail);
             $cliente->setObservaciones($observaciones !== '' ? $observaciones : null);
             $cliente->setIdNacionalidad($idNacionalidad);
             $cliente->setIdProvincia($idProvincia);

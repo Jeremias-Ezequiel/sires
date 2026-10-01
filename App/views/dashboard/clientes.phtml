@@ -68,7 +68,7 @@
                             <td><?= htmlspecialchars($cli->getNombre() . ' ' . $cli->getApellido()) ?></td>
                             <td><?= htmlspecialchars($cli->getDniPasaporte() ?? '') ?></td>
                             <td><?= htmlspecialchars($cli->getTelefono() ?? '') ?></td>
-                            <td><?= htmlspecialchars($cli->getMail() ?? '') ?></td>
+                            <td><?= htmlspecialchars($cli->getEmail() ?? '') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
                                     <a href="<?= url('/dashboard/clients/edit?id=' . $cli->getId()) ?>"
