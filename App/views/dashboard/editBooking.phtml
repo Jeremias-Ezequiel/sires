@@ -467,6 +467,18 @@ if (!empty($habitaciones)) {
                 return;
             }
 
+            if (filtered.type === 'exact') {
+                var r = filtered.results[0];
+                roomConfirmedId = r.id;
+                roomHidden.value = r.id;
+                roomDropdown.classList.remove('open');
+                showRoomConfirmCard(r);
+                roomSearch.setCustomValidity('');
+                aplicarCapacidad(r);
+                actualizarPrecioOcupacion();
+                return;
+            }
+
             roomDropdown.classList.add('open');
             var q = roomSearch.value.toLowerCase();
             filtered.results.forEach(function(r, i) {

@@ -445,7 +445,13 @@
 
             if (filtered.type === 'exact') {
                 var r = filtered.results[0];
-                confirmRoom(r);
+                roomConfirmedId = r.id;
+                roomHidden.value = r.id;
+                roomDropdown.classList.remove('open');
+                showRoomConfirmCard(r);
+                roomSearch.setCustomValidity('');
+                aplicarCapacidad(r);
+                actualizarPrecioOcupacion();
                 return;
             }
 
