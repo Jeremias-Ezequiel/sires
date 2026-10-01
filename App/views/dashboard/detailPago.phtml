@@ -39,6 +39,17 @@ $statusClass = 'badge--disponible';
 if (strpos($estadoLower, 'pendient') !== false) $statusClass = 'badge--pendiente';
 elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
 elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
+
+$noches = 0;
+$precioEfectivo = 0.0;
+if (!empty($reserva['fecha_entrada']) && !empty($reserva['fecha_salida'])):
+    $fIn = new \DateTime($reserva['fecha_entrada']);
+    $fOut = new \DateTime($reserva['fecha_salida']);
+    $noches = $fIn->diff($fOut)->days;
+    if ($resumen !== null && $noches > 0):
+        $precioEfectivo = round($resumen->getTotal() / $noches, 2);
+    endif;
+endif;
 ?>
 
 <section class="details-section">
@@ -73,6 +84,12 @@ elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada
                     <td class="detail-label">Precio por Noche</td>
                     <td class="detail-value">$<?= number_format((float)($reserva['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                 </tr>
+                <?php if ($resumen !== null && $noches > 0): ?>
+                    <tr>
+                        <td class="detail-label">Precio Efectivo por Noche</td>
+                        <td class="detail-value">$<?= number_format($precioEfectivo, 2, ',', '.') ?> <small style="color: var(--text-muted, #6b7280);">(Total / <?= $noches ?> noches)</small></td>
+                    </tr>
+                <?php endif; ?>
                 <tr>
                     <td class="detail-label">Fecha de Entrada</td>
                     <td class="detail-value"><?= htmlspecialchars($reserva['fecha_entrada']) ?></td>
@@ -263,20 +280,54 @@ elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada
     });
 
     // Modal handler for recalcular
-    const recalcBtn = document.querySelector('[data-action="recalculate"]');
-    if (recalcBtn) {
-        recalcBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const reservaName = this.getAttribute('data-name') ?? 'esta reserva';
-            const url = this.getAttribute('data-url') ?? '';
+    const recalcBtns = document.querySelectorAll('.open-sires-modal');
+    recalcBtns.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const actionType = this.getAttribute('data-action');
+            const targetUrl = this.getAttribute('data-url');
+            const reservaName = this.getAttribute('data-name');
+            const modal = document.getElementById('sires-confirm-modal');
+            const modalIconFrame = document.getElementById('modal-icon-frame');
+            const modalIcon = document.getElementById('modal-action-icon');
             const modalTitle = document.getElementById('modal-title-text');
             const modalText = document.getElementById('modal-description-text');
-            const modalForm = document.getElementById('modal-form');
-            if (modalTitle) modalTitle.innerText = 'Recalcular Precio';
-            if (modalText) modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${reservaName}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
-            if (modalForm) modalForm.setAttribute('action', url);
-            const modal = document.getElementById('confirmation-modal');
-            if (modal) modal.style.display = 'flex';
+            const btnConfirm = document.getElementById('btn-modal-confirm');
+            const btnCancel = document.getElementById('btn-modal-cancel');
+
+            if (!modal) return;
+
+            modalIconFrame.className = 'modal__icon';
+            btnConfirm.className = 'btn';
+
+            if (actionType === 'recalculate') {
+                modalTitle.innerText = 'Recalcular Precio';
+                modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${reservaName}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
+                modalIcon.className = 'fas fa-calculator';
+                modalIconFrame.classList.add('modal__icon--warning');
+                btnConfirm.classList.add('btn--warning');
+            }
+
+            btnConfirm.setAttribute('href', targetUrl);
+            modal.classList.add('is-active');
+
+            btnCancel.addEventListener('click', function() {
+                modal.classList.remove('is-active');
+            });
         });
-    }
+    });
 </script>
+
+<!-- MODAL DE CONFIRMACIÓN SIRES -->
+<div id="sires-confirm-modal" class="modal">
+    <div class="modal__box">
+        <div id="modal-icon-frame" class="modal__icon">
+            <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
+        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
+        <div class="modal__actions">
+            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+        </div>
+    </div>
+</div>
