@@ -97,7 +97,7 @@
 
             <div class="form__group">
                 <label class="form__label" for="id_localidad">Localidad</label>
-                <select id="id_localidad" name="id_localidad" required class="form__select" disabled>
+                <select id="id_localidad" name="id_localidad" class="form__select" disabled>
                     <option value="" disabled>Cargando...</option>
                 </select>
             </div>
@@ -229,12 +229,6 @@
                     e.preventDefault();
                     mostrarError('Debe seleccionar una provincia.');
                     selectProvincia?.focus();
-                    return;
-                }
-                if (!selectLocalidad || selectLocalidad.value === '') {
-                    e.preventDefault();
-                    mostrarError('Debe seleccionar una localidad.');
-                    selectLocalidad?.focus();
                     return;
                 }
             });

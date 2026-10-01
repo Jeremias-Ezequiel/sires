@@ -15,7 +15,7 @@ class Usuario extends Model
     // =====================================================================
     private int $id;
     private int $id_rol;
-    private int $id_localidad;
+    private ?int $id_localidad = null;
     private int $id_nacionalidad;
     private int $id_provincia;
     private string $nombre;
@@ -493,13 +493,13 @@ class Usuario extends Model
         $this->id_rol = $id_rol;
     }
 
-    public function getIdLocalidad(): int
+    public function getIdLocalidad(): ?int
     {
         return $this->id_localidad;
     }
-    public function setIdLocalidad(int $id_localidad): void
+    public function setIdLocalidad(?int $id_localidad): void
     {
-        if ($id_localidad <= 0) {
+        if ($id_localidad !== null && $id_localidad <= 0) {
             throw new Exception("La localidad especificada no es válida.");
         }
         $this->id_localidad = $id_localidad;

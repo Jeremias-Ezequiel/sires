@@ -237,9 +237,9 @@ class Clientes extends Model
     {
         return $this->id_localidad;
     }
-    public function setIdLocalidad(int $id_localidad): void
+    public function setIdLocalidad(?int $id_localidad): void
     {
-        if ($id_localidad <= 0) {
+        if ($id_localidad !== null && $id_localidad <= 0) {
             throw new Exception("La localidad vinculada no es válida.");
         }
         $this->id_localidad = $id_localidad;

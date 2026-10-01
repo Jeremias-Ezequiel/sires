@@ -109,7 +109,7 @@ class EmployeeController
             $confirmPassword = $_POST['confirm_password'] ?? '';
             $idRol         = (int)($_POST['id_rol'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
+            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
             $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
 
             if (empty($nombre)) {
@@ -141,9 +141,6 @@ class EmployeeController
             }
             if ($idProvincia <= 0) {
                 throw new Exception("Debe seleccionar una provincia.");
-            }
-            if ($idLocalidad <= 0) {
-                throw new Exception("Debe seleccionar una localidad.");
             }
             if ($idNacionalidad <= 0) {
                 throw new Exception("Debe seleccionar una nacionalidad.");
@@ -263,7 +260,7 @@ class EmployeeController
             $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
             $idRol         = (int)($_POST['id_rol'] ?? 0);
             $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = (int)($_POST['id_localidad'] ?? 0);
+            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
             $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
 
             if (empty($nombre)) {
@@ -283,9 +280,6 @@ class EmployeeController
             }
             if ($idProvincia <= 0) {
                 throw new Exception("Debe seleccionar una provincia.");
-            }
-            if ($idLocalidad <= 0) {
-                throw new Exception("Debe seleccionar una localidad.");
             }
             if ($idNacionalidad <= 0) {
                 throw new Exception("Debe seleccionar una nacionalidad.");
