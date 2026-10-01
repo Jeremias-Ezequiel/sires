@@ -35,6 +35,7 @@ class Habitacion extends Model
 
     public const ACTIVE = 1;
     public const INACTIVE = 0;
+    public const STARTING_FLOOR = 1;
 
     // Regla de negocio: descuento por ocupación según capacidad y cantidad de huéspedes (%)
     public const DESCUENTOS_POR_CAPACIDAD = [
@@ -153,10 +154,10 @@ class Habitacion extends Model
             $stmt = $this->db->query("SELECT MAX(piso) FROM Habitaciones WHERE is_active = 1");
             $maxPiso = $stmt->fetchColumn();
             $maxPiso = $maxPiso !== false && $maxPiso !== null ? (int)$maxPiso : -1;
-            return $maxPiso + 1;
+            return $maxPiso < 0 ? self::STARTING_FLOOR : $maxPiso + 1;
         } catch (PDOException $e) {
             error_log("Error en Habitacion::getNextFloorNumber: " . $e->getMessage());
-            return 0;
+            return self::STARTING_FLOOR;
         }
     }
 
