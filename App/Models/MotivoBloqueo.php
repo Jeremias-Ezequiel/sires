@@ -23,11 +23,7 @@ class MotivoBloqueo extends Model
         try {
             $stmt = $this->db->prepare("SELECT id, descripcion FROM Motivos_Bloqueo ORDER BY id ASC");
             $stmt->execute();
-
-            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, MotivoBloqueo::class);
-            $motivos = $stmt->fetchAll();
-
-            return $motivos ?: null;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (PDOException $e) {
             error_log("Error in getAll motivos bloqueo: " . $e->getMessage());
             throw new Exception("Database error during motivos bloqueo lookup.");

@@ -16,6 +16,7 @@ class Habitacion extends Model
     private int $id_tipo_habitacion;
     private int $id_estado_habitacion;
     private float $precio_noche_base;
+    private ?int $id_motivo_bloqueo = null;
 
     // Estados de habitación según Estados_Habitacion
     public const ESTADO_DISPONIBLE = 1;
@@ -64,10 +65,12 @@ class Habitacion extends Model
 
         $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                        th.descripcion AS tipo, eh.descripcion AS estado,
-                       h.id_tipo_habitacion, h.id_estado_habitacion
+                       h.id_tipo_habitacion, h.id_estado_habitacion,
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion
                 FROM Habitaciones h
                 JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
-                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id";
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id";
 
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -127,8 +130,8 @@ class Habitacion extends Model
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
 
-            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
+            $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base, id_motivo_bloqueo)
+                    VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base, :id_motivo_bloqueo)";
 
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -136,7 +139,8 @@ class Habitacion extends Model
                 ':piso'                 => $habitacion->getPiso(),
                 ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
                 ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
-                ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
+                ':precio_noche_base'    => $habitacion->getPrecioNocheBase(),
+                ':id_motivo_bloqueo'    => $habitacion->getIdMotivoBloqueo()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Habitacion::save: " . $e->getMessage());
@@ -147,13 +151,15 @@ class Habitacion extends Model
     public function findById(int $id): ?array
     {
         try {
-            $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
-                           th.descripcion AS tipo, eh.descripcion AS estado,
-                           h.id_tipo_habitacion, h.id_estado_habitacion
-                    FROM Habitaciones h
-                    JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
-                    JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
-                    WHERE h.id = :id";
+$sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
+                       th.descripcion AS tipo, eh.descripcion AS estado,
+                       h.id_tipo_habitacion, h.id_estado_habitacion,
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
+                WHERE h.id = :id";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
@@ -178,7 +184,8 @@ class Habitacion extends Model
                     SET numero = :numero, piso = :piso,
                         id_tipo_habitacion = :id_tipo_habitacion,
                         id_estado_habitacion = :id_estado_habitacion,
-                        precio_noche_base = :precio_noche_base
+                        precio_noche_base = :precio_noche_base,
+                        id_motivo_bloqueo = :id_motivo_bloqueo
                     WHERE id = :id";
 
             $stmt = $this->db->prepare($sql);
@@ -188,7 +195,8 @@ class Habitacion extends Model
                 ':piso'                 => $habitacion->getPiso(),
                 ':id_tipo_habitacion'   => $habitacion->getIdTipoHabitacion(),
                 ':id_estado_habitacion' => $habitacion->getIdEstadoHabitacion(),
-                ':precio_noche_base'    => $habitacion->getPrecioNocheBase()
+                ':precio_noche_base'    => $habitacion->getPrecioNocheBase(),
+                ':id_motivo_bloqueo'    => $habitacion->getIdMotivoBloqueo()
             ]);
         } catch (PDOException $e) {
             error_log("Error en Habitacion::update: " . $e->getMessage());
@@ -196,18 +204,20 @@ class Habitacion extends Model
         }
     }
 
-    public function deactivate(int $id): bool
+    public function deactivate(int $id, ?int $idMotivoBloqueo = null): bool
     {
         try {
             $sql = "UPDATE Habitaciones
-                    SET id_estado_habitacion = :nuevo_estado
+                    SET id_estado_habitacion = :nuevo_estado,
+                        id_motivo_bloqueo = :id_motivo_bloqueo
                     WHERE id = :id AND id_estado_habitacion = :actual";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':nuevo_estado' => self::ESTADO_BLOQUEADA,
-                ':id'           => $id,
-                ':actual'       => self::ESTADO_DISPONIBLE
+                ':nuevo_estado'      => self::ESTADO_BLOQUEADA,
+                ':id_motivo_bloqueo' => $idMotivoBloqueo,
+                ':id'                => $id,
+                ':actual'            => self::ESTADO_DISPONIBLE
             ]);
 
             return $stmt->rowCount() > 0;
@@ -221,7 +231,8 @@ class Habitacion extends Model
     {
         try {
             $sql = "UPDATE Habitaciones
-                    SET id_estado_habitacion = :nuevo_estado
+                    SET id_estado_habitacion = :nuevo_estado,
+                        id_motivo_bloqueo = NULL
                     WHERE id = :id AND id_estado_habitacion = :actual";
 
             $stmt = $this->db->prepare($sql);
@@ -289,10 +300,12 @@ class Habitacion extends Model
         $tiposIds = $this->tiposPorCapacidad($capacidad);
         $placeholders = implode(',', array_fill(0, count($tiposIds), '?'));
 
-        $sql = "SELECT h.numero, h.piso, th.descripcion AS tipo, eh.descripcion AS estado
+        $sql = "SELECT h.numero, h.piso, th.descripcion AS tipo, eh.descripcion AS estado,
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion
                 FROM Habitaciones h
                 JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
                 WHERE h.id_tipo_habitacion IN ($placeholders)
                 ORDER BY h.numero ASC";
 
@@ -408,5 +421,14 @@ class Habitacion extends Model
             throw new Exception("El precio por noche debe ser mayor a 0.");
         }
         $this->precio_noche_base = $precio_noche_base;
+    }
+
+    public function getIdMotivoBloqueo(): ?int
+    {
+        return $this->id_motivo_bloqueo;
+    }
+    public function setIdMotivoBloqueo(?int $id_motivo_bloqueo): void
+    {
+        $this->id_motivo_bloqueo = $id_motivo_bloqueo;
     }
 }
