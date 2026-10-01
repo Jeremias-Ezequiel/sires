@@ -349,8 +349,8 @@ class RoomController
 
             try {
                 foreach ($numerosGenerar as $numeroStr) {
-                    $check = $db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero");
-                    $check->execute([':numero' => $numeroStr]);
+                    $check = $db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = :is_active");
+                    $check->execute([':numero' => $numeroStr, ':is_active' => Habitacion::ACTIVE]);
                     if ((int)$check->fetchColumn() > 0) {
                         throw new Exception("La habitación N° " . $numeroStr . " ya existe en el sistema.");
                     }
