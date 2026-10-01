@@ -7,6 +7,7 @@ namespace App\Services;
 use Exception;
 use App\Models\Habitacion;
 use App\Models\MotivoBloqueo;
+use PDO;
 use PDOException;
 
 class HabitacionService

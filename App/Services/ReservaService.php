@@ -9,6 +9,7 @@ use App\Models\Reserva;
 use App\Models\Habitacion;
 use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
+use PDO;
 use PDOException;
 
 class ReservaService

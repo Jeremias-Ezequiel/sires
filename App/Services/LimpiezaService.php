@@ -6,6 +6,8 @@ namespace App\Services;
 
 use Exception;
 use App\Models\Habitacion;
+use PDO;
+use PDOException;
 
 class LimpiezaService
 {
