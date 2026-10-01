@@ -130,6 +130,16 @@
                                             <i class="fas fa-check"></i>
                                         </button>
                                     <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="checkin"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-url="<?= url('/dashboard/booking/checkin?id=' . $res['id']) ?>"
+                                            title="Realizar Check-in">
+                                            <i class="fas fa-door-open"></i>
+                                        </button>
+                                    <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
                                         <button type="button"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
@@ -252,6 +262,12 @@
                     modalTitle.innerText = 'Confirmar Reserva';
                     modalText.innerHTML = `¿Está seguro de que desea confirmar la <br><strong>${reservaName}</strong>?`;
                     modalIcon.className = 'fas fa-check';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'checkin') {
+                    modalTitle.innerText = 'Realizar Check-in';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${reservaName}</strong>?<br><small>La habitación será marcada como ocupada.</small>`;
+                    modalIcon.className = 'fas fa-door-open';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'finalize') {
