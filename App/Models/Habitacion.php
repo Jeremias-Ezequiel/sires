@@ -39,10 +39,18 @@ class Habitacion extends Model
     public const INACTIVE = 0;
     public const STARTING_FLOOR = 1;
 
-    public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
+    public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): array
     {
-        $conditions = ["h.is_active = :is_active"];
-        $params = ['is_active' => self::ACTIVE];
+        $conditions = [];
+        $params = [];
+
+        if ($showInactive !== null && $showInactive === '1') {
+            $conditions[] = "h.is_active = :is_active";
+            $params['is_active'] = self::INACTIVE;
+        } else {
+            $conditions[] = "h.is_active = :is_active";
+            $params['is_active'] = self::ACTIVE;
+        }
 
         if ($search !== null && $search !== '') {
             $conditions[] = "h.numero LIKE :search";
@@ -67,7 +75,8 @@ class Habitacion extends Model
         $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                        th.descripcion AS tipo, eh.descripcion AS estado,
                        h.id_tipo_habitacion, h.id_estado_habitacion,
-                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion,
+                       h.is_active, h.fecha_baja
                 FROM Habitaciones h
                 JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id

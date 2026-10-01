@@ -1,7 +1,12 @@
 <header class="main-header employees-header">
     <div>
-        <h1>Administración de Habitaciones</h1>
-        <p>Gestión del inventario de habitaciones del hotel</p>
+        <?php if ($showInactive === 'inactive'): ?>
+            <h1>Habitaciones dadas de baja</h1>
+            <p>Habitaciones inactivas que pueden ser reactivadas</p>
+        <?php else: ?>
+            <h1>Administración de Habitaciones</h1>
+            <p>Gestión del inventario de habitaciones del hotel</p>
+        <?php endif; ?>
     </div>
 
     <div class="header-actions-container">
@@ -82,6 +87,9 @@
         <button type="submit" class="btn btn--primary">
             <i class="fas fa-filter"></i> Filtrar
         </button>
+        <a href="<?= $showInactive === 'inactive' ? url('/dashboard/rooms') : url('/dashboard/rooms?show=inactive') ?>" class="btn btn--ghost">
+            <i class="fas fa-<?= $showInactive === 'inactive' ? 'undo' : 'trash' ?>"></i> <?= $showInactive === 'inactive' ? 'Volver a activas' : 'Ver inactivas' ?>
+        </a>
         <?php if ($hasSearch || $hasStatus || $hasType || $hasFloor): ?>
             <!-- Limpieza de filtros configurada con url() -->
             <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
@@ -184,6 +192,16 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     <?php endif; ?>
+                                    <?php if ($showInactive === 'inactive'): ?>
+                                        <a href="<?= url('/dashboard/rooms/reactivate?id=' . $room['id']) ?>"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="reactivate"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/reactivate?id=' . $room['id']) ?>"
+                                            title="Reactivar Habitación">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -278,6 +296,13 @@
                     modalIcon.className = 'fas fa-trash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
+                    motivoWrapper.style.display = 'none';
+                } else if (actionType === 'reactivate') {
+                    modalTitle.innerText = 'Reactivar Habitación';
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalIcon.className = 'fas fa-undo';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 }
 

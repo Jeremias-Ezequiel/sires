@@ -42,6 +42,7 @@ class RoomController
         $status = $vars['status_filter'] ?? "";
         $type   = $vars['type_filter'] ?? "";
         $floor  = $vars['floor_filter'] ?? "";
+        $showInactive = $vars['show'] ?? '';
 
         $hasSearch = !empty($vars['search']);
         $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
@@ -49,7 +50,10 @@ class RoomController
         $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
 
         $roomModel = new Habitacion();
-        $habitaciones = $roomModel->getAllWithFilters($search, $status, $type, $floor);
+        $habitaciones = $roomModel->getAllWithFilters(
+            $search, $status, $type, $floor,
+            $showInactive === 'inactive' ? '1' : null
+        );
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();
         $pisos = $roomModel->getPisos();
