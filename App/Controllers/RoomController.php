@@ -225,6 +225,7 @@ class RoomController
         $roomModel = new Habitacion();
         $tipos = $roomModel->getTiposHabitacion();
         $pisos = $roomModel->getPisos();
+        $nextFloor = $roomModel->getNextFloorNumber();
 
         $contentView = __DIR__ . '/../views/dashboard/addRoomBatch.phtml';
 
