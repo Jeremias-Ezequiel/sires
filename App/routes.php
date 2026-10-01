@@ -210,6 +210,18 @@ return function (RouteCollector $r) {
       
     ]);
 
+    $r->addRoute('GET', '/dashboard/rooms/add/batch', [
+        'action' => [RoomController::class, 'showBatchRoomForm'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/rooms/add/batch/process', [
+        'action' => [RoomController::class, 'addBatchRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
+    ]);
+
     $r->addRoute('GET', '/dashboard/rooms/detail', [
         'action' => [RoomController::class, 'showRoomDetail'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
@@ -273,6 +285,12 @@ return function (RouteCollector $r) {
 
     $r->addRoute('GET', '/dashboard/booking/confirm', [
         'action' => [BookingController::class, 'confirmBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/booking/checkin', [
+        'action' => [BookingController::class, 'checkInBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
