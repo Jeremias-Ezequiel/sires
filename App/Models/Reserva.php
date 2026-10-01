@@ -235,7 +235,7 @@ class Reserva extends Model
         try {
             $sql = "SELECT r.*,
                            c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
-                           c.dni_pasaporte AS cliente_dni, c.mail AS cliente_email, c.telefono AS cliente_telefono,
+                           c.dni_pasaporte AS cliente_dni, c.email AS cliente_email, c.telefono AS cliente_telefono,
                            h.numero AS habitacion_numero, h.piso AS habitacion_piso, h.precio_noche_base,
                            h.id_tipo_habitacion,
                            th.descripcion AS tipo_habitacion_descripcion,
@@ -246,9 +246,9 @@ class Reserva extends Model
                     FROM Reservas r
                     JOIN Clientes c ON r.id_cliente = c.id
                     JOIN Habitaciones h ON r.id_habitacion = h.id
-                    JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                    LEFT JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                     JOIN Estados_Reserva er ON r.id_estado_reserva = er.id
-                    JOIN Canal_Origen co ON r.id_canal_origen = co.id
+                    LEFT JOIN Canal_Origen co ON r.id_canal_origen = co.id
                     LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
                     LEFT JOIN Estados_Pago ep ON rp.id_estado_pago = ep.id
                     WHERE r.id = :id";
