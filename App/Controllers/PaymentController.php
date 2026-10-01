@@ -150,7 +150,7 @@ class PaymentController
             }
 
             $resumenModel = new ResumenPago();
-            $resumen = $resumenModel->getByReserva($idReserva);
+            $resumen = (new ResumenPago())->getByReserva($idReserva);
 
             if ($resumen === null) {
                 $resumen = $this->generarResumen($reserva);
@@ -199,7 +199,13 @@ class PaymentController
                 throw new Exception("No se pudo actualizar el resumen de pago.");
             }
 
-            $_SESSION['flash_message'] = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
+            $estadoReserva = (int)$reserva['id_estado_reserva'];
+            if ($estadoReserva === Reserva::ESTADO_PENDIENTE) {
+                (new Reserva())->cambiarEstado($idReserva, Reserva::ESTADO_CONFIRMADA, Reserva::ESTADO_PENDIENTE);
+                $_SESSION['flash_message'] = "Pago registrado y reserva confirmada automáticamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
+            } else {
+                $_SESSION['flash_message'] = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
+            }
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $idReserva));

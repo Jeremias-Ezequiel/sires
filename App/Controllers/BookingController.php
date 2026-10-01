@@ -402,23 +402,44 @@ class BookingController
             }
 
             $reservaModel = new Reserva();
-            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_CANCELADA, Reserva::ESTADO_PENDIENTE);
+            $reservaData = $reservaModel->findById((int)$id);
+            if ($reservaData === null) {
+                throw new Exception("La reserva no existe.");
+            }
 
-            if (!$success) {
+            $estadoActual = (int)$reservaData['id_estado_reserva'];
+
+            if ($estadoActual === Reserva::ESTADO_CANCELADA
+                || $estadoActual === Reserva::ESTADO_FINALIZADA
+                || $estadoActual === Reserva::ESTADO_EN_CASA) {
+                throw new Exception("No se puede cancelar una reserva finalizada, en estadía o ya cancelada.");
+            }
+
+            if ($estadoActual === Reserva::ESTADO_PENDIENTE) {
+                $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_CANCELADA, Reserva::ESTADO_PENDIENTE);
+                if (!$success) {
+                    throw new Exception("No se pudo cancelar la reserva.");
+                }
+            } else {
                 $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_CANCELADA, Reserva::ESTADO_CONFIRMADA);
+                if (!$success) {
+                    throw new Exception("No se pudo cancelar la reserva. Solo se pueden cancelar reservas pendientes o confirmadas.");
+                }
+
+                $resumen = (new ResumenPago())->getByReserva((int)$id);
+                if ($resumen !== null && $resumen->getMontoPagado() > 0) {
+                    $resumen->reembolsarPorReserva((int)$id);
+                    $_SESSION['flash_message'] = "Reserva cancelada y pago reembolsado exitosamente.";
+                    $_SESSION['flash_status']  = "success";
+                }
             }
 
-            if (!$success) {
-                throw new Exception("No se pudo cancelar la reserva. Solo se pueden cancelar reservas pendientes o confirmadas.");
-            }
+            (new Habitacion())->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
 
-            $reservaData = (new Reserva())->findById((int)$id);
-            if ($reservaData !== null) {
-                (new Habitacion())->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
+            if (empty($_SESSION['flash_message'])) {
+                $_SESSION['flash_message'] = "Reserva cancelada exitosamente.";
+                $_SESSION['flash_status']  = "success";
             }
-
-            $_SESSION['flash_message'] = "Reserva cancelada exitosamente.";
-            $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/booking'));
             exit;
@@ -445,15 +466,28 @@ class BookingController
             }
 
             $reservaModel = new Reserva();
+            $reservaData = $reservaModel->findById((int)$id);
+            if ($reservaData === null) {
+                throw new Exception("La reserva no existe.");
+            }
+
+            if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_PENDIENTE) {
+                throw new Exception("Solo se pueden confirmar reservas pendientes.");
+            }
+
+            $resumen = (new ResumenPago())->getByReserva((int)$id);
+
+            if ($resumen === null || $resumen->getMontoPagado() <= 0) {
+                $_SESSION['flash_message'] = "Debe realizar al menos un pago (depósito) para confirmar la reserva.";
+                $_SESSION['flash_status']  = "warning";
+                header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $id));
+                exit;
+            }
+
             $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_CONFIRMADA, Reserva::ESTADO_PENDIENTE);
 
             if (!$success) {
-                throw new Exception("No se pudo confirmar la reserva. Solo se pueden confirmar reservas pendientes.");
-            }
-
-            $reservaData = (new Reserva())->findById((int)$id);
-            if ($reservaData !== null) {
-                PaymentController::generarResumen($reservaData);
+                throw new Exception("No se pudo confirmar la reserva.");
             }
 
             $_SESSION['flash_message'] = "Reserva confirmada exitosamente.";
@@ -494,8 +528,8 @@ class BookingController
             }
 
             $resumen = (new ResumenPago())->getByReserva((int)$id);
-            if ($resumen === null || $resumen->getIdEstadoPago() !== ResumenPago::ESTADO_PAGADO_TOTAL) {
-                throw new Exception("No se puede realizar el check-in. La estadía debe estar totalmente pagada.");
+            if ($resumen === null || $resumen->getMontoPagado() <= 0) {
+                throw new Exception("No se puede realizar el check-in. Debe haber al menos un depósito pagado.");
             }
 
             $habitacionModel = new Habitacion();
@@ -509,7 +543,73 @@ class BookingController
 
             $habitacionModel->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_OCUPADA);
 
-            $_SESSION['flash_message'] = "Check-in realizado exitosamente. La habitación ha sido ocupada.";
+            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_EN_CASA, Reserva::ESTADO_CONFIRMADA);
+            if (!$success) {
+                $habitacionModel->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
+                throw new Exception("Error al actualizar el estado de la reserva.");
+            }
+
+            $msg = "Check-in realizado. La habitación ha sido ocupada.";
+            if ($resumen->getIdEstadoPago() !== ResumenPago::ESTADO_PAGADO_TOTAL) {
+                $saldo = $resumen->getSaldoPendiente();
+                $msg .= " Queda un saldo pendiente de $" . number_format($saldo, 2, ',', '.') . ".";
+            }
+
+            $_SESSION['flash_message'] = $msg;
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/booking'));
+            exit;
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/booking'));
+            exit;
+        }
+    }
+
+    public function markNoShow(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de reserva inválido.");
+            }
+
+            $reservaModel = new Reserva();
+            $reservaData = $reservaModel->findById((int)$id);
+            if ($reservaData === null) {
+                throw new Exception("La reserva no existe.");
+            }
+
+            if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_CONFIRMADA) {
+                throw new Exception("Solo se puede marcar como No-Show reservas confirmadas que no se presentaron.");
+            }
+
+            $resumen = (new ResumenPago())->getByReserva((int)$id);
+            if ($resumen !== null && $resumen->getMontoPagado() > 0) {
+                $resumen->reembolsarPorReserva((int)$id);
+            }
+
+            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_NO_SHOW, Reserva::ESTADO_CONFIRMADA);
+            if (!$success) {
+                throw new Exception("No se pudo marcar la reserva como No-Show.");
+            }
+
+            (new Habitacion())->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
+
+            $msg = "Reserva marcada como No-Show. La habitación ha sido liberada.";
+            if ($resumen !== null && $resumen->getMontoPagado() > 0) {
+                $msg .= " El pago fue reembolsado.";
+            }
+
+            $_SESSION['flash_message'] = $msg;
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/booking'));
@@ -542,15 +642,20 @@ class BookingController
                 throw new Exception("La reserva no existe.");
             }
 
+            $estadoActual = (int)$reservaData['id_estado_reserva'];
+            if ($estadoActual !== Reserva::ESTADO_CONFIRMADA && $estadoActual !== Reserva::ESTADO_EN_CASA) {
+                throw new Exception("No se puede finalizar una reserva que no está confirmada o en estadía.");
+            }
+
             $resumen = (new ResumenPago())->getByReserva((int)$id);
             if ($resumen === null || $resumen->getIdEstadoPago() !== ResumenPago::ESTADO_PAGADO_TOTAL) {
                 throw new Exception("No se puede finalizar la reserva hasta que el pago esté realizado en su totalidad.");
             }
 
-            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_FINALIZADA, Reserva::ESTADO_CONFIRMADA);
+            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_FINALIZADA, $estadoActual);
 
             if (!$success) {
-                throw new Exception("No se pudo finalizar la reserva. Solo se pueden finalizar reservas confirmadas con check-in realizado.");
+                throw new Exception("No se pudo finalizar la reserva.");
             }
 
             (new Habitacion())->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);

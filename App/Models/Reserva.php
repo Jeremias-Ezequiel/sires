@@ -28,6 +28,8 @@ class Reserva extends Model
     public const ESTADO_CONFIRMADA = 2;
     public const ESTADO_CANCELADA = 3;
     public const ESTADO_FINALIZADA = 4;
+    public const ESTADO_EN_CASA = 5;
+    public const ESTADO_NO_SHOW = 6;
 
     public function countReservasHoy(?string $fecha = null): int
     {

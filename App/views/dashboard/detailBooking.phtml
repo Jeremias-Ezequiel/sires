@@ -9,11 +9,26 @@
                 <i class="fas fa-door-open"></i> Realizar Check-in
             </a>
         <?php endif; ?>
-        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
             <a href="<?= url('/dashboard/booking/edit?id=' . $reserva['id']) ?>" class="btn btn--primary">
                 <i class="fas fa-edit"></i> Editar
             </a>
-            <a href="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>" class="btn btn--primary">
+            <a href="<?= url('/dashboard/payments/detail?id=' . $reserva['id']) ?>" class="btn btn--primary">
+                <i class="fas fa-credit-card"></i> Pagar y Confirmar
+            </a>
+        <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+            <a href="<?= url('/dashboard/payments/detail?id=' . $reserva['id']) ?>" class="btn btn--primary">
+                <i class="fas fa-dollar-sign"></i> Ir a Pagos
+            </a>
+        <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+            <a href="<?= url('/dashboard/booking/noshow?id=' . $reserva['id']) ?>" class="btn btn--danger open-sires-modal" data-action="noshow" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/noshow?id=' . $reserva['id']) ?>">
+                <i class="fas fa-user-slash"></i> No-Show
+            </a>
+        <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
+            <a href="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>" class="btn btn--primary open-sires-modal" data-action="finalize" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>">
                 <i class="fas fa-flag-checkered"></i> Finalizar
             </a>
         <?php endif; ?>
@@ -30,6 +45,8 @@ if (strpos($estadoLower, 'pendient') !== false) $statusClass = 'badge--pendiente
 elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
 elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
 elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--ocupada';
+elseif (strpos($estadoLower, 'no.show') !== false || strpos($estadoLower, 'no show') !== false) $statusClass = 'badge--ocupada';
+elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false) $statusClass = 'badge--reservada';
 
 $descuentoOcupacion = \App\Models\Habitacion::descuentoParaTipo((int)($reserva['id_tipo_habitacion'] ?? 0), (int)($reserva['cantidad_huespedes'] ?? 1));
 $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($reserva['precio_noche_base'] ?? 0), $descuentoOcupacion);

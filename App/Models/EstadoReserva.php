@@ -17,6 +17,8 @@ class EstadoReserva extends Model
     public const CONFIRMADA = 2;
     public const CANCELADA = 3;
     public const FINALIZADA_CHECKOUT = 4;
+    public const EN_CASA = 5;
+    public const NO_SHOW = 6;
 
     public function getAll(): ?array
     {

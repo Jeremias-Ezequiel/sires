@@ -100,6 +100,10 @@
                             $statusClass = 'badge--ocupada';
                         } elseif (strpos($estadoLower, 'finaliz') !== false || strpos($estadoLower, 'check') !== false) {
                             $statusClass = 'badge--disponible';
+                        } elseif (strpos($estadoLower, 'no.show') !== false || strpos($estadoLower, 'no show') !== false) {
+                            $statusClass = 'badge--ocupada';
+                        } elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false) {
+                            $statusClass = 'badge--reservada';
                         }
                         ?>
                         <tr>
@@ -115,20 +119,20 @@
                                     <a href="<?= url('/dashboard/booking/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
                                         <a href="<?= url('/dashboard/booking/edit?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Reserva">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
-                                        <button type="button"
-                                            class="btn btn--icon btn--icon-success open-sires-modal"
-                                            data-action="confirm"
-                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url('/dashboard/booking/confirm?id=' . $res['id']) ?>"
-                                            title="Confirmar Reserva">
-                                            <i class="fas fa-check"></i>
-                                        </button>
+                                        <a href="<?= url('/dashboard/payments/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-success" title="Pagar / Confirmar">
+                                            <i class="fas fa-credit-card"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <a href="<?= url('/dashboard/payments/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-success" title="Ir a Pagos">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </a>
                                     <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
                                         <button type="button"
@@ -140,7 +144,17 @@
                                             <i class="fas fa-door-open"></i>
                                         </button>
                                     <?php endif; ?>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-danger open-sires-modal"
+                                            data-action="noshow"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-url="<?= url('/dashboard/booking/noshow?id=' . $res['id']) ?>"
+                                            title="Marcar como No-Show">
+                                            <i class="fas fa-user-slash"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
                                         <button type="button"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="finalize"
@@ -276,6 +290,12 @@
                     modalIcon.className = 'fas fa-flag-checkered';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'noshow') {
+                    modalTitle.innerText = 'Marcar como No-Show';
+                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>La habitación será liberada y cualquier pago será reembolsado.</small>`;
+                    modalIcon.className = 'fas fa-user-slash';
+                    modalIconFrame.classList.add('modal__icon--deactivate');
+                    btnConfirm.classList.add('btn--danger');
                 }
 
                 btnConfirm.setAttribute('href', targetUrl);
