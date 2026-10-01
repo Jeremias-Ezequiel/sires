@@ -279,6 +279,8 @@ class RoomController
 
         $roomModel = new Habitacion();
         $tipos = $roomModel->getTiposHabitacion();
+        $pisos = $roomModel->getPisos();
+        $nextFloor = $roomModel->getNextFloorNumber();
 
         $contentView = __DIR__ . '/../views/dashboard/addRoomBatch.phtml';
 
@@ -300,6 +302,11 @@ class RoomController
 
             if ($piso === '' || (int)$piso < 0) {
                 throw new Exception("El piso es obligatorio y no puede ser negativo.");
+            }
+
+            $habitacionModel = new Habitacion();
+            if ((int)$piso !== $habitacionModel->getNextFloorNumber()) {
+                throw new Exception("El piso debe ser el próximo disponible (" . $habitacionModel->getNextFloorNumber() . "). Los pisos se crean de forma consecutiva.");
             }
 
             if ((int)$idTipo <= 0) {
@@ -330,7 +337,6 @@ class RoomController
                 throw new Exception("No se pueden generar más de 100 habitaciones por lote.");
             }
 
-            $habitacionModel = new Habitacion();
             $numerosGenerar = [];
 
             for ($i = $desde; $i <= $hasta; $i++) {

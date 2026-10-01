@@ -129,18 +129,34 @@ class Habitacion extends Model
     public function getNextRoomNumber(int $piso): int
     {
         try {
-            $stmt = $this->db->prepare("SELECT MAX(CAST(numero AS UNSIGNED)) FROM Habitaciones WHERE piso = :piso AND is_active = :is_active");
+            $stmt = $this->db->prepare("SELECT numero FROM Habitaciones WHERE piso = :piso AND is_active = :is_active ORDER BY numero ASC");
             $stmt->execute([':piso' => $piso, ':is_active' => self::ACTIVE]);
-            $maxNumero = $stmt->fetchColumn();
-            $maxNumero = $maxNumero !== false && $maxNumero !== null ? (int)$maxNumero : 0;
+            $existentes = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
-            if ($maxNumero <= 0) {
-                return (int)($piso * 100 + 1);
+            $expected = (int)($piso * 100 + 1);
+            foreach ($existentes as $num) {
+                if ((int)$num !== $expected) {
+                    return $expected;
+                }
+                $expected++;
             }
-            return $maxNumero + 1;
+            return $expected;
         } catch (PDOException $e) {
             error_log("Error en Habitacion::getNextRoomNumber: " . $e->getMessage());
             return (int)($piso * 100 + 1);
+        }
+    }
+
+    public function getNextFloorNumber(): int
+    {
+        try {
+            $stmt = $this->db->query("SELECT MAX(piso) FROM Habitaciones WHERE is_active = 1");
+            $maxPiso = $stmt->fetchColumn();
+            $maxPiso = $maxPiso !== false && $maxPiso !== null ? (int)$maxPiso : -1;
+            return $maxPiso + 1;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getNextFloorNumber: " . $e->getMessage());
+            return 0;
         }
     }
 
