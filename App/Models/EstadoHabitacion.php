@@ -17,6 +17,8 @@ class EstadoHabitacion extends Model
     public const OCUPADA = 2;
     public const MANTENIMIENTO = 3;
     public const BLOQUEADA = 4;
+    public const SUCIA = 5;
+    public const LIMPIANDO = 6;
 
     public function getAll(): ?array
     {

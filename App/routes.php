@@ -246,6 +246,32 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    // Limpieza (Turnaround)
+    $r->addRoute('GET', '/dashboard/rooms/cleaning/start', [
+        'action' => [RoomController::class, 'startCleaning'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/cleaning/complete', [
+        'action' => [RoomController::class, 'completeCleaning'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Mantenimiento
+    $r->addRoute('GET', '/dashboard/rooms/maintenance/start', [
+        'action' => [RoomController::class, 'putInMaintenance'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/rooms/maintenance/end', [
+        'action' => [RoomController::class, 'outOfMaintenance'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
     // Reservas
     $r->addRoute('GET', '/dashboard/booking', [
         'action' => [BookingController::class, 'showBooking'],
@@ -311,6 +337,27 @@ return function (RouteCollector $r) {
         'action' => [BookingController::class, 'markNoShow'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Checkout Anticipado
+    $r->addRoute('GET', '/dashboard/booking/early-checkout', [
+        'action' => [BookingController::class, 'earlyCheckoutBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    // Traslado de Habitación (Room Move)
+    $r->addRoute('GET', '/dashboard/booking/move-room', [
+        'action' => [BookingController::class, 'moveRoomBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
+    // Extensión de Estadía
+    $r->addRoute('GET', '/dashboard/booking/extend', [
+        'action' => [BookingController::class, 'extendBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
     // Pagos

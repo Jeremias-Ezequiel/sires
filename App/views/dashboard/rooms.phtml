@@ -153,6 +153,24 @@
                                             title="Reactivar Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
+                                    <?php elseif ((int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_SUCIA): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-warning open-sires-modal"
+                                            data-action="cleaning"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/cleaning/start?id=' . $room['id']) ?>"
+                                            title="Iniciar Limpieza">
+                                            <i class="fas fa-broom"></i>
+                                        </button>
+                                    <?php elseif ((int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_LIMPIANDO): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            data-action="complete-cleaning"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/cleaning/complete?id=' . $room['id']) ?>"
+                                            title="Completar Limpieza">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
 <?php endif; ?>
                                     <?php if ((int)$userRole === \App\Models\Rol::ADMINISTRADOR): ?>
                                         <button type="button"

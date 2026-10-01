@@ -5,10 +5,21 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Habitacion;
 use App\Models\MotivoBloqueo;
+use App\Services\HabitacionService;
+use App\Services\LimpiezaService;
 use App\Helpers\UrlHelper;
 
 class RoomController
 {
+    private HabitacionService $habitacionService;
+    private LimpiezaService $limpiezaService;
+
+    public function __construct()
+    {
+        $this->habitacionService = new HabitacionService();
+        $this->limpiezaService   = new LimpiezaService();
+    }
+
     public function showRooms(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -31,11 +42,6 @@ class RoomController
         $status = $vars['status_filter'] ?? "";
         $type   = $vars['type_filter'] ?? "";
         $floor  = $vars['floor_filter'] ?? "";
-
-        $hasSearch = !empty($vars['search']);
-        $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
-        $hasType   = isset($vars['type_filter']) && $vars['type_filter'] !== '';
-        $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
 
         $roomModel = new Habitacion();
         $habitaciones = $roomModel->getAllWithFilters($search, $status, $type, $floor);
@@ -88,43 +94,13 @@ class RoomController
         }
 
         try {
-            $piso        = $_POST['piso'] ?? '';
-            $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
-            $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
-            $precioNoche = $_POST['precio_noche_base'] ?? '';
+            $piso        = (int)($_POST['piso'] ?? -1);
+            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
+            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
 
-            if ($piso === '' || (int)$piso < 0) {
-                throw new Exception("El piso es obligatorio y no puede ser negativo.");
-            }
+            $resultado = $this->habitacionService->altaIndividual($piso, $idTipo, $precioNoche);
 
-            $roomModel = new Habitacion();
-            $numero = $roomModel->getNextRoomNumber((int)$piso);
-
-            if ((int)$idTipo <= 0) {
-                throw new Exception("Debe seleccionar un tipo de habitación.");
-            }
-
-            if ((int)$idEstado <= 0) {
-                throw new Exception("Debe seleccionar un estado para la habitación.");
-            }
-
-            if ($precioNoche === '' || (float)$precioNoche < 0) {
-                throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
-            }
-
-            $roomModel->setNumero($numero);
-            $roomModel->setPiso((int)$piso);
-            $roomModel->setIdTipoHabitacion((int)$idTipo);
-            $roomModel->setIdEstadoHabitacion((int)$idEstado);
-            $roomModel->setPrecioNocheBase((float)$precioNoche);
-
-            $success = $roomModel->save($roomModel);
-
-            if (!$success) {
-                throw new Exception("No se pudo registrar la habitación. Verifique los datos ingresados.");
-            }
-
-            $_SESSION['flash_message'] = "Habitación registrada exitosamente.";
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
@@ -196,52 +172,16 @@ class RoomController
         }
 
         try {
-            $id          = $_POST['id'] ?? 0;
-            $numero      = $_POST['numero'] ?? '';
-            $piso        = $_POST['piso'] ?? '';
-            $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
-            $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
-            $precioNoche = $_POST['precio_noche_base'] ?? '';
+            $id          = (int)($_POST['id'] ?? 0);
+            $numero      = (int)($_POST['numero'] ?? 0);
+            $piso        = (int)($_POST['piso'] ?? -1);
+            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
+            $idEstado    = (int)($_POST['id_estado_habitacion'] ?? 0);
+            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
 
-            if (empty($id) || (int)$id <= 0) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación.");
-            }
+            $resultado = $this->habitacionService->editar($id, $numero, $piso, $idTipo, $idEstado, $precioNoche);
 
-            if (empty($numero) || (int)$numero <= 0) {
-                throw new Exception("El número de habitación es obligatorio y debe ser mayor a 0.");
-            }
-
-            if ($piso === '' || (int)$piso < 0) {
-                throw new Exception("El piso es obligatorio y no puede ser negativo.");
-            }
-
-            if ((int)$idTipo <= 0) {
-                throw new Exception("Debe seleccionar un tipo de habitación.");
-            }
-
-            if ((int)$idEstado <= 0) {
-                throw new Exception("Debe seleccionar un estado para la habitación.");
-            }
-
-            if ($precioNoche === '' || (float)$precioNoche < 0) {
-                throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
-            }
-
-            $habitacion = new Habitacion();
-            $habitacion->setId((int)$id);
-            $habitacion->setNumero((int)$numero);
-            $habitacion->setPiso((int)$piso);
-            $habitacion->setIdTipoHabitacion((int)$idTipo);
-            $habitacion->setIdEstadoHabitacion((int)$idEstado);
-            $habitacion->setPrecioNocheBase((float)$precioNoche);
-
-            $success = $habitacion->update($habitacion);
-
-            if (!$success) {
-                throw new Exception("No se pudo actualizar la habitación.");
-            }
-
-            $_SESSION['flash_message'] = "Habitación actualizada exitosamente.";
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
@@ -280,7 +220,6 @@ class RoomController
         $roomModel = new Habitacion();
         $tipos = $roomModel->getTiposHabitacion();
         $pisos = $roomModel->getPisos();
-        $nextFloor = $roomModel->getNextFloorNumber();
 
         $contentView = __DIR__ . '/../views/dashboard/addRoomBatch.phtml';
 
@@ -294,87 +233,15 @@ class RoomController
         }
 
         try {
-            $piso        = $_POST['piso'] ?? '';
-            $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
-            $precioNoche = $_POST['precio_noche_base'] ?? '';
-            $numeroDesde = $_POST['numero_desde'] ?? '';
-            $numeroHasta = $_POST['numero_hasta'] ?? '';
+            $piso        = (int)($_POST['piso'] ?? -1);
+            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
+            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
+            $numeroDesde = (int)($_POST['numero_desde'] ?? 0);
+            $numeroHasta = (int)($_POST['numero_hasta'] ?? 0);
 
-            if ($piso === '' || (int)$piso < 0) {
-                throw new Exception("El piso es obligatorio y no puede ser negativo.");
-            }
+            $resultado = $this->habitacionService->altaMasiva($piso, $idTipo, $precioNoche, $numeroDesde, $numeroHasta);
 
-            $habitacionModel = new Habitacion();
-            if ((int)$piso !== $habitacionModel->getNextFloorNumber()) {
-                throw new Exception("El piso debe ser el próximo disponible (" . $habitacionModel->getNextFloorNumber() . "). Los pisos se crean de forma consecutiva.");
-            }
-
-            if ((int)$idTipo <= 0) {
-                throw new Exception("Debe seleccionar un tipo de habitación.");
-            }
-
-            if ($precioNoche === '' || (float)$precioNoche < 0) {
-                throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
-            }
-
-            $desde = (int)$numeroDesde;
-            $hasta = (int)$numeroHasta;
-
-            if ($numeroDesde === '' || $desde <= 0) {
-                throw new Exception("El número inicial debe ser mayor a 0.");
-            }
-
-            if ($numeroHasta === '' || $hasta <= 0) {
-                throw new Exception("El número final debe ser mayor a 0.");
-            }
-
-            if ($hasta < $desde) {
-                throw new Exception("El número final debe ser mayor o igual al número inicial.");
-            }
-
-            $total = $hasta - $desde + 1;
-            if ($total > 100) {
-                throw new Exception("No se pueden generar más de 100 habitaciones por lote.");
-            }
-
-            $numerosGenerar = [];
-
-            for ($i = $desde; $i <= $hasta; $i++) {
-                $numeroStr = (string)((int)$piso * 100 + $i);
-                $numerosGenerar[] = $numeroStr;
-            }
-
-            $db = $habitacionModel->getConnection();
-            $db->beginTransaction();
-
-            try {
-                foreach ($numerosGenerar as $numeroStr) {
-                    $check = $db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = :is_active");
-                    $check->execute([':numero' => $numeroStr, ':is_active' => Habitacion::ACTIVE]);
-                    if ((int)$check->fetchColumn() > 0) {
-                        throw new Exception("La habitación N° " . $numeroStr . " ya existe en el sistema.");
-                    }
-
-                    $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
-                            VALUES (:numero, :piso, :id_tipo_habitacion, :id_estado_habitacion, :precio_noche_base)";
-
-                    $stmt = $db->prepare($sql);
-                    $stmt->execute([
-                        ':numero'               => $numeroStr,
-                        ':piso'                 => (int)$piso,
-                        ':id_tipo_habitacion'   => (int)$idTipo,
-                        ':id_estado_habitacion' => Habitacion::ESTADO_DISPONIBLE,
-                        ':precio_noche_base'    => (float)$precioNoche
-                    ]);
-                }
-
-                $db->commit();
-            } catch (Exception $e) {
-                $db->rollBack();
-                throw $e;
-            }
-
-            $_SESSION['flash_message'] = $total . " habitaciones generadas exitosamente (N° " . $numerosGenerar[0] . " al " . $numerosGenerar[count($numerosGenerar) - 1] . ").";
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
@@ -437,31 +304,18 @@ class RoomController
             $id = $vars['id'] ?? '';
             $idMotivoBloqueo = $vars['motivo'] ?? '';
 
-            if (empty($id)) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación. Intente nuevamente.");
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
             }
 
-            if (filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
-
-            $roomModel = new Habitacion();
             $motivoParam = !empty($idMotivoBloqueo) ? (int)$idMotivoBloqueo : null;
+            $resultado = $this->habitacionService->bloquear((int)$id, $motivoParam);
 
-            if (!$roomModel->deactivate((int)$id, $motivoParam)) {
-                throw new Exception("La habitación no existe, ya se encuentra bloqueada o no está disponible.");
-            }
-
-            if ($motivoParam !== null) {
-                $_SESSION['flash_message'] = "Habitación puesta en mantenimiento exitosamente.";
-            } else {
-                $_SESSION['flash_message'] = "Habitación bloqueada exitosamente.";
-            }
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
             exit;
-
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
@@ -480,25 +334,17 @@ class RoomController
         try {
             $id = $vars['id'] ?? '';
 
-            if (empty($id)) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación. Intente nuevamente.");
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
             }
 
-            if (filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
-            }
+            $resultado = $this->habitacionService->desbloquear((int)$id);
 
-            $roomModel = new Habitacion();
-            if (!$roomModel->activate((int)$id)) {
-                throw new Exception("La habitación no existe o ya se encuentra disponible.");
-            }
-
-            $_SESSION['flash_message'] = "Habitación reactivada exitosamente.";
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
             exit;
-
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
@@ -517,12 +363,8 @@ class RoomController
         try {
             $id = $vars['id'] ?? '';
 
-            if (empty($id)) {
-                throw new Exception("Ocurrió un error al seleccionar la habitación.");
-            }
-
-            if (filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("El ID tiene que ser estrictamente un número entero.");
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
             }
 
             $roomModel = new Habitacion();
@@ -535,7 +377,122 @@ class RoomController
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
             exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
 
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        }
+    }
+
+    public function startCleaning(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
+            }
+
+            $resultado = $this->limpiezaService->iniciarLimpieza((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        }
+    }
+
+    public function completeCleaning(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
+            }
+
+            $resultado = $this->limpiezaService->completarLimpieza((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        }
+    }
+
+    public function putInMaintenance(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
+            }
+
+            $resultado = $this->habitacionService->ponerEnMantenimiento((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        }
+    }
+
+    public function outOfMaintenance(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
+            }
+
+            $resultado = $this->habitacionService->salirDeMantenimiento((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";

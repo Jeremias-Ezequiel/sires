@@ -30,9 +30,6 @@ $statusClass = 'badge--disponible';
 if (strpos($estadoLower, 'pendient') !== false) $statusClass = 'badge--pendiente';
 elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
 elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
-
-$descuentoOcupacion = \App\Models\Habitacion::descuentoParaTipo((int)($reserva['id_tipo_habitacion'] ?? 0), (int)($reserva['cantidad_huespedes'] ?? 1));
-$precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($reserva['precio_noche_base'] ?? 0), $descuentoOcupacion);
 ?>
 
 <section class="details-section">
@@ -66,14 +63,6 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
                 <tr>
                     <td class="detail-label">Precio por Noche</td>
                     <td class="detail-value">$<?= number_format((float)($reserva['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
-                </tr>
-                <tr>
-                    <td class="detail-label">Descuento por Ocupación</td>
-                    <td class="detail-value"><?= $descuentoOcupacion > 0 ? '-' . $descuentoOcupacion . '%' : '0%' ?></td>
-                </tr>
-                <tr>
-                    <td class="detail-label">Precio por Noche (con Descuento)</td>
-                    <td class="detail-value">$<?= number_format($precioNocheConDescuento, 2, ',', '.') ?></td>
                 </tr>
                 <tr>
                     <td class="detail-label">Fecha de Entrada</td>

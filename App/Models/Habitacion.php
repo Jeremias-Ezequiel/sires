@@ -25,8 +25,10 @@ class Habitacion extends Model
     public const ESTADO_OCUPADA = 2;
     public const ESTADO_MANTENIMIENTO = 3;
     public const ESTADO_BLOQUEADA = 4;
+    public const ESTADO_SUCIA = 5;
+    public const ESTADO_LIMPIANDO = 6;
 
-    // Regla de negocio: tipos de habitación según capacidad de personas
+    // Capacidad de personas según tipo de habitación
     public const TIPOS_POR_CAPACIDAD = [
         2 => [1, 4], // Simple + Matrimonial
         3 => [2],    // Doble
@@ -36,13 +38,6 @@ class Habitacion extends Model
     public const ACTIVE = 1;
     public const INACTIVE = 0;
     public const STARTING_FLOOR = 1;
-
-    // Regla de negocio: descuento por ocupación según capacidad y cantidad de huéspedes (%)
-    public const DESCUENTOS_POR_CAPACIDAD = [
-        4 => [1 => 30, 2 => 20, 3 => 10, 4 => 0],
-        3 => [1 => 25, 2 => 10, 3 => 0],
-        2 => [1 => 15, 2 => 0],
-    ];
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
     {
@@ -310,13 +305,19 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         }
     }
 
-    public function cambiarEstado(int $id, int $nuevoEstado): bool
+    public function cambiarEstado(int $id, int $nuevoEstado, ?int $soloSiEstaEn = null): bool
     {
         try {
-            $stmt = $this->db->prepare(
-                "UPDATE Habitaciones SET id_estado_habitacion = :nuevo WHERE id = :id"
-            );
-            $stmt->execute([':nuevo' => $nuevoEstado, ':id' => $id]);
+            $sql = "UPDATE Habitaciones SET id_estado_habitacion = :nuevo WHERE id = :id";
+            $params = [':nuevo' => $nuevoEstado, ':id' => $id];
+
+            if ($soloSiEstaEn !== null) {
+                $sql .= " AND id_estado_habitacion = :actual";
+                $params[':actual'] = $soloSiEstaEn;
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
             error_log("Error en Habitacion::cambiarEstado: " . $e->getMessage());
@@ -393,22 +394,6 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
             }
         }
         return 2;
-    }
-
-    public static function descuentoParaTipo(int $idTipoHabitacion, int $cantidadHuespedes): int
-    {
-        $capacidad = self::capacidadParaTipo($idTipoHabitacion);
-        return self::DESCUENTOS_POR_CAPACIDAD[$capacidad][$cantidadHuespedes] ?? 0;
-    }
-
-    public static function aplicarDescuento(float $precioBase, int $descuento): float
-    {
-        return round($precioBase - ($precioBase * $descuento / 100), 2);
-    }
-
-    public static function precioNocheParaTipo(int $idTipoHabitacion, float $precioBase, int $cantidadHuespedes): float
-    {
-        return self::aplicarDescuento($precioBase, self::descuentoParaTipo($idTipoHabitacion, $cantidadHuespedes));
     }
 
     // =====================================================================

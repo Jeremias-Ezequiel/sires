@@ -30,6 +30,7 @@ class Reserva extends Model
     public const ESTADO_FINALIZADA = 4;
     public const ESTADO_EN_CASA = 5;
     public const ESTADO_NO_SHOW = 6;
+    public const ESTADO_NO_SHOW_CON_PAGO = 7;
 
     public function countReservasHoy(?string $fecha = null): int
     {
@@ -82,7 +83,7 @@ class Reserva extends Model
                     WHERE id_habitacion = :id_habitacion
                       AND fecha_entrada < :fecha_salida
                       AND fecha_salida > :fecha_entrada
-                      AND id_estado_reserva IN (:pendiente, :confirmada)";
+                      AND id_estado_reserva IN (:pendiente, :confirmada, :encasa, :noshowpago)";
 
             $params = [
                 ':id_habitacion' => $idHabitacion,
@@ -90,6 +91,8 @@ class Reserva extends Model
                 ':fecha_salida'  => $fechaSalida,
                 ':pendiente'     => self::ESTADO_PENDIENTE,
                 ':confirmada'    => self::ESTADO_CONFIRMADA,
+                ':encasa'        => self::ESTADO_EN_CASA,
+                ':noshowpago'    => self::ESTADO_NO_SHOW_CON_PAGO,
             ];
 
             if ($exceptoId !== null) {

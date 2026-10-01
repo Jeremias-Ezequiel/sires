@@ -36,6 +36,8 @@ class DashboardController
         $stats = [
             'disponibles'     => 0,
             'ocupadas'        => 0,
+            'sucias'          => 0,
+            'limpiando'       => 0,
             'reservadas'      => 0,
             'ingresos_hoy'    => 0.0,
             'disp_2_personas' => 0,
@@ -52,6 +54,8 @@ class DashboardController
             $stats['disponibles']     = $habitacion->countByEstado(Habitacion::ESTADO_DISPONIBLE);
             $stats['ocupadas']        = $habitacion->countByEstado(Habitacion::ESTADO_OCUPADA);
             $stats['en_mantenimiento'] = $habitacion->countByEstado(Habitacion::ESTADO_MANTENIMIENTO);
+            $stats['sucias']          = $habitacion->countByEstado(Habitacion::ESTADO_SUCIA);
+            $stats['limpiando']       = $habitacion->countByEstado(Habitacion::ESTADO_LIMPIANDO);
             $stats['reservadas']      = $reserva->countReservasHoy();
             $stats['ingresos_hoy']    = $transaccion->sumIngresosDelDia();
             $stats['disp_2_personas'] = $habitacion->countDisponiblesPorCapacidad(2);
