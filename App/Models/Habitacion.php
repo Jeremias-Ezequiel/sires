@@ -121,6 +121,24 @@ class Habitacion extends Model
         }
     }
 
+    public function getNextRoomNumber(int $piso): int
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT MAX(CAST(numero AS UNSIGNED)) FROM Habitaciones WHERE piso = :piso");
+            $stmt->execute([':piso' => $piso]);
+            $maxNumero = $stmt->fetchColumn();
+            $maxNumero = $maxNumero !== false && $maxNumero !== null ? (int)$maxNumero : 0;
+
+            if ($maxNumero <= 0) {
+                return (int)($piso * 100 + 1);
+            }
+            return $maxNumero + 1;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getNextRoomNumber: " . $e->getMessage());
+            return (int)($piso * 100 + 1);
+        }
+    }
+
     public function save(Habitacion $habitacion): bool
     {
         try {

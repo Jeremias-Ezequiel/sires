@@ -4,7 +4,6 @@
         <p>Alta de habitaciones en el inventario del hotel</p>
     </div>
 
-    <!-- Modificado con la función global url() -->
     <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
         <i class="fas fa-arrow-left"></i> Volver a la Lista
     </a>
@@ -20,8 +19,7 @@
 </div>
 
 <section class="details-section form-container-section">
-    <!-- 🌟 Apertura del formulario automatizada para POST: Resuelve la acción a través del UrlHelper nativo -->
-    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/add/process', 'POST', 'employee-form') ?>
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/add/process', 'POST', 'room-form') ?>
 
         <div class="form__section-title">
             <i class="fas fa-door-open"></i> Ubicación de la Habitación
@@ -29,13 +27,25 @@
 
         <div class="form__grid">
             <div class="form__group">
-                <label class="form__label" for="numero">Número de Habitación</label>
-                <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
+                <label class="form__label" for="piso">Piso</label>
+                <select id="piso" name="piso" required class="form__select">
+                    <option value="" disabled <?= !isset($_POST['piso']) && !isset($old['piso']) ? 'selected' : '' ?>>Seleccione un Piso</option>
+                    <?php if (!empty($pisos)): ?>
+                        <?php foreach ($pisos as $p): ?>
+                            <?php $current_piso = $_POST['piso'] ?? $old['piso'] ?? ''; ?>
+                            <option value="<?= (int)$p ?>" <?= (string)$current_piso === (string)$p ? 'selected' : '' ?>>Piso <?= (int)$p ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
             </div>
 
-            <div class="form__group">
-                <label class="form__label" for="piso">Piso</label>
-                <input type="number" id="piso" name="piso" placeholder="Ej: 1" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? '') ?>">
+            <div class="form__group" id="numero-group" style="display: none;">
+                <label class="form__label" for="numero">Número de Habitación</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="number" id="numero" name="numero" placeholder="Ej: 1" readonly class="form__input" autocomplete="off" min="1" style="flex: 1;" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
+                    <span id="numero-sugerido-label" style="font-size: 0.9em; color: var(--texto-gris); white-space: nowrap;"></span>
+                </div>
+                <small class="form__help">El número se asigna automáticamente de forma consecutiva.</small>
             </div>
         </div>
 
@@ -76,6 +86,12 @@
             </div>
         </div>
 
+        <div class="form__section-title" id="preview-title" style="display: none;">
+            <i class="fas fa-eye"></i> Vista Previa
+        </div>
+
+        <div id="room-preview" class="form__group" style="display: none;"></div>
+
         <div class="form__actions">
             <button type="submit" class="btn btn--primary">
                 <i class="fas fa-save"></i> Guardar Habitación
@@ -86,60 +102,68 @@
 </section>
 
 <script>
+    const HABITACIONES = <?= json_encode($todasHabitaciones ?? []) ?>;
+    const PISOS = <?= json_encode($pisos ?? []) ?>;
+
     document.addEventListener('DOMContentLoaded', function() {
+        const selectPiso = document.getElementById('piso');
         const inputNumero = document.getElementById('numero');
-        const inputPiso = document.getElementById('piso');
+        const numeroGroup = document.getElementById('numero-group');
+        const numeroSugeridoLabel = document.getElementById('numero-sugerido-label');
+        const previewTitle = document.getElementById('preview-title');
+        const roomPreview = document.getElementById('room-preview');
         const inputPrecio = document.getElementById('precio_noche_base');
 
-        if (inputNumero) {
-            inputNumero.addEventListener('keypress', function(e) {
-                if (!/[0-9]/.test(e.key)) e.preventDefault();
-            });
-            inputNumero.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-            inputNumero.addEventListener('paste', function(e) {
-                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
-                if (!/^[0-9]+$/.test(dataPegada)) {
-                    e.preventDefault();
-                    document.getElementById('alert-container').innerHTML = `
-                        <div class="alert alert--error">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Solo se permiten números enteros en el número de habitación.
-                        </div>
-                    `;
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+        function getNextRoomNumber(piso) {
+            let max = 0;
+            HABITACIONES.forEach(function(h) {
+                if (parseInt(h.piso) === piso) {
+                    let num = parseInt(h.numero);
+                    if (num > max) max = num;
                 }
             });
+            if (max === 0) return piso * 100 + 1;
+            return max + 1;
         }
 
-        if (inputPiso) {
-            inputPiso.addEventListener('keypress', function(e) {
-                if (!/[0-9]/.test(e.key)) e.preventDefault();
-            });
-            inputPiso.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-            inputPiso.addEventListener('paste', function(e) {
-                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
-                if (!/^[0-9]+$/.test(dataPegada)) {
-                    e.preventDefault();
-                    document.getElementById('alert-container').innerHTML = `
-                        <div class="alert alert--error">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Solo se permiten números enteros en el piso.
-                        </div>
-                    `;
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                }
-            });
+        function actualizarPreview() {
+            const piso = parseInt(selectPiso.value);
+
+            if (!piso || piso <= 0) {
+                previewTitle.style.display = 'none';
+                roomPreview.style.display = 'none';
+                numeroGroup.style.display = 'none';
+                return;
+            }
+
+            const nextNum = getNextRoomNumber(piso);
+            const indice = nextNum - piso * 100;
+
+            inputNumero.value = indice;
+
+            numeroGroup.style.display = 'block';
+
+            const numeroFinal = piso * 100 + parseInt(inputNumero.value);
+            numeroSugeridoLabel.textContent = '→ N° ' + numeroFinal;
+
+            previewTitle.style.display = 'block';
+            roomPreview.style.display = 'block';
+            roomPreview.innerHTML = `
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px; background: var(--fondo-panel); border-radius: 8px;">
+                    <span class="badge badge--disponible" style="padding: 6px 14px; font-size: 1em;">
+                        <i class="fas fa-layer-group"></i> Piso ${piso}
+                    </span>
+                    <span class="badge badge--disponible" style="padding: 6px 14px; font-size: 1em;">
+                        <i class="fas fa-door-open"></i> Habitación N° ${numeroFinal}
+                    </span>
+                    <span style="color: var(--texto-gris); font-size: 0.85em;">
+                        (índice ${inputNumero.value})
+                    </span>
+                </div>
+            `;
         }
+
+        selectPiso.addEventListener('change', actualizarPreview);
 
         if (inputPrecio) {
             inputPrecio.addEventListener('keypress', function(e) {
@@ -158,12 +182,11 @@
                             Solo se permiten valores numéricos en el precio (ej: 15000 o 15000.50).
                         </div>
                     `;
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             });
         }
+
+        actualizarPreview();
     });
 </script>

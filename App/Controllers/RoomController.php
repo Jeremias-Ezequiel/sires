@@ -73,6 +73,8 @@ class RoomController
         $roomModel = new Habitacion();
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();
+        $pisos = $roomModel->getPisos();
+        $todasHabitaciones = $roomModel->getAllWithFilters(null, null, null, null);
 
         $contentView = __DIR__ . '/../views/dashboard/addRoom.phtml';
 
@@ -86,19 +88,17 @@ class RoomController
         }
 
         try {
-            $numero      = $_POST['numero'] ?? '';
             $piso        = $_POST['piso'] ?? '';
             $idTipo      = $_POST['id_tipo_habitacion'] ?? 0;
             $idEstado    = $_POST['id_estado_habitacion'] ?? 0;
             $precioNoche = $_POST['precio_noche_base'] ?? '';
 
-            if (empty($numero) || (int)$numero <= 0) {
-                throw new Exception("El número de habitación es obligatorio y debe ser mayor a 0.");
-            }
-
             if ($piso === '' || (int)$piso < 0) {
                 throw new Exception("El piso es obligatorio y no puede ser negativo.");
             }
+
+            $roomModel = new Habitacion();
+            $numero = $roomModel->getNextRoomNumber((int)$piso);
 
             if ((int)$idTipo <= 0) {
                 throw new Exception("Debe seleccionar un tipo de habitación.");
@@ -112,14 +112,13 @@ class RoomController
                 throw new Exception("El precio por noche es obligatorio y no puede ser negativo.");
             }
 
-            $habitacion = new Habitacion();
-            $habitacion->setNumero((int)$numero);
-            $habitacion->setPiso((int)$piso);
-            $habitacion->setIdTipoHabitacion((int)$idTipo);
-            $habitacion->setIdEstadoHabitacion((int)$idEstado);
-            $habitacion->setPrecioNocheBase((float)$precioNoche);
+            $roomModel->setNumero($numero);
+            $roomModel->setPiso((int)$piso);
+            $roomModel->setIdTipoHabitacion((int)$idTipo);
+            $roomModel->setIdEstadoHabitacion((int)$idEstado);
+            $roomModel->setPrecioNocheBase((float)$precioNoche);
 
-            $success = $habitacion->save($habitacion);
+            $success = $roomModel->save($roomModel);
 
             if (!$success) {
                 throw new Exception("No se pudo registrar la habitación. Verifique los datos ingresados.");
