@@ -17,6 +17,8 @@ class Habitacion extends Model
     private int $id_estado_habitacion;
     private float $precio_noche_base;
     private ?int $id_motivo_bloqueo = null;
+    private int $is_active = self::ACTIVE;
+    private ?string $fecha_baja = null;
 
     // Estados de habitación según Estados_Habitacion
     public const ESTADO_DISPONIBLE = 1;
@@ -31,6 +33,9 @@ class Habitacion extends Model
         4 => [3],    // Suite
     ];
 
+    public const ACTIVE = 1;
+    public const INACTIVE = 0;
+
     // Regla de negocio: descuento por ocupación según capacidad y cantidad de huéspedes (%)
     public const DESCUENTOS_POR_CAPACIDAD = [
         4 => [1 => 30, 2 => 20, 3 => 10, 4 => 0],
@@ -40,8 +45,8 @@ class Habitacion extends Model
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor): array
     {
-        $conditions = [];
-        $params = [];
+        $conditions = ["h.is_active = :is_active"];
+        $params = ['is_active' => self::ACTIVE];
 
         if ($search !== null && $search !== '') {
             $conditions[] = "h.numero LIKE :search";
@@ -113,7 +118,7 @@ class Habitacion extends Model
     public function getPisos(): array
     {
         try {
-            $stmt = $this->db->query("SELECT DISTINCT piso FROM Habitaciones ORDER BY piso ASC");
+            $stmt = $this->db->query("SELECT DISTINCT piso FROM Habitaciones WHERE is_active = 1 ORDER BY piso ASC");
             return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
         } catch (PDOException $e) {
             error_log("Error en Habitacion::getPisos: " . $e->getMessage());
@@ -124,8 +129,8 @@ class Habitacion extends Model
     public function getNextRoomNumber(int $piso): int
     {
         try {
-            $stmt = $this->db->prepare("SELECT MAX(CAST(numero AS UNSIGNED)) FROM Habitaciones WHERE piso = :piso");
-            $stmt->execute([':piso' => $piso]);
+            $stmt = $this->db->prepare("SELECT MAX(CAST(numero AS UNSIGNED)) FROM Habitaciones WHERE piso = :piso AND is_active = :is_active");
+            $stmt->execute([':piso' => $piso, ':is_active' => self::ACTIVE]);
             $maxNumero = $stmt->fetchColumn();
             $maxNumero = $maxNumero !== false && $maxNumero !== null ? (int)$maxNumero : 0;
 
@@ -142,8 +147,8 @@ class Habitacion extends Model
     public function save(Habitacion $habitacion): bool
     {
         try {
-            $check = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero");
-            $check->execute([':numero' => $habitacion->getNumero()]);
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = :is_active");
+            $check->execute([':numero' => $habitacion->getNumero(), ':is_active' => self::ACTIVE]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El número de habitación ya existe en el sistema.");
             }
@@ -192,8 +197,8 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
     public function update(Habitacion $habitacion): bool
     {
         try {
-            $check = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND id != :id");
-            $check->execute([':numero' => $habitacion->getNumero(), ':id' => $habitacion->getId()]);
+            $check = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = :is_active AND id != :id");
+            $check->execute([':numero' => $habitacion->getNumero(), ':is_active' => self::ACTIVE, ':id' => $habitacion->getId()]);
             if ((int)$check->fetchColumn() > 0) {
                 throw new Exception("El número de habitación ya está en uso por otra habitación.");
             }
@@ -267,6 +272,27 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         }
     }
 
+    public function bajaLogica(int $id): bool
+    {
+        try {
+            $sql = "UPDATE Habitaciones
+                    SET is_active = :inactive, fecha_baja = NOW()
+                    WHERE id = :id AND is_active = :active";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':inactive' => self::INACTIVE,
+                ':id'       => $id,
+                ':active'   => self::ACTIVE
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::bajaLogica: " . $e->getMessage());
+            throw new Exception("Error interno al dar de baja la habitación.");
+        }
+    }
+
     public function cambiarEstado(int $id, int $nuevoEstado): bool
     {
         try {
@@ -285,9 +311,9 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
     {
         try {
             $stmt = $this->db->prepare(
-                "SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = :estado"
+                "SELECT COUNT(*) FROM Habitaciones WHERE id_estado_habitacion = :estado AND is_active = :is_active"
             );
-            $stmt->execute([':estado' => $idEstado]);
+            $stmt->execute([':estado' => $idEstado, ':is_active' => self::ACTIVE]);
             return (int)$stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log("Error en Habitacion::countByEstado: " . $e->getMessage());
@@ -303,9 +329,9 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         try {
             $stmt = $this->db->prepare(
                 "SELECT COUNT(*) FROM Habitaciones
-                 WHERE id_estado_habitacion = ? AND id_tipo_habitacion IN ($placeholders)"
+                 WHERE id_estado_habitacion = ? AND id_tipo_habitacion IN ($placeholders) AND is_active = ?"
             );
-            $stmt->execute(array_merge([self::ESTADO_DISPONIBLE], $tiposIds));
+            $stmt->execute(array_merge([self::ESTADO_DISPONIBLE], $tiposIds, [self::ACTIVE]));
             return (int)$stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log("Error en Habitacion::countDisponiblesPorCapacidad: " . $e->getMessage());
@@ -324,12 +350,12 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                 JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
                 LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
-                WHERE h.id_tipo_habitacion IN ($placeholders)
+                WHERE h.id_tipo_habitacion IN ($placeholders) AND h.is_active = ?
                 ORDER BY h.numero ASC";
 
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute($tiposIds);
+            $stmt->execute(array_merge($tiposIds, [self::ACTIVE]));
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (PDOException $e) {
             error_log("Error en Habitacion::getHabitacionesPorCapacidad: " . $e->getMessage());
@@ -448,5 +474,26 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
     public function setIdMotivoBloqueo(?int $id_motivo_bloqueo): void
     {
         $this->id_motivo_bloqueo = $id_motivo_bloqueo;
+    }
+
+    public function getIsActive(): int
+    {
+        return $this->is_active;
+    }
+    public function setIsActive(int $is_active): void
+    {
+        if ($is_active !== 0 && $is_active !== 1) {
+            throw new Exception("El valor de is_active debe ser 0 o 1.");
+        }
+        $this->is_active = $is_active;
+    }
+
+    public function getFechaBaja(): ?string
+    {
+        return $this->fecha_baja;
+    }
+    public function setFechaBaja(?string $fecha_baja): void
+    {
+        $this->fecha_baja = $fecha_baja;
     }
 }

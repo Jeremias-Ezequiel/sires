@@ -240,6 +240,12 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    $r->addRoute('GET', '/dashboard/rooms/baja', [
+        'action' => [RoomController::class, 'bajaLogicaRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     // Reservas
     $r->addRoute('GET', '/dashboard/booking', [
         'action' => [BookingController::class, 'showBooking'],

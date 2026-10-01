@@ -5,10 +5,12 @@
     </div>
 
     <div class="header-actions-container">
-        <!-- Redirección adaptada con url() para el formulario de registro -->
-        <a href="<?= url('/dashboard/rooms/add/batch') ?>" class="btn btn--ghost">
-            <i class="fas fa-sort-numeric-down"></i> Generar en Lote
-        </a>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <small style="color: var(--texto-gris); font-size: 0.75em;">Inicializar un piso nuevo</small>
+            <a href="<?= url('/dashboard/rooms/add/batch') ?>" class="btn btn--ghost">
+                <i class="fas fa-layer-group"></i> Nuevo Piso
+            </a>
+        </div>
         <a href="<?= url('/dashboard/rooms/add') ?>" class="btn btn--primary">
             <i class="fas fa-plus"></i> Registrar Habitación
         </a>
@@ -152,6 +154,16 @@
                                             <i class="fas fa-bed"></i>
                                         </button>
 <?php endif; ?>
+                                    <?php if ((int)$userRole === \App\Models\Rol::ADMINISTRADOR): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-danger open-sires-modal"
+                                            data-action="delete"
+                                            data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
+                                            data-url="<?= url('/dashboard/rooms/baja?id=' . $room['id']) ?>"
+                                            title="Dar de Baja">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -239,6 +251,13 @@
                     modalIcon.className = 'fas fa-bed';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
+                    motivoWrapper.style.display = 'none';
+                } else if (actionType === 'delete') {
+                    modalTitle.innerText = 'Dar de Baja';
+                    modalText.innerHTML = `¿Dar de baja la <br><strong>${roomName}</strong>? Se liberará su número para ser reutilizado.`;
+                    modalIcon.className = 'fas fa-trash';
+                    modalIconFrame.classList.add('modal__icon--deactivate');
+                    btnConfirm.classList.add('btn--danger');
                     motivoWrapper.style.display = 'none';
                 }
 
