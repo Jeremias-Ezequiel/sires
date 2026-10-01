@@ -30,12 +30,12 @@
         <div class="form__grid">
             <div class="form__group">
                 <label class="form__label" for="numero">Número de Habitación</label>
-                <input type="number" id="numero" name="numero" placeholder="Ej: 101" required class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? $habitacion['numero']) ?>">
+                <input type="number" id="numero" name="numero" placeholder="Ej: 101" readonly class="form__input" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? $habitacion['numero']) ?>">
             </div>
 
             <div class="form__group">
                 <label class="form__label" for="piso">Piso</label>
-                <input type="number" id="piso" name="piso" placeholder="Ej: 1" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? $habitacion['piso']) ?>">
+                <input type="number" id="piso" name="piso" placeholder="Ej: 1" readonly class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? $habitacion['piso']) ?>">
             </div>
         </div>
 
@@ -87,53 +87,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const inputNumero = document.getElementById('numero');
-        const inputPiso = document.getElementById('piso');
         const inputPrecio = document.getElementById('precio_noche_base');
-
-        if (inputNumero) {
-            inputNumero.addEventListener('keypress', function(e) {
-                if (!/[0-9]/.test(e.key)) e.preventDefault();
-            });
-            inputNumero.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-            inputNumero.addEventListener('paste', function(e) {
-                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
-                if (!/^[0-9]+$/.test(dataPegada)) {
-                    e.preventDefault();
-                    document.getElementById('alert-container').innerHTML = `
-                        <div class="alert alert--error">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Solo se permiten números enteros en el número de habitación.
-                        </div>
-                    `;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
-        if (inputPiso) {
-            inputPiso.addEventListener('keypress', function(e) {
-                if (!/[0-9]/.test(e.key)) e.preventDefault();
-            });
-            inputPiso.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-            inputPiso.addEventListener('paste', function(e) {
-                const dataPegada = (e.clipboardData || window.clipboardData).getData('text');
-                if (!/^[0-9]+$/.test(dataPegada)) {
-                    e.preventDefault();
-                    document.getElementById('alert-container').innerHTML = `
-                        <div class="alert alert--error">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Solo se permiten números enteros en el piso.
-                        </div>
-                    `;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
 
         if (inputPrecio) {
             inputPrecio.addEventListener('keypress', function(e) {
