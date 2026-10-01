@@ -157,4 +157,32 @@ class PaymentController
             exit;
         }
     }
+
+    public function recalculateReservation(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de reserva inválido.");
+            }
+
+            $resultado = $this->pagoService->recalcularManual((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $id));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $id));
+            exit;
+        }
+    }
 }

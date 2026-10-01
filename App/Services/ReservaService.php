@@ -80,6 +80,26 @@ class ReservaService
                 throw new Exception("No se pudo registrar la reserva.");
             }
 
+            $idStmt = $db->prepare("SELECT LAST_INSERT_ID()");
+            $idStmt->execute();
+            $nuevoIdReserva = (int)$idStmt->fetchColumn();
+
+            $entrada = new \DateTime($fechaEntrada);
+            $salida  = new \DateTime($fechaSalida);
+            $noches  = $entrada->diff($salida)->days;
+            $precioBase = (float)$habitacionRow['precio_noche_base'];
+            $total   = $precioBase * $noches;
+
+            $insertResumen = $db->prepare(
+                "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
+                 VALUES (:id_reserva, :estado, :total, 0, :total)"
+            );
+            $insertResumen->execute([
+                ':id_reserva' => $nuevoIdReserva,
+                ':estado'     => ResumenPago::ESTADO_PENDIENTE,
+                ':total'      => $total
+            ]);
+
             $db->commit();
             return ['success' => true, 'message' => 'Reserva registrada exitosamente.'];
         } catch (Exception $e) {

@@ -385,4 +385,10 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    $r->addRoute('GET', '/dashboard/payments/recalculate', [
+        'action' => [PaymentController::class, 'recalculateReservation'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
 };

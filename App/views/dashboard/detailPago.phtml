@@ -7,6 +7,15 @@
         <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a Pagos
         </a>
+        <?php if ($resumen !== null && $resumen->getMontoPagado() <= 0): ?>
+            <button type="button"
+                class="btn btn--warning open-sires-modal"
+                data-action="recalculate"
+                data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
+                data-url="<?= url('/dashboard/payments/recalculate?id=' . $reserva['id']) ?>">
+                <i class="fas fa-calculator"></i> Recalcular Precio
+            </button>
+        <?php endif; ?>
     </div>
 </header>
 
@@ -252,4 +261,22 @@ elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada
             });
         }
     });
+
+    // Modal handler for recalcular
+    const recalcBtn = document.querySelector('[data-action="recalculate"]');
+    if (recalcBtn) {
+        recalcBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const reservaName = this.getAttribute('data-name') ?? 'esta reserva';
+            const url = this.getAttribute('data-url') ?? '';
+            const modalTitle = document.getElementById('modal-title-text');
+            const modalText = document.getElementById('modal-description-text');
+            const modalForm = document.getElementById('modal-form');
+            if (modalTitle) modalTitle.innerText = 'Recalcular Precio';
+            if (modalText) modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${reservaName}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
+            if (modalForm) modalForm.setAttribute('action', url);
+            const modal = document.getElementById('confirmation-modal');
+            if (modal) modal.style.display = 'flex';
+        });
+    }
 </script>

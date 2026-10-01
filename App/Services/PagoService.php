@@ -284,4 +284,105 @@ class PagoService
 
         return ['success' => true, 'message' => 'Corte de pagos ejecutado. ' . $contador . ' reserva(s) afectada(s).'];
     }
+
+    public function recalcularManual(int $idReserva): array
+    {
+        $reserva = $this->reservaModel->findById($idReserva);
+        if (!$reserva) {
+            throw new Exception("La reserva no existe.");
+        }
+
+        $db = $this->resumenModel->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $lock = $db->prepare(
+                "SELECT rp.id, rp.monto_cobrado, rp.monto_total, rp.saldo_pendiente,
+                        h.precio_noche_base
+                 FROM Resumen_Pago rp
+                 JOIN Reservas r ON r.id = rp.id_reserva
+                 JOIN Habitaciones h ON h.id = r.id_habitacion
+                 WHERE rp.id_reserva = :id FOR UPDATE"
+            );
+            $lock->execute([':id' => $idReserva]);
+            $row = $lock->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $db->rollBack();
+                throw new Exception("La reserva no tiene un resumen de pago.");
+            }
+
+            $montoCobrado  = (float)$row['monto_cobrado'];
+            $montoTotalAnt = (float)$row['monto_total'];
+            $precioNoche   = (float)$row['precio_noche_base'];
+
+            $entrada = new \DateTime($reserva['fecha_entrada']);
+            $salida  = new \DateTime($reserva['fecha_salida']);
+            $noches  = $entrada->diff($salida)->days;
+
+            $nuevoTotal = $precioNoche * $noches;
+
+            if ($nuevoTotal <= 0) {
+                $db->rollBack();
+                throw new Exception("No se pudo calcular un total válido.");
+            }
+
+            if ($montoCobrado > 0 && $nuevoTotal < $montoCobrado) {
+                $db->rollBack();
+                throw new Exception(
+                    "El nuevo total ($" . number_format($nuevoTotal, 2, ',', '.') .
+                    ") es menor a lo ya cobrado ($" . number_format($montoCobrado, 2, ',', '.') .
+                    "). No se puede recalcular."
+                );
+            }
+
+            $nuevoSaldo = $nuevoTotal - $montoCobrado;
+
+            $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
+            if ($nuevoSaldo <= 0 && $montoCobrado > 0) {
+                $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
+            } elseif ($montoCobrado > 0) {
+                $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
+            }
+
+            $update = $db->prepare(
+                "UPDATE Resumen_Pago
+                 SET monto_total = :total, saldo_pendiente = :saldo,
+                     id_estado_pago = :estado
+                 WHERE id = :id"
+            );
+            $update->execute([
+                ':total'  => $nuevoTotal,
+                ':saldo'  => $nuevoSaldo,
+                ':estado' => $nuevoEstado,
+                ':id'     => (int)$row['id']
+            ]);
+
+            $updateObs = $db->prepare(
+                "UPDATE Reservas
+                 SET observaciones = CONCAT(
+                     COALESCE(observaciones, ''),
+                     ' | Recálculo manual de precio: $',
+                     :anterior, ' → $', :nuevo, '. Fecha: ', NOW()
+                 )
+                 WHERE id = :id"
+            );
+            $updateObs->execute([
+                ':anterior' => number_format($montoTotalAnt, 2, ',', '.'),
+                ':nuevo'    => number_format($nuevoTotal, 2, ',', '.'),
+                ':id'       => $idReserva
+            ]);
+
+            $db->commit();
+            return [
+                'success' => true,
+                'message' => 'Precio recalculado exitosamente. Total anterior: $' .
+                    number_format($montoTotalAnt, 2, ',', '.') .
+                    ' → Nuevo total: $' . number_format($nuevoTotal, 2, ',', '.') . '.'
+            ];
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
 }
