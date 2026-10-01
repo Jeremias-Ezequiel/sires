@@ -43,6 +43,9 @@ class PaymentController
         $search       = $vars['search'] ?? "";
         $estadoPago   = $vars['estado_pago_filter'] ?? "";
 
+        $hasSearch = !empty($vars['search']);
+        $hasEstado = isset($vars['estado_pago_filter']) && $vars['estado_pago_filter'] !== '';
+
         $resumenModel = new ResumenPago();
 
         $totalPagos = $resumenModel->countPagos($search, $estadoPago);

@@ -23,26 +23,6 @@ class BookingController
         $this->pagoService    = new PagoService();
     }
 
-    private function initSession(): array
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        $flashStatus  = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_message'], $_SESSION['flash_status']);
-
-        return [
-            'userName' => $_SESSION['user_name'] ?? 'Usuario',
-            'userRole' => $_SESSION['user_role'] ?? 0,
-            'flashMessage' => $flashMessage,
-            'flashStatus'  => $flashStatus,
-            'old' => $_SESSION['old_inputs'] ?? [],
-        ];
-        unset($_SESSION['old_inputs']);
-    }
-
     private function redirect(string $url): void
     {
         header('Location: ' . UrlHelper::to($url));
@@ -51,7 +31,21 @@ class BookingController
 
     public function showBooking(array $vars): void
     {
-        $session = $this->initSession();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
 
         $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         if ($currentPage < 1) { $currentPage = 1; }
@@ -62,6 +56,10 @@ class BookingController
         $search = $vars['search'] ?? "";
         $estado = $vars['estado_filter'] ?? "";
         $canal  = $vars['canal_filter'] ?? "";
+
+        $hasSearch = !empty($vars['search']);
+        $hasEstado = isset($vars['estado_filter']) && $vars['estado_filter'] !== '';
+        $hasCanal  = isset($vars['canal_filter']) && $vars['canal_filter'] !== '';
 
         $reservaModel = new Reserva();
 
@@ -80,7 +78,24 @@ class BookingController
 
     public function showNewBookingForm(): void
     {
-        $session = $this->initSession();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
+
+        $old = $_SESSION['old_inputs'] ?? [];
+        unset($_SESSION['old_inputs']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
 
         $clientes     = (new Clientes())->getAll();
         $habitaciones = array_filter(
@@ -135,7 +150,24 @@ class BookingController
 
     public function showEditBookingForm(array $vars): void
     {
-        $session = $this->initSession();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
+
+        $old = $_SESSION['old_inputs'] ?? [];
+        unset($_SESSION['old_inputs']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
             $id = $vars['id'] ?? '';
@@ -282,7 +314,15 @@ class BookingController
 
     public function showBookingDetail(array $vars): void
     {
-        $session = $this->initSession();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
+
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
             $id = $vars['id'] ?? '';

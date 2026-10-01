@@ -43,6 +43,11 @@ class RoomController
         $type   = $vars['type_filter'] ?? "";
         $floor  = $vars['floor_filter'] ?? "";
 
+        $hasSearch = !empty($vars['search']);
+        $hasStatus = isset($vars['status_filter']) && $vars['status_filter'] !== '';
+        $hasType   = isset($vars['type_filter']) && $vars['type_filter'] !== '';
+        $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
+
         $roomModel = new Habitacion();
         $habitaciones = $roomModel->getAllWithFilters($search, $status, $type, $floor);
         $tipos = $roomModel->getTiposHabitacion();
