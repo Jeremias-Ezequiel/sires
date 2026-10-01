@@ -85,7 +85,8 @@ class BookingController
             (new Habitacion())->getAllWithFilters(null, null, null, null),
             function (array $h): bool {
                 return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA;
+                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
+                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA;
             }
         );
         $reservasActivas = (new Reserva())->getReservasActivas();
@@ -160,8 +161,6 @@ class BookingController
                     throw new Exception("No se pudo registrar la reserva. Verifique los datos ingresados.");
                 }
 
-                (new Habitacion())->cambiarEstado($idHabitacion, Habitacion::ESTADO_OCUPADA);
-
                 $db->commit();
             } catch (Exception $e) {
                 $db->rollBack();
@@ -222,12 +221,18 @@ class BookingController
                 throw new Exception("No se puede editar una reserva cancelada o finalizada.");
             }
 
+            $habitacionActual = (new Habitacion())->findById((int)$reserva['id_habitacion']);
+            if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+                throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
+            }
+
             $clientes     = (new Clientes())->getAll();
             $habitaciones = array_filter(
                 (new Habitacion())->getAllWithFilters(null, null, null, null),
                 function (array $h): bool {
                     return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA;
+                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
+                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA;
                 }
             );
             $reservasActivas = (new Reserva())->getReservasActivas();
@@ -290,6 +295,11 @@ class BookingController
             $reservaActual = $reservaModel->findById($id);
             if (!$reservaActual) {
                 throw new Exception("La reserva no existe.");
+            }
+
+            $habitacionActual = (new Habitacion())->findById((int)$reservaActual['id_habitacion']);
+            if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+                throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
             }
 
             if ((int)$reservaActual['id_habitacion'] !== $idHabitacion
@@ -461,6 +471,59 @@ class BookingController
         }
     }
 
+    public function checkInBooking(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de reserva inválido.");
+            }
+
+            $reservaModel = new Reserva();
+            $reservaData = $reservaModel->findById((int)$id);
+            if ($reservaData === null) {
+                throw new Exception("La reserva no existe.");
+            }
+
+            if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_CONFIRMADA) {
+                throw new Exception("Solo se puede hacer check-in de reservas confirmadas.");
+            }
+
+            $resumen = (new ResumenPago())->getByReserva((int)$id);
+            if ($resumen === null || $resumen->getIdEstadoPago() !== ResumenPago::ESTADO_PAGADO_TOTAL) {
+                throw new Exception("No se puede realizar el check-in. La estadía debe estar totalmente pagada.");
+            }
+
+            $habitacionModel = new Habitacion();
+            $roomData = $habitacionModel->findById((int)$reservaData['id_habitacion']);
+            if (!$roomData) {
+                throw new Exception("La habitación asignada no existe.");
+            }
+            if ((int)$roomData['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+                throw new Exception("El check-in ya fue realizado. La habitación ya se encuentra ocupada.");
+            }
+
+            $habitacionModel->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_OCUPADA);
+
+            $_SESSION['flash_message'] = "Check-in realizado exitosamente. La habitación ha sido ocupada.";
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/booking'));
+            exit;
+
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/booking'));
+            exit;
+        }
+    }
+
     public function finalizeBooking(array $vars): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -484,14 +547,10 @@ class BookingController
                 throw new Exception("No se puede finalizar la reserva hasta que el pago esté realizado en su totalidad.");
             }
 
-            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_FINALIZADA, Reserva::ESTADO_PENDIENTE);
+            $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_FINALIZADA, Reserva::ESTADO_CONFIRMADA);
 
             if (!$success) {
-                $success = $reservaModel->cambiarEstado((int)$id, Reserva::ESTADO_FINALIZADA, Reserva::ESTADO_CONFIRMADA);
-            }
-
-            if (!$success) {
-                throw new Exception("No se pudo finalizar la reserva. Solo se pueden finalizar reservas pendientes o confirmadas.");
+                throw new Exception("No se pudo finalizar la reserva. Solo se pueden finalizar reservas confirmadas con check-in realizado.");
             }
 
             (new Habitacion())->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
