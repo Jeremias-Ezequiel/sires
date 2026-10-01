@@ -58,12 +58,10 @@ class ReservaService
                 || $estadoActual === Habitacion::ESTADO_BLOQUEADA
                 || $estadoActual === Habitacion::ESTADO_SUCIA
                 || $estadoActual === Habitacion::ESTADO_LIMPIANDO) {
-                $db->rollBack();
                 throw new Exception("La habitación seleccionada no está disponible.");
             }
 
             if ($this->reservaModel->existeSolapamiento($idHabitacion, $fechaEntrada, $fechaSalida)) {
-                $db->rollBack();
                 throw new Exception("La habitación ya tiene una reserva pendiente o confirmada para ese rango de fechas.");
             }
 
@@ -79,7 +77,6 @@ class ReservaService
 
             $ok = $this->reservaModel->save($reserva);
             if (!$ok) {
-                $db->rollBack();
                 throw new Exception("No se pudo registrar la reserva.");
             }
 
@@ -200,7 +197,6 @@ class ReservaService
         try {
             $reservaOk = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_FINALIZADA, $estadoActual);
             if (!$reservaOk) {
-                $db->rollBack();
                 throw new Exception("No se pudo finalizar la reserva.");
             }
 
@@ -211,7 +207,6 @@ class ReservaService
             );
             if (!$roomOk) {
                 $this->reservaModel->cambiarEstado($idReserva, $estadoActual, Reserva::ESTADO_FINALIZADA);
-                $db->rollBack();
                 throw new Exception("Error al marcar la habitación como sucia.");
             }
 
@@ -248,7 +243,6 @@ class ReservaService
                 Reserva::ESTADO_EN_CASA
             );
             if (!$reservaOk) {
-                $db->rollBack();
                 throw new Exception("No se pudo finalizar la reserva.");
             }
 
@@ -259,7 +253,6 @@ class ReservaService
             );
             if (!$roomOk) {
                 $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_EN_CASA, Reserva::ESTADO_FINALIZADA);
-                $db->rollBack();
                 throw new Exception("Error al liberar la habitación.");
             }
 
@@ -331,6 +324,8 @@ class ReservaService
             throw new Exception("Solo se puede marcar como No-Show reservas confirmadas.");
         }
 
+        $idHabitacion = (int)$reservaData['id_habitacion'];
+
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
 
@@ -345,9 +340,14 @@ class ReservaService
                     Reserva::ESTADO_CONFIRMADA
                 );
                 if (!$ok) {
-                    $db->rollBack();
                     throw new Exception("No se pudo marcar la reserva como No-Show.");
                 }
+
+                $this->habitacionModel->cambiarEstado(
+                    $idHabitacion,
+                    Habitacion::ESTADO_OCUPADA,
+                    Habitacion::ESTADO_DISPONIBLE
+                );
 
                 $db->commit();
                 return [
@@ -361,14 +361,12 @@ class ReservaService
                     Reserva::ESTADO_CONFIRMADA
                 );
                 if (!$ok) {
-                    $db->rollBack();
                     throw new Exception("No se pudo marcar la reserva como No-Show.");
                 }
 
                 $this->habitacionModel->cambiarEstado(
-                    (int)$reservaData['id_habitacion'],
-                    Habitacion::ESTADO_DISPONIBLE,
-                    Habitacion::ESTADO_OCUPADA
+                    $idHabitacion,
+                    Habitacion::ESTADO_DISPONIBLE
                 );
 
                 $db->commit();
