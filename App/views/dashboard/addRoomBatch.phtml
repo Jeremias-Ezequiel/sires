@@ -1,0 +1,145 @@
+<header class="main-header employees-header">
+    <div>
+        <h1>Generación en Lote de Habitaciones</h1>
+        <p>Alta masiva de habitaciones consecutivas en el inventario del hotel</p>
+    </div>
+
+    <a href="<?= url('/dashboard/rooms') ?>" class="btn btn--ghost">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+</header>
+
+<div id="alert-container">
+    <?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+        <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>">
+            <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+            <?= htmlspecialchars($flashMessage) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<section class="details-section form-container-section">
+    <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/add/batch/process', 'POST', 'batch-room-form') ?>
+
+        <div class="form__section-title">
+            <i class="fas fa-layer-group"></i> Configuración del Lote
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="piso">Piso</label>
+                <input type="number" id="piso" name="piso" placeholder="Ej: 2" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['piso'] ?? $old['piso'] ?? '') ?>">
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="id_tipo_habitacion">Tipo de Habitación</label>
+                <select id="id_tipo_habitacion" name="id_tipo_habitacion" required class="form__select">
+                    <option value="" disabled <?= !isset($_POST['id_tipo_habitacion']) && !isset($old['id_tipo_habitacion']) ? 'selected' : '' ?>>Seleccione un Tipo</option>
+                    <?php if (!empty($tipos)): ?>
+                        <?php foreach ($tipos as $tipo): ?>
+                            <?php $current_tipo_id = $_POST['id_tipo_habitacion'] ?? $old['id_tipo_habitacion'] ?? ''; ?>
+                            <option value="<?= $tipo['id'] ?>" <?= (string)$current_tipo_id === (string)$tipo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tipo['descripcion']) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="precio_noche_base">Precio por Noche ($)</label>
+                <input type="number" id="precio_noche_base" name="precio_noche_base" placeholder="Ej: 15000.00" required class="form__input" autocomplete="off" min="0" step="0.01" value="<?= htmlspecialchars($_POST['precio_noche_base'] ?? $old['precio_noche_base'] ?? '') ?>">
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-sort-numeric-down"></i> Rango Numérico
+        </div>
+
+        <div class="form__grid">
+            <div class="form__group">
+                <label class="form__label" for="numero_desde">Número Inicial</label>
+                <input type="number" id="numero_desde" name="numero_desde" placeholder="Ej: 1" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['numero_desde'] ?? $old['numero_desde'] ?? '') ?>">
+                <small class="form__help">Índice inicial dentro del piso (ej: 1 → <?= htmlspecialchars((string)(((int)($_POST['piso'] ?? $old['piso'] ?? 0)) * 100 + 1)) ?>)</small>
+            </div>
+
+            <div class="form__group">
+                <label class="form__label" for="numero_hasta">Número Final</label>
+                <input type="number" id="numero_hasta" name="numero_hasta" placeholder="Ej: 10" required class="form__input" autocomplete="off" min="0" value="<?= htmlspecialchars($_POST['numero_hasta'] ?? $old['numero_hasta'] ?? '') ?>">
+                <small class="form__help">Índice final dentro del piso (ej: 10 → <?= htmlspecialchars((string)(((int)($_POST['piso'] ?? $old['piso'] ?? 0)) * 100 + 10)) ?>)</small>
+            </div>
+        </div>
+
+        <div class="form__section-title">
+            <i class="fas fa-eye"></i> Vista Previa
+        </div>
+
+        <div id="batch-preview" class="form__group">
+            <p class="form__help">Complete los campos de piso y rango numérico para ver la previsualización.</p>
+        </div>
+
+        <div class="form__actions">
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-save"></i> Generar Habitaciones
+            </button>
+        </div>
+
+    </form>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputPiso = document.getElementById('piso');
+        const inputDesde = document.getElementById('numero_desde');
+        const inputHasta = document.getElementById('numero_hasta');
+        const inputPrecio = document.getElementById('precio_noche_base');
+        const preview = document.getElementById('batch-preview');
+
+        function actualizarPreview() {
+            const piso = parseInt(inputPiso.value) || 0;
+            const desde = parseInt(inputDesde.value) || 0;
+            const hasta = parseInt(inputHasta.value) || 0;
+
+            if (piso <= 0 || desde <= 0 || hasta <= 0 || desde > hasta) {
+                preview.innerHTML = '<p class="form__help">Complete el piso y el rango (desde ≤ hasta) para ver la previsualización.</p>';
+                return;
+            }
+
+            const total = hasta - desde + 1;
+            let numeros = '';
+            for (let i = desde; i <= hasta; i++) {
+                numeros += `<span class="badge badge--disponible" style="margin: 2px; padding: 4px 10px;">${piso}${i.toString().padStart(2, '0')}</span> `;
+            }
+
+            preview.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="font-size: 1.1em;">Se generarán <span id="preview-count">${total}</span> habitaciones</strong>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; line-height: 2.2;">
+                    ${numeros}
+                </div>
+            `;
+        }
+
+        [inputPiso, inputDesde, inputHasta].forEach(function(input) {
+            if (input) {
+                input.addEventListener('input', actualizarPreview);
+                input.addEventListener('keypress', function(e) {
+                    if (!/[0-9]/.test(e.key)) e.preventDefault();
+                });
+                input.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            }
+        });
+
+        if (inputPrecio) {
+            inputPrecio.addEventListener('keypress', function(e) {
+                if (!/[0-9.]/.test(e.key)) e.preventDefault();
+            });
+            inputPrecio.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9.]/g, '');
+            });
+        }
+
+        actualizarPreview();
+    });
+</script>
