@@ -373,12 +373,38 @@ class RoomController
                 throw new Exception("ID de habitación inválido.");
             }
 
-            $roomModel = new Habitacion();
-            if (!$roomModel->bajaLogica((int)$id)) {
-                throw new Exception("La habitación no existe o ya se encuentra dada de baja.");
+            $resultado = $this->habitacionService->darDeBaja((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            exit;
+        }
+    }
+
+    public function reactivateRoom(array $vars): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $id = $vars['id'] ?? '';
+
+            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
+                throw new Exception("ID de habitación inválido.");
             }
 
-            $_SESSION['flash_message'] = "Habitación dada de baja exitosamente. Su número queda liberado para futuras habitaciones.";
+            $resultado = $this->habitacionService->reactivar((int)$id);
+
+            $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));

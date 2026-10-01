@@ -246,6 +246,12 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
+    $r->addRoute('GET', '/dashboard/rooms/reactivate', [
+        'action' => [RoomController::class, 'reactivateRoom'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     // Limpieza (Turnaround)
     $r->addRoute('GET', '/dashboard/rooms/cleaning/start', [
         'action' => [RoomController::class, 'startCleaning'],

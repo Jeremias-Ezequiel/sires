@@ -189,7 +189,8 @@ class Habitacion extends Model
 $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                        th.descripcion AS tipo, eh.descripcion AS estado,
                        h.id_tipo_habitacion, h.id_estado_habitacion,
-                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion,
+                       h.is_active, h.fecha_baja
                 FROM Habitaciones h
                 JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
@@ -287,6 +288,43 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
     public function bajaLogica(int $id): bool
     {
         try {
+            $this->db->beginTransaction();
+
+            $lock = $this->db->prepare(
+                "SELECT id_estado_habitacion FROM Habitaciones WHERE id = :id FOR UPDATE"
+            );
+            $lock->execute([':id' => $id]);
+            $estado = $lock->fetchColumn();
+
+            if ($estado === false || $estado === null) {
+                $this->db->rollBack();
+                throw new Exception("La habitación no existe.");
+            }
+
+            $estado = (int)$estado;
+            if ($estado !== self::ESTADO_DISPONIBLE && $estado !== self::ESTADO_BLOQUEADA) {
+                $this->db->rollBack();
+                throw new Exception("Solo se pueden dar de baja habitaciones disponibles o bloqueadas.");
+            }
+
+            $check = $this->db->prepare(
+                "SELECT COUNT(*) FROM Reservas
+                 WHERE id_habitacion = :id
+                   AND id_estado_reserva IN (:pendiente, :confirmada, :encasa, :noshowpago)"
+            );
+            $check->execute([
+                ':id'         => $id,
+                ':pendiente'  => 1,
+                ':confirmada' => 2,
+                ':encasa'     => 5,
+                ':noshowpago' => 7
+            ]);
+
+            if ((int)$check->fetchColumn() > 0) {
+                $this->db->rollBack();
+                throw new Exception("No se puede dar de baja una habitación con reservas activas.");
+            }
+
             $sql = "UPDATE Habitaciones
                     SET is_active = :inactive, fecha_baja = NOW()
                     WHERE id = :id AND is_active = :active";
@@ -298,10 +336,70 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
                 ':active'   => self::ACTIVE
             ]);
 
+            $this->db->commit();
             return $stmt->rowCount() > 0;
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
+            $this->db->rollBack();
             error_log("Error en Habitacion::bajaLogica: " . $e->getMessage());
-            throw new Exception("Error interno al dar de baja la habitación.");
+            throw $e;
+        }
+    }
+
+    public function reactivar(int $id): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $lock = $this->db->prepare(
+                "SELECT is_active, numero FROM Habitaciones WHERE id = :id FOR UPDATE"
+            );
+            $lock->execute([':id' => $id]);
+            $row = $lock->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $this->db->rollBack();
+                throw new Exception("La habitación no existe.");
+            }
+
+            if ((int)$row['is_active'] === self::ACTIVE) {
+                $this->db->rollBack();
+                throw new Exception("La habitación ya se encuentra activa.");
+            }
+
+            $numero = $row['numero'];
+            $check = $this->db->prepare(
+                "SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = :active AND id != :id"
+            );
+            $check->execute([
+                ':numero' => $numero,
+                ':active' => self::ACTIVE,
+                ':id'     => $id
+            ]);
+
+            if ((int)$check->fetchColumn() > 0) {
+                $this->db->rollBack();
+                throw new Exception("No se puede reactivar: el número de habitación ya está asignado a otra activa.");
+            }
+
+            $stmt = $this->db->prepare(
+                "UPDATE Habitaciones
+                 SET is_active = :active, fecha_baja = NULL,
+                     id_estado_habitacion = :disponible
+                 WHERE id = :id AND is_active = :inactive"
+            );
+            $stmt->execute([
+                ':active'     => self::ACTIVE,
+                ':disponible' => self::ESTADO_DISPONIBLE,
+                ':id'         => $id,
+                ':inactive'   => self::INACTIVE
+            ]);
+
+            $this->db->commit();
+            return $stmt->rowCount() > 0;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error en Habitacion::reactivar: " . $e->getMessage());
+            throw $e;
         }
     }
 

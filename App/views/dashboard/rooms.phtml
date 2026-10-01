@@ -172,7 +172,9 @@
                                             <i class="fas fa-check-circle"></i>
                                         </button>
 <?php endif; ?>
-                                    <?php if ((int)$userRole === \App\Models\Rol::ADMINISTRADOR): ?>
+                                    <?php if ((int)$userRole === \App\Models\Rol::ADMINISTRADOR
+                                        && ((int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_DISPONIBLE
+                                            || (int)$room['id_estado_habitacion'] === \App\Models\Habitacion::ESTADO_BLOQUEADA)): ?>
                                         <button type="button"
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="delete"

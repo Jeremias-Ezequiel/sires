@@ -333,4 +333,32 @@ class HabitacionService
             throw $e;
         }
     }
+
+    public function darDeBaja(int $id): array
+    {
+        if ($id <= 0) {
+            throw new Exception("ID de habitación inválido.");
+        }
+
+        $ok = $this->habitacionModel->bajaLogica($id);
+        if (!$ok) {
+            throw new Exception("No se pudo dar de baja la habitación.");
+        }
+
+        return ['success' => true, 'message' => 'Habitación dada de baja exitosamente.'];
+    }
+
+    public function reactivar(int $id): array
+    {
+        if ($id <= 0) {
+            throw new Exception("ID de habitación inválido.");
+        }
+
+        $ok = $this->habitacionModel->reactivar($id);
+        if (!$ok) {
+            throw new Exception("No se pudo reactivar la habitación.");
+        }
+
+        return ['success' => true, 'message' => 'Habitación reactivada exitosamente.'];
+    }
 }
