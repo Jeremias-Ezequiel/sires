@@ -253,6 +253,10 @@
   color: var(--texto-blanco);
 }
 
+.details-section + .details-section {
+  margin-top: 24px;
+}
+
 .details-table-wrapper {
   overflow-x: auto;
 }
@@ -475,7 +479,7 @@
 
 .form-container-section {
   max-width: 900px;
-  margin: 0 auto;
+  margin: 30px auto 0;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }

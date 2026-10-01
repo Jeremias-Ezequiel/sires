@@ -25,7 +25,13 @@ class ResumenPago extends Model
     public function getByReserva(int $id_reserva): ?ResumenPago
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM Resumen_Pago WHERE id_reserva = :id_reserva");
+            $stmt = $this->db->prepare(
+                "SELECT id, id_reserva, id_estado_pago,
+                        monto_total AS total,
+                        monto_cobrado AS monto_pagado,
+                        saldo_pendiente
+                 FROM Resumen_Pago WHERE id_reserva = :id_reserva"
+            );
             $stmt->execute([':id_reserva' => $id_reserva]);
 
             $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, ResumenPago::class);
