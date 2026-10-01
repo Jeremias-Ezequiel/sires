@@ -114,7 +114,7 @@ class HabitacionService
 
             $sql = "INSERT INTO Habitaciones (numero, piso, id_tipo_habitacion, id_estado_habitacion, precio_noche_base)
                     VALUES (:numero, :piso, :id_tipo, :estado, :precio)";
-            foreach ($numeroStr as $numeroStr) {
+            foreach ($numerosGenerar as $numeroStr) {
                 $stmt = $db->prepare($sql);
                 $stmt->execute([
                     ':numero' => $numeroStr,
