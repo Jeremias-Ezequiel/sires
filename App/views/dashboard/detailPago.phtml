@@ -233,6 +233,17 @@ $precioNocheConDescuento = \App\Models\Habitacion::aplicarDescuento((float)($res
         if (formulario && inputMonto) {
             const saldoPendiente = <?= json_encode($resumen !== null ? $resumen->getSaldoPendiente() : 0.0) ?>;
 
+            inputMonto.addEventListener('input', function() {
+                const raw = this.value.replace(',', '.');
+                if (raw === '' || raw === '.') return;
+                const value = parseFloat(raw);
+                if (!isNaN(value) && value > saldoPendiente) {
+                    this.value = this._lastValid ?? '';
+                } else {
+                    this._lastValid = this.value;
+                }
+            });
+
             formulario.addEventListener('submit', function(e) {
                 const monto = parseFloat(inputMonto.value.trim());
 
