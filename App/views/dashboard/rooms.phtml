@@ -40,6 +40,10 @@
     <!-- 🌟 Apertura del formulario automatizada para GET: previene la pérdida de la Query String de la sección -->
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms', 'GET', 'filter-form') ?>
 
+        <?php if ($showInactive === 'inactive'): ?>
+            <input type="hidden" name="show" value="inactive">
+        <?php endif; ?>
+
         <div class="form-group-search">
             <label class="form__label">Buscar por N° Habitación</label>
             <div class="search-input-wrapper">
@@ -115,10 +119,15 @@
                 </thead>
                 <tbody>
                     <?php foreach ($habitaciones as $room):
-                        $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                        $roomInactiva = isset($room['is_active']) && (int)$room['is_active'] === 0;
+                        if ($roomInactiva):
+                            $statusClass = 'badge--ocupada';
+                        else:
+                            $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
+                            $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                        endif;
                     ?>
-                        <tr>
+                        <tr<?= $roomInactiva ? ' style="opacity: 0.6;"' : '' ?>>
                             <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
                             <td><?= htmlspecialchars($room['tipo']) ?>
@@ -127,7 +136,7 @@
                                 ?>
                                 <span style="font-size: 0.8em; color: var(--text-muted, #666);">(<?= $cap ?>p)</span>
                             </td>
-                            <td><span class="badge <?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span>
+                            <td><span class="badge <?= $statusClass ?>"><?= $roomInactiva ? 'Inactiva' : htmlspecialchars($room['estado']) ?></span>
                                 <?php if (!empty($room['motivo_descripcion'])): ?>
                                     <span style="display: block; font-size: 0.8em; color: var(--text-muted, #666); margin-top: 2px;">
                                         <i class="fas fa-tools"></i> <?= htmlspecialchars($room['motivo_descripcion']) ?>
@@ -137,6 +146,7 @@
                             <td>$<?= number_format((float)($room['precio_noche_base'] ?? 0), 2, ',', '.') ?></td>
                             <td class="cell-actions">
                                 <div class="actions-group-container">
+                                    <?php if (!$roomInactiva): ?>
                                     <a href="<?= url('/dashboard/rooms/edit?id=' . $room['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Habitación">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -192,7 +202,8 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     <?php endif; ?>
-                                    <?php if ($showInactive === 'inactive'): ?>
+                                    <?php endif; ?>
+                                    <?php if ($roomInactiva): ?>
                                         <a href="<?= url('/dashboard/rooms/reactivate?id=' . $room['id']) ?>"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="reactivate"
