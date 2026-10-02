@@ -52,7 +52,9 @@
         <div class="form__grid form__grid--3">
             <div class="form__group">
                 <label class="form__label" for="dni">DNI / Documento</label>
-                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['dni'] ?? $old['dni'] ?? '') ?>">
+                <input type="text" id="dni" name="dni" placeholder="Ej: 35.123.456" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['dni'] ?? $old['dni'] ?? '') ?>"
+    pattern="^(?:[0-9]{6,8}|[A-Za-z0-9]{5,9})$"
+    title="DNI de 6 a 8 dígitos o Pasaporte alfanumérico de 5 a 9 caracteres.">
             </div>
 
             <div class="form__group">
@@ -63,7 +65,9 @@
 
             <div class="form__group">
                 <label class="form__label" for="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['telefono'] ?? $old['telefono'] ?? '') ?>">
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 11 1234-5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($_POST['telefono'] ?? $old['telefono'] ?? '') ?>"
+    pattern="^\+[0-9]{8,15}$"
+    title="Formato internacional UIT-T E.164 (ej: +5491123456789). Solo números, sin espacios ni guiones.">
             </div>
         </div>
 
@@ -265,7 +269,20 @@
                 }
 
                 // 5. Localidad
-                // 6. Correo Electrónico
+                // 6. DNI / Documento
+                const dniInput = document.getElementById('dni');
+                const dniVal = dniInput?.value.trim() ?? '';
+                if (dniVal !== '') {
+                    const regexDni = /^[0-9]{6,8}$/;
+                    if (!regexDni.test(dniVal)) {
+                        e.preventDefault();
+                        mostrarError('El formato del DNI no es válido. Debe contener entre 6 y 8 dígitos.');
+                        dniInput?.focus();
+                        return;
+                    }
+                }
+
+                // 7. Correo Electrónico
                 const emailVal = inputEmail?.value.trim() ?? '';
                 if (emailVal === '') {
                     e.preventDefault();
@@ -447,6 +464,15 @@
                     .catch(function() {
                         resetSelect(selectLocalidad, 'Error al cargar');
                     });
+            });
+        }
+
+        // --- 📞 Auto-formato Teléfono internacional ---
+        const inputTelefono = document.getElementById('telefono');
+        if (inputTelefono) {
+            inputTelefono.addEventListener('input', function() {
+                const soloDigitos = this.value.replace(/[^0-9]/g, '');
+                this.value = soloDigitos === '' ? '' : '+' + soloDigitos.slice(0, 15);
             });
         }
 
