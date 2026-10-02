@@ -45,7 +45,6 @@ class Habitacion extends Model
 
     // Descuento por ocupación: [capacidad => [huespedes => descuento%]]
     public const DESCUENTO_OCUPACION = [
-        4 => [1 => 30, 2 => 20, 3 => 10, 4 => 0],
         3 => [1 => 25, 2 => 10, 3 => 0],
         2 => [1 => 15, 2 => 0],
     ];
