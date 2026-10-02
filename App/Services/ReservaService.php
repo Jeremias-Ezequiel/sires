@@ -44,6 +44,14 @@ class ReservaService
             throw new Exception("La habitación seleccionada no existe.");
         }
 
+        $capacidadMax = Habitacion::capacidadParaTipo((int)$habitacionRow['id_tipo_habitacion']);
+        if ($cantHuespedes > $capacidadMax) {
+            throw new Exception(
+                "La cantidad de huéspedes (" . $cantHuespedes .
+                ") supera la capacidad máxima de la habitación (" . $capacidadMax . " personas)."
+            );
+        }
+
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
 
