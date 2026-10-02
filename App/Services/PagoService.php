@@ -46,7 +46,10 @@ class PagoService
 
         $noches     = $entrada->diff($salida)->days;
         $precioBase = (float)$reserva['precio_noche_base'];
-        $total      = $precioBase * $noches;
+        $idTipo     = (int)$reserva['id_tipo_habitacion'];
+        $huespedes  = (int)$reserva['cantidad_huespedes'];
+        $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
+        $total      = $precioEfectivo * $noches;
 
         if ($total <= 0) {
             throw new Exception("No se pudo calcular un total válido para la reserva.");
@@ -201,7 +204,10 @@ class PagoService
             $salida     = new \DateTime($reserva['fecha_salida']);
             $noches     = $entrada->diff($salida)->days;
             $precioBase = (float)$reserva['precio_noche_base'];
-            $nuevoTotal = $precioBase * $noches;
+            $idTipo     = (int)$reserva['id_tipo_habitacion'];
+            $huespedes  = (int)$reserva['cantidad_huespedes'];
+            $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
+            $nuevoTotal = $precioEfectivo * $noches;
 
             if ($nuevoTotal <= 0) {
                 $db->rollBack();
@@ -352,7 +358,8 @@ class PagoService
         try {
             $lock = $db->prepare(
                 "SELECT rp.id, rp.monto_cobrado, rp.monto_total, rp.saldo_pendiente,
-                        h.precio_noche_base
+                        h.precio_noche_base, h.id_tipo_habitacion,
+                        r.cantidad_huespedes
                  FROM Resumen_Pago rp
                  JOIN Reservas r ON r.id = rp.id_reserva
                  JOIN Habitaciones h ON h.id = r.id_habitacion
@@ -369,12 +376,15 @@ class PagoService
             $montoCobrado  = (float)$row['monto_cobrado'];
             $montoTotalAnt = (float)$row['monto_total'];
             $precioNoche   = (float)$row['precio_noche_base'];
+            $idTipo        = (int)$row['id_tipo_habitacion'];
+            $huespedes     = (int)$row['cantidad_huespedes'];
 
             $entrada = new \DateTime($reserva['fecha_entrada']);
             $salida  = new \DateTime($reserva['fecha_salida']);
             $noches  = $entrada->diff($salida)->days;
 
-            $nuevoTotal = $precioNoche * $noches;
+            $precioEfectivo = Habitacion::precioEfectivoNoche($precioNoche, $idTipo, $huespedes);
+            $nuevoTotal = $precioEfectivo * $noches;
 
             if ($nuevoTotal <= 0) {
                 $db->rollBack();

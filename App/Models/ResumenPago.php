@@ -270,7 +270,10 @@ class ResumenPago extends Model
         $noches  = $entrada->diff($salida)->days;
 
         $precioNoche = (float)$reserva['precio_noche_base'];
-        $nuevoTotal = $precioNoche * $noches;
+        $idTipo     = (int)$reserva['id_tipo_habitacion'];
+        $huespedes  = (int)$reserva['cantidad_huespedes'];
+        $precioEfectivo = Habitacion::precioEfectivoNoche($precioNoche, $idTipo, $huespedes);
+        $nuevoTotal = $precioEfectivo * $noches;
         $montoPagado = $resumen->getMontoPagado();
         $nuevoSaldo = $nuevoTotal - $montoPagado;
 

@@ -88,7 +88,9 @@ class ReservaService
             $salida  = new \DateTime($fechaSalida);
             $noches  = $entrada->diff($salida)->days;
             $precioBase = (float)$habitacionRow['precio_noche_base'];
-            $total   = $precioBase * $noches;
+            $idTipo = (int)$habitacionRow['id_tipo_habitacion'];
+            $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $cantHuespedes);
+            $total   = $precioEfectivo * $noches;
 
             $insertResumen = $db->prepare(
                 "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
