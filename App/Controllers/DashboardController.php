@@ -26,7 +26,7 @@ class DashboardController
             Rol::ADMINISTRADOR => 'Administrador',
             Rol::RECEPCIONISTA => 'Recepcionista',
             Rol::GERENTE       => 'Gerente',
-            Rol::AUDITOR       => 'Auditor',
+            Rol::LIMPIEZA      => 'Personal de Limpieza',
         ];
         $rolNombre = $rolMap[$userRole] ?? 'Sin rol';
 

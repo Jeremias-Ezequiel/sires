@@ -21,7 +21,6 @@ class Rol extends Model
     public const ADMINISTRADOR = 1;
     public const RECEPCIONISTA = 2;
     public const GERENTE = 3;
-    public const AUDITOR = 4;
     public const LIMPIEZA = 5;
 
     // =====================================================================
