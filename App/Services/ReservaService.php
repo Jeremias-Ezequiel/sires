@@ -92,12 +92,13 @@ class ReservaService
 
             $insertResumen = $db->prepare(
                 "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
-                 VALUES (:id_reserva, :estado, :total, 0, :total)"
+                 VALUES (:id_reserva, :estado, :total, 0, :saldo)"
             );
             $insertResumen->execute([
                 ':id_reserva' => $nuevoIdReserva,
                 ':estado'     => ResumenPago::ESTADO_PENDIENTE,
-                ':total'      => $total
+                ':total'      => $total,
+                ':saldo'      => $total
             ]);
 
             $db->commit();
