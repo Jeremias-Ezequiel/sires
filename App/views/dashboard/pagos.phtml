@@ -74,13 +74,15 @@
                     <?php foreach ($pagos as $pag): ?>
                         <?php
                         $estadoPagoLower = mb_strtolower($pag['estado_pago_descripcion'] ?? '', 'UTF-8');
-                        $pagoStatusClass = 'badge--disponible';
+                        $pagoStatusClass = 'badge--desconocido';
                         if (strpos($estadoPagoLower, 'pendient') !== false) {
                             $pagoStatusClass = 'badge--pendiente';
                         } elseif (strpos($estadoPagoLower, 'parcial') !== false) {
                             $pagoStatusClass = 'badge--reservada';
                         } elseif (strpos($estadoPagoLower, 'reembols') !== false) {
                             $pagoStatusClass = 'badge--ocupada';
+                        } elseif (strpos($estadoPagoLower, 'a reembolsar') !== false) {
+                            $pagoStatusClass = 'badge--warning';
                         }
 
                         $reservaEstadoLower = mb_strtolower($pag['estado_descripcion'] ?? '', 'UTF-8');

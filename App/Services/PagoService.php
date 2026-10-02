@@ -7,6 +7,7 @@ namespace App\Services;
 use Exception;
 use App\Models\Reserva;
 use App\Models\ResumenPago;
+use App\Models\EstadoPago;
 use App\Models\TransaccionPago;
 use App\Models\Habitacion;
 use PDO;
@@ -152,7 +153,7 @@ class PagoService
             $estadoReserva = (int)$reserva['id_estado_reserva'];
             $mensaje = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
 
-            if ($estadoReserva === Reserva::ESTADO_PENDIENTE) {
+            if ($nuevoSaldo <= 0 && $estadoReserva === Reserva::ESTADO_PENDIENTE) {
                 $this->reservaModel->cambiarEstado(
                     $idReserva,
                     Reserva::ESTADO_CONFIRMADA,
@@ -246,11 +247,11 @@ class PagoService
 
                 if ($estadoPago === ResumenPago::ESTADO_PAGO_PARCIAL) {
                     $updateResumen = $db->prepare(
-                        "UPDATE Resumen_Pago SET id_estado_pago = :estado, monto_cobrado = 0, saldo_pendiente = 0
+                        "UPDATE Resumen_Pago SET id_estado_pago = :estado
                          WHERE id = :id"
                     );
                     $updateResumen->execute([
-                        ':estado' => ResumenPago::ESTADO_REEMBOLSADO,
+                        ':estado' => EstadoPago::A_REEMBOLSAB,
                         ':id'     => $idResumen
                     ]);
                 }
@@ -379,6 +380,75 @@ class PagoService
                 'message' => 'Precio recalculado exitosamente. Total anterior: $' .
                     number_format($montoTotalAnt, 2, ',', '.') .
                     ' → Nuevo total: $' . number_format($nuevoTotal, 2, ',', '.') . '.'
+            ];
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function procesarReembolso(int $idReserva): array
+    {
+        $resumen = $this->resumenModel->getByReserva($idReserva);
+        if ($resumen === null) {
+            throw new Exception("La reserva no tiene un resumen de pago asociado.");
+        }
+        if ($resumen->getIdEstadoPago() !== EstadoPago::A_REEMBOLSAB) {
+            throw new Exception("La reserva no está pendiente de reembolso.");
+        }
+
+        $montoReembolso = $resumen->getMontoPagado();
+        if ($montoReembolso <= 0) {
+            throw new Exception("No hay monto cobrado para reembolsar.");
+        }
+
+        $db = $this->resumenModel->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $lock = $db->prepare(
+                "SELECT id, monto_cobrado FROM Resumen_Pago WHERE id = :id FOR UPDATE"
+            );
+            $lock->execute([':id' => $resumen->getId()]);
+            $row = $lock->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $db->rollBack();
+                throw new Exception("El resumen de pago no existe.");
+            }
+
+            $insertTx = $db->prepare(
+                "INSERT INTO Transacciones_Pago (id_resumen_pago, id_metodo_pago, monto_abonado, registrado_por)
+                 VALUES (:id_resumen, :id_metodo, :monto, :registrado)"
+            );
+            $insertTx->execute([
+                ':id_resumen' => $resumen->getId(),
+                ':id_metodo'  => 1,
+                ':monto'      => -$montoReembolso,
+                ':registrado' => $_SESSION['user_id'] ?? 1
+            ]);
+
+            $update = $db->prepare(
+                "UPDATE Resumen_Pago
+                 SET id_estado_pago = :estado,
+                     monto_total    = :total,
+                     monto_cobrado  = :cobrado,
+                     saldo_pendiente = :saldo
+                 WHERE id = :id"
+            );
+            $update->execute([
+                ':estado'  => ResumenPago::ESTADO_REEMBOLSADO,
+                ':total'   => 0.0,
+                ':cobrado' => 0.0,
+                ':saldo'   => 0.0,
+                ':id'      => $resumen->getId()
+            ]);
+
+            $db->commit();
+            return [
+                'success' => true,
+                'message' => 'Reembolso procesado exitosamente por $' .
+                    number_format($montoReembolso, 2, ',', '.') . '.'
             ];
         } catch (Exception $e) {
             $db->rollBack();

@@ -17,6 +17,7 @@ class EstadoPago extends Model
     public const PAGO_PARCIAL = 2;
     public const PAGADO_TOTAL = 3;
     public const REEMBOLSADO = 4;
+    public const A_REEMBOLSAB = 5;
 
     public function getAll(): ?array
     {

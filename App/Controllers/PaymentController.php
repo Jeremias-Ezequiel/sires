@@ -185,4 +185,53 @@ class PaymentController
             exit;
         }
     }
+
+    public function refundPayment(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            csrf_check();
+
+            $idReserva = (int)($_POST['id_reserva'] ?? 0);
+            if ($idReserva <= 0) {
+                throw new Exception("ID de reserva inválido.");
+            }
+
+            $reserva = (new Reserva())->findById($idReserva);
+            if (!$reserva) {
+                throw new Exception("La reserva no existe.");
+            }
+
+            $resumenModel = new ResumenPago();
+            $resumen = $resumenModel->getByReserva($idReserva);
+            if ($resumen === null) {
+                throw new Exception("La reserva no tiene un resumen de pago asociado.");
+            }
+            if ($resumen->getIdEstadoPago() !== \App\Models\EstadoPago::A_REEMBOLSAB) {
+                throw new Exception("El estado del pago no está pendiente de reembolso.");
+            }
+
+            $montoReembolso = $resumen->getMontoPagado();
+            if ($montoReembolso <= 0) {
+                throw new Exception("No hay monto cobrado para reembolsar.");
+            }
+
+            $resultado = $this->pagoService->procesarReembolso($idReserva);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $idReserva));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . ($_POST['id_reserva'] ?? 0)));
+            exit;
+        }
+    }
 }

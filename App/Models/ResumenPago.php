@@ -204,20 +204,54 @@ class ResumenPago extends Model
             if ($resumen === null) {
                 throw new Exception("La reserva no tiene un resumen de pago asociado.");
             }
+            if ($resumen->getMontoPagado() <= 0) {
+                throw new Exception("No hay monto cobrado para reembolsar.");
+            }
 
-            $sql = "UPDATE Resumen_Pago
-                    SET id_estado_pago = :estado,
-                        monto_cobrado  = :cobrado,
-                        saldo_pendiente = :saldo
-                    WHERE id = :id";
+            $db = $this->db;
+            $db->beginTransaction();
 
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':estado'  => self::ESTADO_REEMBOLSADO,
-                ':cobrado' => 0.0,
-                ':saldo'   => 0.0,
-                ':id'      => $resumen->getId()
-            ]);
+            try {
+                $lock = $db->prepare(
+                    "SELECT id FROM Resumen_Pago WHERE id = :id FOR UPDATE"
+                );
+                $lock->execute([':id' => $resumen->getId()]);
+
+                $montoReembolso = $resumen->getMontoPagado();
+
+                $insertTx = $db->prepare(
+                    "INSERT INTO Transacciones_Pago (id_resumen_pago, id_metodo_pago, monto_abonado, registrado_por)
+                     VALUES (:id_resumen, :id_metodo, :monto, :registrado)"
+                );
+                $insertTx->execute([
+                    ':id_resumen' => $resumen->getId(),
+                    ':id_metodo'  => 1, // Efectivo como default para reembolso
+                    ':monto'      => -$montoReembolso,
+                    ':registrado' => 1  // Sistema
+                ]);
+
+                $sql = "UPDATE Resumen_Pago
+                        SET id_estado_pago = :estado,
+                            monto_total    = :total,
+                            monto_cobrado  = :cobrado,
+                            saldo_pendiente = :saldo
+                        WHERE id = :id";
+
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    ':estado'  => self::ESTADO_REEMBOLSADO,
+                    ':total'   => 0.0,
+                    ':cobrado' => 0.0,
+                    ':saldo'   => 0.0,
+                    ':id'      => $resumen->getId()
+                ]);
+
+                $db->commit();
+                return true;
+            } catch (Exception $e) {
+                $db->rollBack();
+                throw $e;
+            }
         } catch (PDOException $e) {
             error_log("Error en ResumenPago::reembolsarPorReserva: " . $e->getMessage());
             throw new Exception("Error interno al reembolsar el pago.");

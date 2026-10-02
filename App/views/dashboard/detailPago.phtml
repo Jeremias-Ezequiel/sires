@@ -7,15 +7,25 @@
         <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a Pagos
         </a>
-        <?php if ($resumen !== null && $resumen->getMontoPagado() <= 0): ?>
-            <button type="button"
-                class="btn btn--warning open-sires-modal"
-                data-action="recalculate"
-                data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
-                data-url="<?= url('/dashboard/payments/recalculate?id=' . $reserva['id']) ?>">
-                <i class="fas fa-calculator"></i> Recalcular Precio
-            </button>
-        <?php endif; ?>
+<?php if ($resumen !== null && $resumen->getMontoPagado() <= 0): ?>
+                    <button type="button"
+                        class="btn btn--warning open-sires-modal"
+                        data-action="recalculate"
+                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
+                        data-url="<?= url('/dashboard/payments/recalculate?id=' . $reserva['id']) ?>">
+                        <i class="fas fa-calculator"></i> Recalcular Precio
+                    </button>
+                <?php endif; ?>
+                <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB): ?>
+                    <button type="button"
+                        class="btn btn--danger open-sires-modal"
+                        data-action="refund"
+                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
+                        data-url="<?= url('/dashboard/payments/refund/process') ?>"
+                        data-reserva-id="<?= (int)$reserva['id'] ?>">
+                        <i class="fas fa-undo-alt"></i> Procesar Reembolso
+                    </button>
+                <?php endif; ?>
     </div>
 </header>
 
@@ -114,6 +124,7 @@ endif;
                             elseif (strpos($estadoPagoLower, 'parcial') !== false) $pagoStatusClass = 'badge--reservada';
                             elseif (strpos($estadoPagoLower, 'pagad') !== false) $pagoStatusClass = 'badge--disponible';
                             elseif (strpos($estadoPagoLower, 'reembols') !== false) $pagoStatusClass = 'badge--ocupada';
+                            elseif (strpos($estadoPagoLower, 'a reembolsar') !== false) $pagoStatusClass = 'badge--warning';
                             ?>
                             <span class="badge <?= $pagoStatusClass ?>"><?= htmlspecialchars($estadoPagoDescripcion) ?></span>
                         <?php else: ?>
@@ -174,6 +185,32 @@ endif;
                 <p>No se registraron transacciones de pago para esta reserva.</p>
             </div>
         <?php endif; ?>
+    </section>
+<?php endif; ?>
+
+<?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB): ?>
+    <section class="details-section">
+        <div class="form__section-title">
+            <i class="fas fa-undo-alt"></i> Reembolso Pendiente
+        </div>
+        <div class="alert alert--warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Esta reserva tiene un pago pendiente de reembolso por
+            <strong>$<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?></strong>.
+        </div>
+        <div class="form__actions">
+            <form id="refund-form" action="<?= url('/dashboard/payments/refund/process') ?>" method="POST">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id_reserva" value="<?= (int)$reserva['id'] ?>">
+                <button type="button" class="btn btn--danger open-sires-modal"
+                    data-action="refund"
+                    data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
+                    data-reserva-id="<?= (int)$reserva['id'] ?>"
+                    data-monto="<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?>">
+                    <i class="fas fa-undo-alt"></i> Procesar Reembolso
+                </button>
+            </form>
+        </div>
     </section>
 <?php endif; ?>
 
@@ -279,9 +316,9 @@ endif;
         }
     });
 
-    // Modal handler for recalcular
-    const recalcBtns = document.querySelectorAll('.open-sires-modal');
-    recalcBtns.forEach(function(button) {
+    // Modal handler
+    const modalBtns = document.querySelectorAll('.open-sires-modal');
+    modalBtns.forEach(function(button) {
         button.addEventListener('click', function() {
             const actionType = this.getAttribute('data-action');
             const targetUrl = this.getAttribute('data-url');
@@ -293,6 +330,7 @@ endif;
             const modalText = document.getElementById('modal-description-text');
             const btnConfirm = document.getElementById('btn-modal-confirm');
             const btnCancel = document.getElementById('btn-modal-cancel');
+            const refundForm = document.getElementById('refund-form');
 
             if (!modal) return;
 
@@ -305,9 +343,21 @@ endif;
                 modalIcon.className = 'fas fa-calculator';
                 modalIconFrame.classList.add('modal__icon--warning');
                 btnConfirm.classList.add('btn--warning');
+                btnConfirm.setAttribute('href', targetUrl);
+                btnConfirm.onclick = null;
+            } else if (actionType === 'refund') {
+                const monto = this.getAttribute('data-monto') ?? '0,00';
+                modalTitle.innerText = 'Procesar Reembolso';
+                modalText.innerHTML = `¿Está seguro de que desea reembolsar <strong>$${monto}</strong> a<br><strong>${reservaName}</strong>?<br><small>Se registrará una transacción de egreso y el resumen se dará de baja.</small>`;
+                modalIcon.className = 'fas fa-undo-alt';
+                modalIconFrame.classList.add('modal__icon--danger');
+                btnConfirm.classList.add('btn--danger');
+                btnConfirm.setAttribute('href', '#');
+                btnConfirm.onclick = function() {
+                    if (refundForm) refundForm.submit();
+                };
             }
 
-            btnConfirm.setAttribute('href', targetUrl);
             modal.classList.add('is-active');
 
             btnCancel.addEventListener('click', function() {

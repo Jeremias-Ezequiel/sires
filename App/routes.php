@@ -393,4 +393,10 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
+    $r->addRoute('POST', '/dashboard/payments/refund/process', [
+        'action' => [PaymentController::class, 'refundPayment'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
 };

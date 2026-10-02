@@ -139,6 +139,11 @@ class ReservaService
             throw new Exception("La reserva no existe.");
         }
 
+        $hoy = date('Y-m-d');
+        if ((string)$reservaData['fecha_entrada'] > $hoy) {
+            throw new Exception("No se puede realizar el check-in antes de la fecha de entrada.");
+        }
+
         $estadoActual = (int)$reservaData['id_estado_reserva'];
         $vieneDeNoShow = $estadoActual === Reserva::ESTADO_NO_SHOW_CON_PAGO;
 
@@ -218,6 +223,11 @@ class ReservaService
         $reservaData = $this->reservaModel->findById($idReserva);
         if (!$reservaData) {
             throw new Exception("La reserva no existe.");
+        }
+
+        $hoy = date('Y-m-d');
+        if ((string)$reservaData['fecha_salida'] > $hoy) {
+            throw new Exception("No se puede finalizar la reserva antes de la fecha de salida.");
         }
 
         $estadoActual = (int)$reservaData['id_estado_reserva'];
@@ -336,7 +346,13 @@ class ReservaService
 
                 $resumen = $this->resumenModel->getByReserva($idReserva);
                 if ($resumen !== null && $resumen->getMontoPagado() > 0) {
-                    $this->resumenModel->reembolsarPorReserva($idReserva);
+                    $upd = $db->prepare(
+                        "UPDATE Resumen_Pago SET id_estado_pago = :estado WHERE id = :id"
+                    );
+                    $upd->execute([
+                        ':estado' => \App\Models\EstadoPago::A_REEMBOLSAB,
+                        ':id'     => $resumen->getId()
+                    ]);
                 }
             }
 
@@ -361,6 +377,14 @@ class ReservaService
         }
         if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_CONFIRMADA) {
             throw new Exception("Solo se puede marcar como No-Show reservas confirmadas.");
+        }
+
+        $hoy = date('Y-m-d');
+        if ((string)$reservaData['fecha_entrada'] > $hoy) {
+            throw new Exception("No se puede marcar como No-Show antes de la fecha de entrada.");
+        }
+        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < '11:00') {
+            throw new Exception("El No-Show solo puede marcarse después de las 11:00 AM del día de entrada.");
         }
 
         $idHabitacion = (int)$reservaData['id_habitacion'];
