@@ -4,7 +4,7 @@
         <p>Información completa de la reserva #<?= htmlspecialchars((string)$reserva['id']) ?></p>
     </div>
     <div class="header-actions-container">
-        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_NO_SHOW_CON_PAGO): ?>
             <a href="<?= url('/dashboard/booking/checkin?id=' . $reserva['id']) ?>" class="btn btn--primary open-sires-modal" data-action="checkin" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/checkin?id=' . $reserva['id']) ?>">
                 <i class="fas fa-door-open"></i> Realizar Check-in
             </a>

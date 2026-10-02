@@ -134,7 +134,7 @@
                                             <i class="fas fa-dollar-sign"></i>
                                         </a>
                                     <?php endif; ?>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
+                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_NO_SHOW_CON_PAGO): ?>
                                         <button type="button"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="checkin"
@@ -280,7 +280,7 @@
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'checkin') {
                     modalTitle.innerText = 'Realizar Check-in';
-                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${reservaName}</strong>?<br><small>La habitación será marcada como ocupada.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${reservaName}</strong>?<br><small>Se activará la estadía del huésped.</small>`;
                     modalIcon.className = 'fas fa-door-open';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');

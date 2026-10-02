@@ -138,8 +138,14 @@ class ReservaService
         if (!$reservaData) {
             throw new Exception("La reserva no existe.");
         }
-        if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_CONFIRMADA) {
-            throw new Exception("Solo se puede hacer check-in de reservas confirmadas.");
+
+        $estadoActual = (int)$reservaData['id_estado_reserva'];
+        $vieneDeNoShow = $estadoActual === Reserva::ESTADO_NO_SHOW_CON_PAGO;
+
+        if ($estadoActual !== Reserva::ESTADO_CONFIRMADA && !$vieneDeNoShow) {
+            throw new Exception(
+                "Solo se puede hacer check-in de reservas confirmadas o en No-Show con pago."
+            );
         }
 
         $resumen = $this->resumenModel->getByReserva($idReserva);
@@ -147,6 +153,7 @@ class ReservaService
             throw new Exception("No se puede realizar el check-in. La estadía debe estar 100% pagada.");
         }
 
+        $idHabitacion = (int)$reservaData['id_habitacion'];
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
 
@@ -154,35 +161,46 @@ class ReservaService
             $lock = $db->prepare(
                 "SELECT id_estado_habitacion FROM Habitaciones WHERE id = :id FOR UPDATE"
             );
-            $lock->execute([':id' => (int)$reservaData['id_habitacion']]);
+            $lock->execute([':id' => $idHabitacion]);
             $estadoHabitacion = (int)$lock->fetchColumn();
 
-            if ($estadoHabitacion === Habitacion::ESTADO_OCUPADA) {
-                $db->rollBack();
-                throw new Exception("La habitación ya se encuentra ocupada.");
-            }
-            if ($estadoHabitacion !== Habitacion::ESTADO_DISPONIBLE) {
-                $db->rollBack();
-                throw new Exception("La habitación no está disponible para check-in.");
-            }
+            if ($vieneDeNoShow) {
+                if ($estadoHabitacion !== Habitacion::ESTADO_OCUPADA) {
+                    $db->rollBack();
+                    throw new Exception(
+                        "La habitación debería estar ocupada (retenida por No-Show)."
+                    );
+                }
+            } else {
+                if ($estadoHabitacion === Habitacion::ESTADO_OCUPADA) {
+                    $db->rollBack();
+                    throw new Exception("La habitación ya se encuentra ocupada.");
+                }
+                if ($estadoHabitacion !== Habitacion::ESTADO_DISPONIBLE) {
+                    $db->rollBack();
+                    throw new Exception("La habitación no está disponible para check-in.");
+                }
 
-            $roomOk = $this->habitacionModel->cambiarEstado(
-                (int)$reservaData['id_habitacion'],
-                Habitacion::ESTADO_OCUPADA,
-                Habitacion::ESTADO_DISPONIBLE
-            );
-            if (!$roomOk) {
-                $db->rollBack();
-                throw new Exception("Error al ocupar la habitación.");
+                $roomOk = $this->habitacionModel->cambiarEstado(
+                    $idHabitacion,
+                    Habitacion::ESTADO_OCUPADA,
+                    Habitacion::ESTADO_DISPONIBLE
+                );
+                if (!$roomOk) {
+                    $db->rollBack();
+                    throw new Exception("Error al ocupar la habitación.");
+                }
             }
 
             $reservaOk = $this->reservaModel->cambiarEstado(
                 $idReserva,
                 Reserva::ESTADO_EN_CASA,
-                Reserva::ESTADO_CONFIRMADA
+                $estadoActual
             );
             if (!$reservaOk) {
-                $this->habitacionModel->cambiarEstado((int)$reservaData['id_habitacion'], Habitacion::ESTADO_DISPONIBLE);
+                if (!$vieneDeNoShow) {
+                    $this->habitacionModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_DISPONIBLE);
+                }
                 $db->rollBack();
                 throw new Exception("Error al actualizar el estado de la reserva.");
             }
