@@ -141,7 +141,8 @@
                                             class="btn btn--icon btn--icon-info open-sires-modal"
                                             data-action="checkin"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url('/dashboard/booking/checkin?id=' . $res['id']) ?>"
+                                            data-id="<?= $res['id'] ?>"
+                                            data-url="<?= url('/dashboard/booking/checkin') ?>"
                                             title="Realizar Check-in">
                                             <i class="fas fa-door-open"></i>
                                         </button>
@@ -151,7 +152,8 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="noshow"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url('/dashboard/booking/noshow?id=' . $res['id']) ?>"
+                                            data-id="<?= $res['id'] ?>"
+                                            data-url="<?= url('/dashboard/booking/noshow') ?>"
                                             title="Marcar como No-Show">
                                             <i class="fas fa-user-slash"></i>
                                         </button>
@@ -161,7 +163,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="finalize"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url('/dashboard/booking/finalize?id=' . $res['id']) ?>"
+                                            data-id="<?= $res['id'] ?>"
+                                            data-url="<?= url('/dashboard/booking/finalize') ?>"
                                             title="Finalizar Reserva">
                                             <i class="fas fa-flag-checkered"></i>
                                         </button>
@@ -171,7 +174,8 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="cancel"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
-                                            data-url="<?= url('/dashboard/booking/cancel?id=' . $res['id']) ?>"
+                                            data-id="<?= $res['id'] ?>"
+                                            data-url="<?= url('/dashboard/booking/cancel') ?>"
                                             title="Cancelar Reserva">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -241,10 +245,14 @@
         </div>
         <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
         <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
-        <div class="modal__actions">
-            <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
-        </div>
+        <form id="csrf-form" method="POST" action="">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id" id="modal-action-id">
+            <div class="modal__actions">
+                <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+                <button type="submit" id="btn-modal-confirm" class="btn">Confirmar</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -255,8 +263,10 @@
         const modalIcon = document.getElementById('modal-action-icon');
         const modalTitle = document.getElementById('modal-title-text');
         const modalText = document.getElementById('modal-description-text');
-        const btnConfirm = document.getElementById('btn-modal-confirm');
         const btnCancel = document.getElementById('btn-modal-cancel');
+        const csrfForm = document.getElementById('csrf-form');
+        const actionId = document.getElementById('modal-action-id');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
 
         const buttons = document.querySelectorAll('.open-sires-modal');
         buttons.forEach(button => {
@@ -264,6 +274,7 @@
                 const actionType = this.getAttribute('data-action');
                 const targetUrl = this.getAttribute('data-url');
                 const reservaName = this.getAttribute('data-name');
+                const reservaId = this.getAttribute('data-id');
 
                 modalIconFrame.className = 'modal__icon';
                 btnConfirm.className = 'btn';
@@ -300,7 +311,8 @@
                     btnConfirm.classList.add('btn--danger');
                 }
 
-                btnConfirm.setAttribute('href', targetUrl);
+                csrfForm.action = targetUrl;
+                actionId.value = reservaId;
                 modal.classList.add('is-active');
             });
         });

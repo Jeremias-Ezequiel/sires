@@ -5,9 +5,9 @@
     </div>
     <div class="header-actions-container">
         <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_NO_SHOW_CON_PAGO): ?>
-            <a href="<?= url('/dashboard/booking/checkin?id=' . $reserva['id']) ?>" class="btn btn--primary open-sires-modal" data-action="checkin" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/checkin?id=' . $reserva['id']) ?>">
+            <button type="button" class="btn btn--primary open-sires-modal" data-action="checkin" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/checkin') ?>">
                 <i class="fas fa-door-open"></i> Realizar Check-in
-            </a>
+            </button>
         <?php endif; ?>
         <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
             <a href="<?= url('/dashboard/booking/edit?id=' . $reserva['id']) ?>" class="btn btn--primary">
@@ -23,19 +23,19 @@
             </a>
         <?php endif; ?>
         <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
-            <a href="<?= url('/dashboard/booking/noshow?id=' . $reserva['id']) ?>" class="btn btn--danger open-sires-modal" data-action="noshow" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/noshow?id=' . $reserva['id']) ?>">
+            <button type="button" class="btn btn--danger open-sires-modal" data-action="noshow" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/noshow') ?>">
                 <i class="fas fa-user-slash"></i> No-Show
-            </a>
+            </button>
         <?php endif; ?>
         <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
-            <a href="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>" class="btn btn--primary open-sires-modal" data-action="finalize" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/finalize?id=' . $reserva['id']) ?>">
+            <button type="button" class="btn btn--primary open-sires-modal" data-action="finalize" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/finalize') ?>">
                 <i class="fas fa-flag-checkered"></i> Finalizar
-            </a>
+            </button>
         <?php endif; ?>
         <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
-            <a href="<?= url('/dashboard/booking/early-checkout?id=' . $reserva['id']) ?>" class="btn btn--warning open-sires-modal" data-action="early-checkout" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-url="<?= url('/dashboard/booking/early-checkout?id=' . $reserva['id']) ?>">
+            <button type="button" class="btn btn--warning open-sires-modal" data-action="early-checkout" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/early-checkout') ?>">
                 <i class="fas fa-door-open"></i> Checkout Anticipado
-            </a>
+            </button>
         <?php endif; ?>
         <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a la Lista
@@ -144,3 +144,88 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
         </table>
     </div>
 </section>
+
+<div id="sires-confirm-modal" class="modal">
+    <div class="modal__box">
+        <div id="modal-icon-frame" class="modal__icon">
+            <i id="modal-action-icon" class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
+        <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
+        <form id="csrf-form" method="POST" action="">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id" id="modal-action-id">
+            <div class="modal__actions">
+                <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
+                <button type="submit" id="btn-modal-confirm" class="btn">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('sires-confirm-modal');
+        const modalIconFrame = document.getElementById('modal-icon-frame');
+        const modalIcon = document.getElementById('modal-action-icon');
+        const modalTitle = document.getElementById('modal-title-text');
+        const modalText = document.getElementById('modal-description-text');
+        const btnCancel = document.getElementById('btn-modal-cancel');
+        const csrfForm = document.getElementById('csrf-form');
+        const actionId = document.getElementById('modal-action-id');
+        const btnConfirm = document.getElementById('btn-modal-confirm');
+
+        const buttons = document.querySelectorAll('.open-sires-modal');
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const actionType = this.getAttribute('data-action');
+                const targetUrl = this.getAttribute('data-url');
+                const reservaName = this.getAttribute('data-name');
+                const reservaId = this.getAttribute('data-id');
+
+                modalIconFrame.className = 'modal__icon';
+                btnConfirm.className = 'btn';
+
+                if (actionType === 'checkin') {
+                    modalTitle.innerText = 'Realizar Check-in';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${reservaName}</strong>?`;
+                    modalIcon.className = 'fas fa-door-open';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'finalize') {
+                    modalTitle.innerText = 'Finalizar Reserva';
+                    modalText.innerHTML = `¿Está seguro de que desea finalizar la <br><strong>${reservaName}</strong>? Se liberará la habitación.`;
+                    modalIcon.className = 'fas fa-flag-checkered';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'noshow') {
+                    modalTitle.innerText = 'Marcar como No-Show';
+                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>Si tiene pago, el importe NO se reembolsa.</small>`;
+                    modalIcon.className = 'fas fa-user-slash';
+                    modalIconFrame.classList.add('modal__icon--deactivate');
+                    btnConfirm.classList.add('btn--danger');
+                } else if (actionType === 'early-checkout') {
+                    modalTitle.innerText = 'Checkout Anticipado';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el checkout anticipado de la <br><strong>${reservaName}</strong>?<br><small>Sin reembolso por días no usados.</small>`;
+                    modalIcon.className = 'fas fa-door-open';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--warning');
+                }
+
+                csrfForm.action = targetUrl;
+                actionId.value = reservaId;
+                modal.classList.add('is-active');
+            });
+        });
+
+        btnCancel.addEventListener('click', function() {
+            modal.classList.remove('is-active');
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('is-active');
+            }
+        });
+    });
+</script>

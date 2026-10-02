@@ -17,6 +17,8 @@ use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\SanitizeLoginMiddleware;
 use App\Models\Rol;
 
+use App\Middleware\CsrfMiddleware;
+
 return function (RouteCollector $r) {
 
     // =====================================================================
@@ -315,54 +317,54 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/cancel', [
+    $r->addRoute('POST', '/dashboard/booking/cancel', [
         'action' => [BookingController::class, 'cancelBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/confirm', [
+    $r->addRoute('POST', '/dashboard/booking/confirm', [
         'action' => [BookingController::class, 'confirmBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/checkin', [
+    $r->addRoute('POST', '/dashboard/booking/checkin', [
         'action' => [BookingController::class, 'checkInBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/finalize', [
+    $r->addRoute('POST', '/dashboard/booking/finalize', [
         'action' => [BookingController::class, 'finalizeBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/booking/noshow', [
+    $r->addRoute('POST', '/dashboard/booking/noshow', [
         'action' => [BookingController::class, 'markNoShow'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     // Checkout Anticipado
-    $r->addRoute('GET', '/dashboard/booking/early-checkout', [
+    $r->addRoute('POST', '/dashboard/booking/early-checkout', [
         'action' => [BookingController::class, 'earlyCheckoutBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     // Traslado de Habitación (Room Move)
-    $r->addRoute('GET', '/dashboard/booking/move-room', [
+    $r->addRoute('POST', '/dashboard/booking/move-room', [
         'action' => [BookingController::class, 'moveRoomBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
     // Extensión de Estadía
-    $r->addRoute('GET', '/dashboard/booking/extend', [
+    $r->addRoute('POST', '/dashboard/booking/extend', [
         'action' => [BookingController::class, 'extendBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 

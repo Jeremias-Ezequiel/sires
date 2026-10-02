@@ -353,7 +353,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -379,7 +379,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -405,7 +405,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -431,7 +431,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -457,7 +457,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -483,7 +483,7 @@ class BookingController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }
@@ -509,8 +509,8 @@ class BookingController
         }
 
         try {
-            $idReserva  = (int)($vars['id'] ?? 0);
-            $idNuevaHab = (int)($vars['nueva_habitacion'] ?? 0);
+            $idReserva  = (int)($_POST['id'] ?? 0);
+            $idNuevaHab = (int)($_POST['nueva_habitacion'] ?? 0);
 
             if ($idReserva <= 0 || $idNuevaHab <= 0) {
                 throw new Exception("Parámetros inválidos para el traslado.");
@@ -537,8 +537,8 @@ class BookingController
         }
 
         try {
-            $idReserva = (int)($vars['id'] ?? 0);
-            $nuevaSalida = trim($vars['nueva_fecha_salida'] ?? '');
+            $idReserva   = (int)($_POST['id'] ?? 0);
+            $nuevaSalida = trim($_POST['nueva_fecha_salida'] ?? '');
 
             if ($idReserva <= 0 || empty($nuevaSalida)) {
                 throw new Exception("Parámetros inválidos para la extensión.");
