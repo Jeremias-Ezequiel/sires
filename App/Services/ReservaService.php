@@ -259,6 +259,13 @@ class ReservaService
                 throw new Exception("No se pudo finalizar la reserva.");
             }
 
+            if ((string)$reservaData['fecha_salida'] > $hoy) {
+                $obsActual = (string)($reservaData['observaciones'] ?? '');
+                $nuevaObs = $obsActual . ($obsActual !== '' ? "\n" : '') . "- Se retiró de forma temprana el " . $hoy . ".";
+                $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
+                $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
+            }
+
             $roomOk = $this->habitacionModel->cambiarEstado(
                 (int)$reservaData['id_habitacion'],
                 Habitacion::ESTADO_SUCIA,
@@ -304,6 +311,12 @@ class ReservaService
             if (!$reservaOk) {
                 throw new Exception("No se pudo finalizar la reserva.");
             }
+
+            $hoy = date('Y-m-d');
+            $obsActual = (string)($reservaData['observaciones'] ?? '');
+            $nuevaObs = $obsActual . ($obsActual !== '' ? "\n" : '') . "- Se retiró de forma temprana el " . $hoy . ".";
+            $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
+            $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
 
             $roomOk = $this->habitacionModel->cambiarEstado(
                 (int)$reservaData['id_habitacion'],
