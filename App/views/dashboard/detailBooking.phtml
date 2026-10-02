@@ -37,6 +37,11 @@
                 <i class="fas fa-door-open"></i> Checkout Anticipado
             </button>
         <?php endif; ?>
+        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
+            <button type="button" class="btn btn--primary open-upgrade-modal" id="btn-upgrade" data-id="<?= $reserva['id'] ?>" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>">
+                <i class="fas fa-arrow-up"></i> Upgrade de Habitación
+            </button>
+        <?php endif; ?>
         <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a la Lista
         </a>
@@ -145,6 +150,56 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
     </div>
 </section>
 
+<div id="upgrade-modal" class="modal">
+    <div class="modal__box">
+        <div class="modal__icon">
+            <i class="fas fa-arrow-up" style="color: #38bdf8;"></i>
+        </div>
+        <h3 class="modal__title">Upgrade de Habitación</h3>
+        <p class="modal__desc" id="upgrade-modal-desc">
+            Seleccione la habitación de destino para la <strong>Reserva #<?= htmlspecialchars((string)$reserva['id']) ?></strong>.
+            <br>Habitación actual: <strong>#<?= htmlspecialchars((string)$reserva['habitacion_numero']) ?> (<?= htmlspecialchars($reserva['tipo_habitacion_descripcion'] ?? '') ?>)</strong>
+            <br><small>Sin costo adicional para el huésped.</small>
+        </p>
+        <form id="upgrade-form" method="POST" action="<?= url('/dashboard/booking/upgrade') ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id" value="<?= $reserva['id'] ?>">
+            <div id="upgrade-options-container" class="form__group" style="max-height: 300px; overflow-y: auto; margin: 12px 0;">
+                <?php if (!empty($upgradeOptions)): ?>
+                    <?php $sugerida = $upgradeOptions[0]; ?>
+                    <?php foreach ($upgradeOptions as $i => $opt):
+                        $esSugerida = $i === 0;
+                        $precioFormato = number_format((float)$opt['precio_noche_base'], 2, ',', '.');
+                        $capacidad = \App\Models\Habitacion::capacidadParaTipo((int)($opt['id_tipo_habitacion'] ?? 0));
+                    ?>
+                        <label class="upgrade-option" style="display: block; padding: 10px 14px; border: 2px solid <?= $esSugerida ? '#38bdf8' : '#e5e7eb' ?>; border-radius: 8px; margin-bottom: 6px; cursor: pointer; <?= $esSugerida ? 'background: rgba(56,189,248,0.08);' : '' ?>">
+                            <input type="radio" name="nueva_habitacion" value="<?= $opt['id'] ?>" <?= $esSugerida ? 'checked' : '' ?> required>
+                            <strong>#<?= htmlspecialchars((string)$opt['numero']) ?></strong>
+                            — <?= htmlspecialchars($opt['tipo'] ?? '') ?>
+                            <span style="color: var(--texto-gris); font-size: 0.85em;">(<?= $capacidad ?>p, Piso <?= (int)$opt['piso'] ?>)</span>
+                            <?php if ($esSugerida): ?>
+                                <span class="badge badge--disponible" style="font-size: 0.75em; margin-left: 4px;">Sugerida</span>
+                            <?php endif; ?>
+                            <span style="float: right; font-weight: 600;">$<?= $precioFormato ?>/noche</span>
+                        </label>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="alert alert--info" style="margin: 0;">
+                        <i class="fa-solid fa-circle-info"></i>
+                        No hay habitaciones iguales o superiores disponibles para las fechas de esta reserva.
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="modal__actions">
+                <button type="button" id="btn-upgrade-cancel" class="btn btn--ghost">Cancelar</button>
+                <button type="submit" id="btn-upgrade-confirm" class="btn btn--primary" <?= empty($upgradeOptions) ? 'disabled' : '' ?>>
+                    <i class="fas fa-arrow-up"></i> Realizar Upgrade
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="sires-confirm-modal" class="modal">
     <div class="modal__box">
         <div id="modal-icon-frame" class="modal__icon">
@@ -227,5 +282,30 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
                 modal.classList.remove('is-active');
             }
         });
+
+        // Upgrade Modal
+        const upgradeModal = document.getElementById('upgrade-modal');
+        const btnUpgrade = document.getElementById('btn-upgrade');
+        const btnUpgradeCancel = document.getElementById('btn-upgrade-cancel');
+
+        if (btnUpgrade) {
+            btnUpgrade.addEventListener('click', function() {
+                upgradeModal.classList.add('is-active');
+            });
+        }
+
+        if (btnUpgradeCancel) {
+            btnUpgradeCancel.addEventListener('click', function() {
+                upgradeModal.classList.remove('is-active');
+            });
+        }
+
+        if (upgradeModal) {
+            upgradeModal.addEventListener('click', function(e) {
+                if (e.target === upgradeModal) {
+                    upgradeModal.classList.remove('is-active');
+                }
+            });
+        }
     });
 </script>

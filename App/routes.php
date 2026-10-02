@@ -368,6 +368,13 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
+    // Upgrade de Habitación
+    $r->addRoute('POST', '/dashboard/booking/upgrade', [
+        'action' => [BookingController::class, 'upgradeBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
     // Pagos
     $r->addRoute('GET', '/dashboard/payments', [
         'action' => [PaymentController::class, 'showPayments'],

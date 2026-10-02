@@ -343,6 +343,16 @@ class BookingController
                 throw new Exception("La reserva no existe.");
             }
 
+            $estadoReserva = (int)$reserva['id_estado_reserva'];
+            $upgradeOptions = [];
+            if ($estadoReserva === Reserva::ESTADO_CONFIRMADA || $estadoReserva === Reserva::ESTADO_EN_CASA) {
+                try {
+                    $upgradeOptions = $this->reservaService->getOpcionesUpgrade((int)$id);
+                } catch (Exception $e) {
+                    $upgradeOptions = [];
+                }
+            }
+
             $contentView = __DIR__ . '/../views/dashboard/detailBooking.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
@@ -553,6 +563,34 @@ class BookingController
             }
 
             $resultado = $this->reservaService->extenderEstadia($idReserva, $nuevaSalida);
+
+            $_SESSION['flash_message'] = $resultado['message'];
+            $_SESSION['flash_status']  = "success";
+
+            $this->redirect('/dashboard/booking/detail?id=' . $idReserva);
+        } catch (Exception $e) {
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_status']  = "error";
+
+            $this->redirect('/dashboard/booking');
+        }
+    }
+
+    public function upgradeBooking(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        try {
+            $idReserva      = (int)($_POST['id'] ?? 0);
+            $idNuevaHab     = (int)($_POST['nueva_habitacion'] ?? 0);
+
+            if ($idReserva <= 0 || $idNuevaHab <= 0) {
+                throw new Exception("Parámetros inválidos para el upgrade.");
+            }
+
+            $resultado = $this->reservaService->upgradeHabitacion($idReserva, $idNuevaHab);
 
             $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
