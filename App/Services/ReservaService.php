@@ -236,11 +236,11 @@ class ReservaService
         }
 
         $hoy = date('Y-m-d');
-        if ((string)$reservaData['fecha_salida'] > $hoy) {
+        $estadoActual = (int)$reservaData['id_estado_reserva'];
+        if ($estadoActual === Reserva::ESTADO_CONFIRMADA && (string)$reservaData['fecha_salida'] > $hoy) {
             throw new Exception("No se puede finalizar la reserva antes de la fecha de salida.");
         }
 
-        $estadoActual = (int)$reservaData['id_estado_reserva'];
         if ($estadoActual !== Reserva::ESTADO_CONFIRMADA && $estadoActual !== Reserva::ESTADO_EN_CASA) {
             throw new Exception("No se puede finalizar una reserva que no está confirmada o en estadía.");
         }
