@@ -942,3 +942,113 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- [11. OCUPANCY TIMELINE] --- */
+.timeline-container {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.timeline-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.timeline-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--texto-gris, #999);
+  letter-spacing: 0.2px;
+}
+
+.timeline-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.timeline-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--texto-gris, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.timeline-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+}
+
+.timeline-labels {
+  display: flex;
+  height: 16px;
+  align-items: flex-end;
+}
+
+.timeline-label {
+  width: 11px;
+  min-width: 11px;
+  flex-shrink: 0;
+  font-size: 8px;
+  color: var(--texto-gris, #999);
+  text-align: center;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.timeline-bar {
+  display: flex;
+  gap: 1px;
+  margin-top: 1px;
+}
+
+.timeline-day {
+  width: 11px;
+  min-width: 11px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.timeline-day--free {
+  background-color: #22c55e;
+}
+
+.timeline-day--occupied {
+  background-color: #ef4444;
+}
+
+.timeline-day--selected {
+  background-color: #eab308;
+}
+
+.timeline-day--today {
+  outline: 1px solid rgba(255, 255, 255, 0.6);
+  outline-offset: -1px;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
