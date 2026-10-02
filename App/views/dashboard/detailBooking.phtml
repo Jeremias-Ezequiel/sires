@@ -47,12 +47,12 @@
 $estadoLower = mb_strtolower($reserva['estado_descripcion'] ?? '', 'UTF-8');
 $statusClass = 'badge--disponible';
 if (strpos($estadoLower, 'pendient') !== false) $statusClass = 'badge--pendiente';
-elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
-elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
-elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--ocupada';
-elseif (strpos($estadoLower, 'no.show') !== false || strpos($estadoLower, 'no show') !== false) $statusClass = 'badge--ocupada';
-elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false) $statusClass = 'badge--reservada';
 elseif (strpos($estadoLower, 'no-show con pago') !== false) $statusClass = 'badge--reservada';
+elseif (strpos($estadoLower, 'confirm') !== false) $statusClass = 'badge--reservada';
+elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false) $statusClass = 'badge--reservada';
+elseif (strpos($estadoLower, 'no.show') !== false || strpos($estadoLower, 'no show') !== false) $statusClass = 'badge--ocupada';
+elseif (strpos($estadoLower, 'cancel') !== false) $statusClass = 'badge--ocupada';
+elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--disponible';
 ?>
 
 <section class="details-section">

@@ -60,8 +60,16 @@
                     <td class="detail-label">Estado</td>
                     <td class="detail-value">
                         <?php
-                        $statusLower = mb_strtolower($habitacion['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                        $idEstado = (int)$habitacion['id_estado_habitacion'];
+                        $statusClass = match($idEstado) {
+                            \App\Models\Habitacion::ESTADO_DISPONIBLE     => 'badge--disponible',
+                            \App\Models\Habitacion::ESTADO_OCUPADA        => 'badge--ocupada',
+                            \App\Models\Habitacion::ESTADO_MANTENIMIENTO  => 'badge--mantenimiento',
+                            \App\Models\Habitacion::ESTADO_BLOQUEADA      => 'badge--bloqueada',
+                            \App\Models\Habitacion::ESTADO_SUCIA          => 'badge--sucia',
+                            \App\Models\Habitacion::ESTADO_LIMPIANDO      => 'badge--limpiando',
+                            default                                       => 'badge--disponible'
+                        };
                         ?>
                         <span class="badge <?= $statusClass ?>"><?= htmlspecialchars($habitacion['estado']) ?></span>
                         <?php if (!empty($habitacion['motivo_descripcion'])): ?>

@@ -123,8 +123,16 @@
                         if ($roomInactiva):
                             $statusClass = 'badge--ocupada';
                         else:
-                            $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                            $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                            $idEstado = (int)$room['id_estado_habitacion'];
+                            $statusClass = match($idEstado) {
+                                \App\Models\Habitacion::ESTADO_DISPONIBLE     => 'badge--disponible',
+                                \App\Models\Habitacion::ESTADO_OCUPADA        => 'badge--ocupada',
+                                \App\Models\Habitacion::ESTADO_MANTENIMIENTO  => 'badge--mantenimiento',
+                                \App\Models\Habitacion::ESTADO_BLOQUEADA      => 'badge--bloqueada',
+                                \App\Models\Habitacion::ESTADO_SUCIA          => 'badge--sucia',
+                                \App\Models\Habitacion::ESTADO_LIMPIANDO      => 'badge--limpiando',
+                                default                                       => 'badge--disponible'
+                            };
                         endif;
                     ?>
                         <tr<?= $roomInactiva ? ' style="opacity: 0.6;"' : '' ?>>
@@ -312,6 +320,20 @@
                     modalTitle.innerText = 'Reactivar Habitación';
                     modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
                     modalIcon.className = 'fas fa-undo';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--success');
+                    motivoWrapper.style.display = 'none';
+                } else if (actionType === 'cleaning') {
+                    modalTitle.innerText = 'Iniciar Limpieza';
+                    modalText.innerHTML = `¿Está seguro de que desea iniciar la limpieza de la <br><strong>${roomName}</strong>?<br><small>La habitación pasará a estado "Limpiando".</small>`;
+                    modalIcon.className = 'fas fa-broom';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--warning');
+                    motivoWrapper.style.display = 'none';
+                } else if (actionType === 'complete-cleaning') {
+                    modalTitle.innerText = 'Completar Limpieza';
+                    modalText.innerHTML = `¿Está seguro de que desea marcar como limpia la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalIcon.className = 'fas fa-check-circle';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';

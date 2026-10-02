@@ -156,8 +156,14 @@ include __DIR__ . '/../partials/head.phtml';
                                     $claseEstado = 'badge--disponible';
                                     if (strpos($estadoLower, 'ocupad') !== false) {
                                         $claseEstado = 'badge--ocupada';
-                                    } elseif (strpos($estadoLower, 'mantenimient') !== false || strpos($estadoLower, 'bloquead') !== false) {
-                                        $claseEstado = 'badge--reservada';
+                                    } elseif (strpos($estadoLower, 'sucia') !== false || strpos($estadoLower, 'sucio') !== false) {
+                                        $claseEstado = 'badge--sucia';
+                                    } elseif (strpos($estadoLower, 'limpiando') !== false || strpos($estadoLower, 'limpi') !== false) {
+                                        $claseEstado = 'badge--limpiando';
+                                    } elseif (strpos($estadoLower, 'mantenimient') !== false) {
+                                        $claseEstado = 'badge--mantenimiento';
+                                    } elseif (strpos($estadoLower, 'bloquead') !== false) {
+                                        $claseEstado = 'badge--bloqueada';
                                     }
                                 ?>
                                     <tr>

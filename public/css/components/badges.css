@@ -10,6 +10,11 @@
 .badge--disponible { background-color: var(--estado-disponible); }
 .badge--ocupada { background-color: var(--estado-ocupada); }
 .badge--reservada { background-color: var(--estado-reservada); color: #000; }
+.badge--sucia { background-color: var(--color-warning); }
+.badge--limpiando { background-color: var(--color-info); }
+.badge--mantenimiento { background-color: #f97316; }
+.badge--bloqueada { background-color: #6b7280; }
+.badge--pendiente { background-color: var(--color-warning); }
 
 .badge--recepcionista {
   background: rgba(56, 189, 248, 0.1);

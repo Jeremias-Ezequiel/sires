@@ -91,6 +91,10 @@
                             $reservaStatusClass = 'badge--reservada';
                         } elseif (strpos($reservaEstadoLower, 'cancel') !== false) {
                             $reservaStatusClass = 'badge--ocupada';
+                        } elseif (strpos($reservaEstadoLower, 'no-show con pago') !== false) {
+                            $reservaStatusClass = 'badge--reservada';
+                        } elseif (strpos($reservaEstadoLower, 'finaliz') !== false) {
+                            $reservaStatusClass = 'badge--disponible';
                         }
 
                         $saldoPago = isset($pag['saldo_pendiente']) && $pag['saldo_pendiente'] !== null ? (float)$pag['saldo_pendiente'] : 0.0;

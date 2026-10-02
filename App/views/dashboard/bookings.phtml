@@ -89,7 +89,7 @@
                 </thead>
                 <tbody>
                     <?php foreach ($reservas as $res): ?>
-                        <?php
+<?php
                         $estadoLower = mb_strtolower($res['estado_descripcion'] ?? '', 'UTF-8');
                         $statusClass = 'badge--disponible';
                         if (strpos($estadoLower, 'pendient') !== false) {
@@ -100,9 +100,11 @@
                             $statusClass = 'badge--ocupada';
                         } elseif (strpos($estadoLower, 'finaliz') !== false || strpos($estadoLower, 'check') !== false) {
                             $statusClass = 'badge--disponible';
+                        } elseif (strpos($estadoLower, 'no-show con pago') !== false) {
+                            $statusClass = 'badge--reservada';
                         } elseif (strpos($estadoLower, 'no.show') !== false || strpos($estadoLower, 'no show') !== false) {
                             $statusClass = 'badge--ocupada';
-                        } elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false) {
+                        } elseif (strpos($estadoLower, 'en casa') !== false || strpos($estadoLower, 'casa') !== false || strpos($estadoLower, 'ocupad') !== false) {
                             $statusClass = 'badge--reservada';
                         }
                         ?>
@@ -136,7 +138,7 @@
                                     <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_NO_SHOW_CON_PAGO): ?>
                                         <button type="button"
-                                            class="btn btn--icon btn--icon-success open-sires-modal"
+                                            class="btn btn--icon btn--icon-info open-sires-modal"
                                             data-action="checkin"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
                                             data-url="<?= url('/dashboard/booking/checkin?id=' . $res['id']) ?>"
@@ -292,7 +294,7 @@
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'noshow') {
                     modalTitle.innerText = 'Marcar como No-Show';
-                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>La habitación será liberada y cualquier pago será reembolsado.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>Si tiene pago, el importe NO se reembolsa. La habitación será retenida hasta el día siguiente.</small>`;
                     modalIcon.className = 'fas fa-user-slash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');

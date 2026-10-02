@@ -131,7 +131,11 @@
                 <?php if (count($habitaciones) > 0): ?>
                     <?php foreach ($habitaciones as $room):
                         $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada' : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--reservada' : 'badge--disponible');
+                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada'
+                            : ((strpos($statusLower, 'sucia') !== false || strpos($statusLower, 'sucio') !== false) ? 'badge--sucia'
+                            : ((strpos($statusLower, 'limpiando') !== false || strpos($statusLower, 'limpi') !== false) ? 'badge--limpiando'
+                            : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--mantenimiento'
+                            : 'badge--disponible')));
                     ?>
                         <tr>
                             <td><?= htmlspecialchars((string)$room['numero']) ?></td>

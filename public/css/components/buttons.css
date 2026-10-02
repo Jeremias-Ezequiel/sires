@@ -91,6 +91,17 @@
   background-color: #059669;
 }
 
+.btn--warning {
+  background-color: var(--color-warning);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 10px 20px;
+}
+
+.btn--warning:hover {
+  background-color: #d97706;
+}
+
 .btn--outline {
   display: inline-flex;
   align-items: center;
@@ -167,4 +178,24 @@
 .btn--icon-success:hover {
   background: rgba(34, 197, 94, 0.12);
   border-color: #22c55e;
+}
+
+.btn--icon-warning {
+  color: var(--color-warning);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.btn--icon-warning:hover {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: var(--color-warning);
+}
+
+.btn--icon-info {
+  color: var(--color-info);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+.btn--icon-info:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--color-info);
 }
