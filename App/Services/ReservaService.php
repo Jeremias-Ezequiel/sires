@@ -675,8 +675,8 @@ class ReservaService
              JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
              WHERE h.id_tipo_habitacion IN ($placeholders)
                AND h.is_active = 1
-               AND h.id_estado_habitacion = :disponible
-               AND h.id != :actual
+               AND h.id_estado_habitacion = ?
+               AND h.id != ?
              ORDER BY
                CASE h.id_tipo_habitacion
                  WHEN 3 THEN 4
