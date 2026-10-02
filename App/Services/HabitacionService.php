@@ -323,7 +323,6 @@ class HabitacionService
                     ':noshowpago'  => 7
                 ]);
                 if ((int)$reservas->fetchColumn() > 0) {
-                    $db->rollBack();
                     throw new Exception("No se puede marcar como disponible una habitación con reservas activas.");
                 }
             }
