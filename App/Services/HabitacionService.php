@@ -309,6 +309,25 @@ class HabitacionService
                 throw new Exception("El número de habitación ya está en uso por otra habitación.");
             }
 
+            if ($idEstado === Habitacion::ESTADO_DISPONIBLE) {
+                $reservas = $db->prepare(
+                    "SELECT COUNT(*) FROM Reservas
+                     WHERE id_habitacion = :id
+                       AND id_estado_reserva IN (:pendiente, :confirmada, :encasa, :noshowpago)"
+                );
+                $reservas->execute([
+                    ':id'          => $id,
+                    ':pendiente'   => 1,
+                    ':confirmada'  => 2,
+                    ':encasa'      => 5,
+                    ':noshowpago'  => 7
+                ]);
+                if ((int)$reservas->fetchColumn() > 0) {
+                    $db->rollBack();
+                    throw new Exception("No se puede marcar como disponible una habitación con reservas activas.");
+                }
+            }
+
             $sql = "UPDATE Habitaciones
                     SET numero = :numero, piso = :piso,
                         id_tipo_habitacion = :tipo,
