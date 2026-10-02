@@ -372,26 +372,26 @@ return function (RouteCollector $r) {
     $r->addRoute('POST', '/dashboard/booking/upgrade', [
         'action' => [BookingController::class, 'upgradeBooking'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     // Pagos
     $r->addRoute('GET', '/dashboard/payments', [
         'action' => [PaymentController::class, 'showPayments'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     $r->addRoute('GET', '/dashboard/payments/detail', [
         'action' => [PaymentController::class, 'showPaymentDetail'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     $r->addRoute('POST', '/dashboard/payments/add/process', [
         'action' => [PaymentController::class, 'addPayment'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     $r->addRoute('GET', '/dashboard/payments/recalculate', [

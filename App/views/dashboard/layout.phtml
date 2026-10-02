@@ -57,7 +57,7 @@ include __DIR__ . '/../partials/head.phtml';
                         </li>
                     <?php endif; ?>
 
-                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
                             <a href="<?= url('/dashboard/payments') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'pagos.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-money-bill-wave"></i>Pagos
