@@ -30,11 +30,16 @@ class HabitacionService
         if ($precioNoche <= 0) {
             throw new Exception("El precio por noche debe ser mayor a 0.");
         }
+        if ($precioNoche > Habitacion::MAX_PRICE) {
+            throw new Exception("El precio por noche no puede superar los $" . number_format(Habitacion::MAX_PRICE, 2, ',', '.') . ".");
+        }
 
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
 
         try {
+            Habitacion::validarJerarquiaPrecio($db, $idTipo, $precioNoche);
+
             $lock = $db->prepare(
                 "SELECT MAX(numero) FROM Habitaciones WHERE piso = :piso AND is_active = 1 FOR UPDATE"
             );
@@ -83,6 +88,9 @@ class HabitacionService
         if ($precioNoche <= 0) {
             throw new Exception("El precio por noche debe ser mayor a 0.");
         }
+        if ($precioNoche > Habitacion::MAX_PRICE) {
+            throw new Exception("El precio por noche no puede superar los $" . number_format(Habitacion::MAX_PRICE, 2, ',', '.') . ".");
+        }
         if ($desde <= 0 || $hasta <= 0 || $hasta < $desde) {
             throw new Exception("El rango numérico no es válido.");
         }
@@ -96,6 +104,8 @@ class HabitacionService
         $db->beginTransaction();
 
         try {
+            Habitacion::validarJerarquiaPrecio($db, $idTipo, $precioNoche);
+
             $lock = $db->prepare(
                 "SELECT numero FROM Habitaciones WHERE piso = :piso AND is_active = 1 FOR UPDATE"
             );
@@ -295,11 +305,16 @@ class HabitacionService
         if ($numero <= 0) {
             throw new Exception("El número de habitación debe ser mayor a 0.");
         }
+        if ($precioNoche > Habitacion::MAX_PRICE) {
+            throw new Exception("El precio por noche no puede superar los $" . number_format(Habitacion::MAX_PRICE, 2, ',', '.') . ".");
+        }
 
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
 
         try {
+            Habitacion::validarJerarquiaPrecio($db, $idTipo, $precioNoche);
+
             $check = $db->prepare(
                 "SELECT COUNT(*) FROM Habitaciones WHERE numero = :numero AND is_active = 1 AND id != :id"
             );

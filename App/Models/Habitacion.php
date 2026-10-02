@@ -38,6 +38,10 @@ class Habitacion extends Model
     public const ACTIVE = 1;
     public const INACTIVE = 0;
     public const STARTING_FLOOR = 1;
+    public const MAX_PRICE = 10000000;
+
+    // Jerarquía de precios: Simple ≤ Matrimonial ≤ Doble ≤ Suite
+    public const PRICE_HIERARCHY_ORDER = [1, 4, 2, 3];
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): array
     {
@@ -503,6 +507,47 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         return 2;
     }
 
+    public static function validarJerarquiaPrecio(PDO $db, int $idTipo, float $precio): void
+    {
+        $jerarquia = self::PRICE_HIERARCHY_ORDER;
+        $pos = array_search($idTipo, $jerarquia);
+        if ($pos === false) return;
+
+        if ($pos > 0) {
+            $tipoInferior = $jerarquia[$pos - 1];
+            $stmt = $db->prepare(
+                "SELECT MAX(precio_noche_base) FROM Habitaciones
+                 WHERE id_tipo_habitacion = :tipo AND is_active = 1"
+            );
+            $stmt->execute([':tipo' => $tipoInferior]);
+            $maxInferior = $stmt->fetchColumn();
+            if ($maxInferior !== false && $maxInferior !== null && $precio < (float)$maxInferior) {
+                throw new Exception(
+                    "El precio de $" . number_format($precio, 2, ',', '.') .
+                    " es menor que el de tipos inferiores ($" . number_format((float)$maxInferior, 2, ',', '.') .
+                    "). La jerarquía debe ser: Simple ≤ Matrimonial ≤ Doble ≤ Suite."
+                );
+            }
+        }
+
+        if ($pos < count($jerarquia) - 1) {
+            $tipoSuperior = $jerarquia[$pos + 1];
+            $stmt = $db->prepare(
+                "SELECT MIN(precio_noche_base) FROM Habitaciones
+                 WHERE id_tipo_habitacion = :tipo AND is_active = 1"
+            );
+            $stmt->execute([':tipo' => $tipoSuperior]);
+            $minSuperior = $stmt->fetchColumn();
+            if ($minSuperior !== false && $minSuperior !== null && $precio > (float)$minSuperior) {
+                throw new Exception(
+                    "El precio de $" . number_format($precio, 2, ',', '.') .
+                    " supera al de tipos superiores ($" . number_format((float)$minSuperior, 2, ',', '.') .
+                    "). La jerarquía debe ser: Simple ≤ Matrimonial ≤ Doble ≤ Suite."
+                );
+            }
+        }
+    }
+
     // =====================================================================
     // GETTERS Y SETTERS
     // =====================================================================
@@ -572,6 +617,9 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
     {
         if ($precio_noche_base <= 0) {
             throw new Exception("El precio por noche debe ser mayor a 0.");
+        }
+        if ($precio_noche_base > self::MAX_PRICE) {
+            throw new Exception("El precio por noche no puede superar los $" . number_format(self::MAX_PRICE, 2, ',', '.') . ".");
         }
         $this->precio_noche_base = $precio_noche_base;
     }
