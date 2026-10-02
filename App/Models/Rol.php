@@ -22,6 +22,7 @@ class Rol extends Model
     public const RECEPCIONISTA = 2;
     public const GERENTE = 3;
     public const AUDITOR = 4;
+    public const LIMPIEZA = 5;
 
     // =====================================================================
     // MÉTODOS DE NEGOCIO
