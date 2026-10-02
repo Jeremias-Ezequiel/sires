@@ -600,7 +600,12 @@ class BookingController
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            $this->redirect('/dashboard/booking');
+            $idReserva = (int)($_POST['id'] ?? 0);
+            if ($idReserva > 0) {
+                $this->redirect('/dashboard/booking/detail?id=' . $idReserva);
+            } else {
+                $this->redirect('/dashboard/booking');
+            }
         }
     }
 }

@@ -48,6 +48,13 @@
     </div>
 </header>
 
+<?php if (!empty($flashMessage) && !empty($flashStatus)): ?>
+    <div class="alert alert--<?= htmlspecialchars($flashStatus) ?>" style="margin-bottom: 16px;">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
 <?php
 $estadoLower = mb_strtolower($reserva['estado_descripcion'] ?? '', 'UTF-8');
 $statusClass = 'badge--disponible';
