@@ -354,18 +354,7 @@ class Usuario extends Model
     {
         try {
 
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-            }
-                if (strlen($newPassword) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-            }
+            \App\Helpers\Validator::passwordValida($newPassword);
 
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
@@ -391,19 +380,7 @@ class Usuario extends Model
     {
         try {
 
-            if (strlen($newPassword) < 5) {
-                throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-            }
-            if (strlen($newPassword) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $newPassword)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-
-            }
+            \App\Helpers\Validator::passwordValida($newPassword);
 
             // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -535,19 +512,8 @@ class Usuario extends Model
     }
     public function setNombre(string $nombre): void
     {
-        $cleanNombre = trim($nombre);
-        if (empty($cleanNombre)) {
-            throw new Exception("El nombre no puede estar vacío.");
-        }
-
-        $cleanNombre = mb_convert_case($cleanNombre, MB_CASE_TITLE, 'UTF-8');
-        $cleanNombre = htmlspecialchars($cleanNombre, ENT_QUOTES, 'UTF-8');
-
-        if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $cleanNombre)) {
-            throw new Exception("El nombre solo puede contener letras y espacios.");
-        }
-
-        $this->nombre = $cleanNombre;
+        $cleanNombre = \App\Helpers\Validator::letrasYEspacios($nombre, 'nombre', \App\Helpers\Validator::MAX_NOMBRE);
+        $this->nombre = mb_convert_case($cleanNombre, MB_CASE_TITLE, 'UTF-8');
     }
 
     public function getApellido(): string
@@ -556,19 +522,8 @@ class Usuario extends Model
     }
     public function setApellido(string $apellido): void
     {
-        $cleanApellido = trim($apellido);
-        if (empty($cleanApellido)) {
-            throw new Exception("El apellido no puede estar vacío.");
-        }
-
-        $cleanApellido = mb_convert_case($cleanApellido, MB_CASE_TITLE, 'UTF-8');
-        $cleanApellido = htmlspecialchars($cleanApellido, ENT_QUOTES, 'UTF-8');
-
-        if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $cleanApellido)) {
-            throw new Exception("El apellido solo puede contener letras y espacios.");
-        }
-
-        $this->apellido = $cleanApellido;
+        $cleanApellido = \App\Helpers\Validator::letrasYEspacios($apellido, 'apellido', \App\Helpers\Validator::MAX_APELLIDO);
+        $this->apellido = mb_convert_case($cleanApellido, MB_CASE_TITLE, 'UTF-8');
     }
 
     public function getEmail(): string
@@ -577,12 +532,7 @@ class Usuario extends Model
     }
     public function setEmail(string $email): void
     {
-        $cleanEmail = mb_strtolower(trim($email), 'UTF-8');
-        $cleanEmail = filter_var($cleanEmail, FILTER_SANITIZE_EMAIL);
-        if (!filter_var($cleanEmail, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("El formato del correo electrónico no es válido.");
-        }
-        $this->email = $cleanEmail;
+        $this->email = \App\Helpers\Validator::emailValido($email);
     }
 
     public function getPassword(): string
@@ -591,21 +541,7 @@ class Usuario extends Model
     }
     public function setPassword(string $password): void
     {
-
-        if (strlen($password) < 5) {
-            throw new Exception("La contraseña debe tener una longitud mínima de 5 caracteres.");
-        }
-        if (strlen($password) < 8) {
-            throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-        }
-        if (!preg_match('/[A-Z]/', $password)) {
-            throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-        }
-        if (!preg_match('/\d/', $password)) {
-            throw new Exception("La contraseña debe contener al menos un número.");
-
-        }
-
+        \App\Helpers\Validator::passwordValida($password);
         $this->password = password_hash($password, PASSWORD_BCRYPT);
     }
 
@@ -619,17 +555,7 @@ class Usuario extends Model
     }
     public function setTelefono(?string $telefono): void
     {
-        $clean = trim($telefono ?? '');
-        if ($clean !== '') {
-            $digits = preg_replace('/\D/', '', $clean);
-            if (strlen($digits) < 8) {
-                throw new Exception("El teléfono debe tener al menos 8 dígitos.");
-            }
-            if (!preg_match('/^[0-9+\-\s()]{10,50}$/', $clean)) {
-                throw new Exception("El formato del teléfono no es válido.");
-            }
-        }
-        $this->telefono = $clean !== '' ? $clean : null;
+        $this->telefono = \App\Helpers\Validator::telefonoE164((string)$telefono);
     }
 
     public function getDni(): ?string
@@ -638,11 +564,8 @@ class Usuario extends Model
     }
     public function setDni(?string $dni): void
     {
-        $clean = trim($dni ?? '');
-        if ($clean !== '' && !preg_match('/^[0-9.]{6,20}$/', $clean)) {
-            throw new Exception("El formato del DNI no es válido.");
-        }
-        $this->dni = $clean !== '' ? $clean : null;
+        $clean = trim((string)$dni);
+        $this->dni = $clean !== '' ? \App\Helpers\Validator::dniEmpleado($clean) : null;
     }
 
     public function getCuil(): ?string
@@ -651,16 +574,8 @@ class Usuario extends Model
     }
     public function setCuil(?string $cuil): void
     {
-        $clean = trim($cuil ?? '');
-        if ($clean !== '') {
-            $digits = preg_replace('/\D/', '', $clean);
-            if (strlen($digits) !== 11) {
-                throw new Exception("El CUIL debe tener 11 dígitos en el formato XX-XXXXXXXX-X.");
-            }
-            $this->cuil = substr($digits, 0, 2) . '-' . substr($digits, 2, 8) . '-' . substr($digits, 10, 1);
-        } else {
-            $this->cuil = null;
-        }
+        $clean = trim((string)$cuil);
+        $this->cuil = $clean !== '' ? \App\Helpers\Validator::cuilValido($clean) : null;
     }
 
     public function getDireccion(): ?string
@@ -669,11 +584,7 @@ class Usuario extends Model
     }
     public function setDireccion(?string $direccion): void
     {
-        $clean = trim($direccion ?? '');
-        if ($clean !== '') {
-            $clean = htmlspecialchars($clean, ENT_QUOTES, 'UTF-8');
-        }
-        $this->direccion = $clean !== '' ? $clean : null;
+        $this->direccion = \App\Helpers\Validator::direccionValida((string)$direccion);
     }
 
     public function getFechaNacimiento(): ?string
@@ -682,22 +593,8 @@ class Usuario extends Model
     }
     public function setFechaNacimiento(?string $fecha_nacimiento): void
     {
-        $clean = trim($fecha_nacimiento ?? '');
-        if ($clean !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
-            throw new Exception("El formato de la fecha de nacimiento no es válido (AAAA-MM-DD).");
-        }
-        if ($clean !== '') {
-            $nacimiento = new \DateTime($clean);
-            $hoy = new \DateTime();
-            $edad = $hoy->diff($nacimiento)->y;
-            if ($edad < 18) {
-                throw new Exception("El usuario debe ser mayor de edad (18 años o más).");
-            }
-            if ($edad > 130) {
-                throw new Exception("La fecha de nacimiento indica una edad mayor a 130 años.");
-            }
-        }
-        $this->fecha_nacimiento = $clean !== '' ? $clean : null;
+        $clean = trim((string)$fecha_nacimiento);
+        $this->fecha_nacimiento = $clean !== '' ? \App\Helpers\Validator::fechaNacimientoValida($clean) : null;
     }
 
     public function getIsActive(): int
