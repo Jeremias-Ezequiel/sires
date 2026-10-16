@@ -103,6 +103,21 @@ class Validator
         return substr($digits, 0, 2) . '-' . substr($digits, 2, 8) . '-' . $digits[10];
     }
 
+    /**
+     * Verifica que el CUIL corresponda al DNI de una persona.
+     * El CUIL embebe el DNI en sus 8 dígitos centrales (zero-padded).
+     */
+    public static function cuilCoincideConDni(string $cuil, string $dni): bool
+    {
+        $cuilDigits = preg_replace('/\D/', '', $cuil);
+        $dniDigits  = preg_replace('/[^0-9]/', '', $dni);
+        if (strlen($cuilDigits) !== 11 || $dniDigits === '') {
+            return false;
+        }
+        $dniPadded = str_pad($dniDigits, 8, '0', STR_PAD_LEFT);
+        return substr($cuilDigits, 2, 8) === $dniPadded;
+    }
+
     /** Normaliza un teléfono al estándar internacional E.164. Devuelve null si viene vacío. */
     public static function telefonoE164(string $telefono): ?string
     {

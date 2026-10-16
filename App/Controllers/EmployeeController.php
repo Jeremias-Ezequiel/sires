@@ -323,6 +323,14 @@ class EmployeeController
                 throw new Exception("El CUIL es obligatorio para empleados argentinos.");
             }
             $cuil = Validator::cuilValido($cuil);
+
+            // Para argentinos el CUIL debe derivar del DNI ingresado
+            if ($dni === '') {
+                throw new Exception("El DNI es obligatorio para empleados argentinos.");
+            }
+            if (!Validator::cuilCoincideConDni($cuil, $dni)) {
+                throw new Exception("El CUIL no coincide con el DNI ingresado.");
+            }
         } else {
             $cuil = $cuil !== '' ? Validator::cuilValido($cuil) : '';
         }

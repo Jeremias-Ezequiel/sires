@@ -287,6 +287,18 @@
                         inputCuil?.focus();
                         return;
                     }
+                    if (dniVal === '') {
+                        e.preventDefault();
+                        mostrarError('El DNI es obligatorio para empleados argentinos.');
+                        inputDni?.focus();
+                        return;
+                    }
+                    if (cuilVal.slice(2, 10) !== dniVal.padStart(8, '0')) {
+                        e.preventDefault();
+                        mostrarError('El CUIL no coincide con el DNI ingresado.');
+                        inputDni?.focus();
+                        return;
+                    }
                 } else if (cuilVal !== '' && !cuilValido(cuilVal)) {
                     e.preventDefault();
                     mostrarError('El CUIL ingresado no es válido. Verifique el número y su dígito verificador.');
