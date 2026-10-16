@@ -84,6 +84,10 @@ return function (RouteCollector $r) {
         'action' => [ApiController::class, 'getCities']
     ]);
 
+    $r->addRoute('GET', '/api/reloj', [
+        'action' => [ApiController::class, 'consultarReloj']
+    ]);
+
     // =====================================================================
     // 🔒 RUTAS PROTEGIDAS (Pasan por la tubería de Middlewares)
     // =====================================================================

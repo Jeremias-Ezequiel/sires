@@ -65,6 +65,14 @@ include __DIR__ . '/../partials/head.phtml';
                         </li>
                     <?php endif; ?>
 
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
+                        <li>
+                            <a href="<?= url('/api/reloj') ?>" class="nav-link">
+                                <i class="fas fa-clock"></i>Reloj Oficial
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
                     <li>
                         <a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;">
                             <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
