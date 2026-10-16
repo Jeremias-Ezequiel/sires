@@ -30,14 +30,14 @@
         <div class="form__grid">
             <div class="form__group">
                 <label class="form__label" for="nombre">Nombre</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['nombre'] ?? $cliente->getNombre() ?? '') ?>"
+                <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan" maxlength="50" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['nombre'] ?? $cliente->getNombre() ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El nombre solo puede contener letras y espacios.">
             </div>
 
             <div class="form__group">
                 <label class="form__label" for="apellido">Apellido</label>
-                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['apellido'] ?? $cliente->getApellido() ?? '') ?>"
+                <input type="text" id="apellido" name="apellido" placeholder="Ej: Pérez" maxlength="50" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['apellido'] ?? $cliente->getApellido() ?? '') ?>"
                     pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                     title="El apellido solo puede contener letras y espacios.">
             </div>
@@ -50,21 +50,21 @@
         <div class="form__grid form__grid--3">
             <div class="form__group">
                 <label class="form__label" for="dni_pasaporte">DNI / Pasaporte</label>
-                <input type="text" id="dni_pasaporte" name="dni_pasaporte" placeholder="Ej: 35.123.456" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni_pasaporte'] ?? $cliente->getDniPasaporte() ?? '') ?>"
+                <input type="text" id="dni_pasaporte" name="dni_pasaporte" placeholder="Ej: 35.123.456" maxlength="11" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['dni_pasaporte'] ?? $cliente->getDniPasaporte() ?? '') ?>"
                     pattern="^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$"
                     title="Normativa OACI 9303: DNI de 6 a 8 dígitos (ej: 35.123.456) o Pasaporte alfanumérico de 5 a 9 caracteres.">
             </div>
 
             <div class="form__group">
                 <label class="form__label" for="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 9 11 1234 5678" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $cliente->getTelefono() ?? '') ?>"
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej: +54 9 11 1234 5678" maxlength="16" class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['telefono'] ?? $cliente->getTelefono() ?? '') ?>"
                     pattern="^\+[0-9]{8,15}$"
                     title="Formato internacional UIT-T E.164 (ej: +5491123456789). Solo números, sin espacios ni guiones.">
             </div>
 
             <div class="form__group">
                 <label class="form__label" for="mail">Email</label>
-                <input type="email" id="mail" name="mail" placeholder="ejemplo@sires.com" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['mail'] ?? $cliente->getEmail() ?? '') ?>">
+                <input type="email" id="mail" name="mail" placeholder="ejemplo@sires.com" maxlength="254" required class="form__input" autocomplete="off" value="<?= htmlspecialchars($old['mail'] ?? $cliente->getEmail() ?? '') ?>">
             </div>
         </div>
 
@@ -110,7 +110,7 @@
         <div class="form__grid">
             <div class="form__group">
                 <label class="form__label" for="observaciones">Observaciones</label>
-                <textarea id="observaciones" name="observaciones" rows="3" class="form__input" placeholder="Notas u observaciones del cliente (opcional)"><?= htmlspecialchars($old['observaciones'] ?? $cliente->getObservaciones() ?? '') ?></textarea>
+                <textarea id="observaciones" name="observaciones" rows="3" maxlength="500" class="form__input" placeholder="Notas u observaciones del cliente (opcional)"><?= htmlspecialchars($old['observaciones'] ?? $cliente->getObservaciones() ?? '') ?></textarea>
             </div>
         </div>
 
@@ -260,6 +260,13 @@
             inputTelefono.addEventListener('input', function() {
                 const soloDigitos = this.value.replace(/[^0-9]/g, '');
                 this.value = soloDigitos === '' ? '' : '+' + soloDigitos.slice(0, 15);
+            });
+        }
+
+        // --- 🔡 Normalización DNI/Pasaporte (mayúsculas) ---
+        if (inputDni) {
+            inputDni.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
             });
         }
 

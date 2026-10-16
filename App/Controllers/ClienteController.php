@@ -5,6 +5,9 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Clientes;
 use App\Models\Nacionalidad;
+use App\Models\Provincia;
+use App\Models\Localidad;
+use App\Helpers\Validator;
 use App\Helpers\UrlHelper;
 
 class ClienteController
@@ -82,64 +85,18 @@ class ClienteController
         try {
             csrf_check();
 
-            $nombre        = trim($_POST['nombre'] ?? '');
-            $apellido      = trim($_POST['apellido'] ?? '');
-            $dni           = trim($_POST['dni_pasaporte'] ?? '');
-            $telefono      = trim($_POST['telefono'] ?? '');
-            $mail          = trim($_POST['mail'] ?? '');
-            $observaciones = trim($_POST['observaciones'] ?? '');
-            $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
-            $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
-
-            if (empty($nombre)) {
-                throw new Exception("El nombre es obligatorio.");
-            }
-            if (empty($apellido)) {
-                throw new Exception("El apellido es obligatorio.");
-            }
-            if (empty($dni)) {
-                throw new Exception("El DNI/Pasaporte es obligatorio.");
-            }
-            if (!preg_match('/^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/', $dni)) {
-                throw new Exception("El formato del DNI o Pasaporte no es válido (normativa OACI 9303).");
-            }
-            if (empty($mail)) {
-                throw new Exception("El email es obligatorio.");
-            }
-            if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("El formato del email no es válido.");
-            }
-            if ($telefono !== '') {
-                $telefono = '+' . preg_replace('/[^0-9]/', '', $telefono);
-                if (!preg_match('/^\+[0-9]{8,15}$/', $telefono)) {
-                    throw new Exception("El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).");
-                }
-            }
-            if ($idNacionalidad <= 0) {
-                throw new Exception("Debe seleccionar una nacionalidad.");
-            }
-            if ($idProvincia <= 0) {
-                throw new Exception("Debe seleccionar una provincia.");
-            }
-
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
-                throw new Exception("El nombre solo puede contener letras y espacios.");
-            }
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $apellido)) {
-                throw new Exception("El apellido solo puede contener letras y espacios.");
-            }
+            $data = $this->validarYNormalizarCliente($_POST);
 
             $cliente = new Clientes();
-            $cliente->setNombre($nombre);
-            $cliente->setApellido($apellido);
-            $cliente->setDniPasaporte($dni);
-            $cliente->setTelefono($telefono);
-            $cliente->setEmail($mail);
-            $cliente->setObservaciones($observaciones !== '' ? $observaciones : null);
-            $cliente->setIdNacionalidad($idNacionalidad);
-            $cliente->setIdProvincia($idProvincia);
-            $cliente->setIdLocalidad($idLocalidad);
+            $cliente->setNombre($data['nombre']);
+            $cliente->setApellido($data['apellido']);
+            $cliente->setDniPasaporte($data['dni_pasaporte']);
+            $cliente->setTelefono($data['telefono']);
+            $cliente->setEmail($data['email']);
+            $cliente->setObservaciones($data['observaciones']);
+            $cliente->setIdNacionalidad($data['id_nacionalidad']);
+            $cliente->setIdProvincia($data['id_provincia']);
+            $cliente->setIdLocalidad($data['id_localidad']);
 
             $success = $cliente->save($cliente);
 
@@ -216,65 +173,19 @@ class ClienteController
                 throw new Exception("ID de cliente inválido.");
             }
 
-            $nombre        = trim($_POST['nombre'] ?? '');
-            $apellido      = trim($_POST['apellido'] ?? '');
-            $dni           = trim($_POST['dni_pasaporte'] ?? '');
-            $telefono      = trim($_POST['telefono'] ?? '');
-            $mail          = trim($_POST['mail'] ?? '');
-            $observaciones = trim($_POST['observaciones'] ?? '');
-            $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
-            $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
-
-            if (empty($nombre)) {
-                throw new Exception("El nombre es obligatorio.");
-            }
-            if (empty($apellido)) {
-                throw new Exception("El apellido es obligatorio.");
-            }
-            if (empty($dni)) {
-                throw new Exception("El DNI/Pasaporte es obligatorio.");
-            }
-            if (!preg_match('/^(?:[0-9]{6,8}|[0-9]{1,3}(?:\.[0-9]{3}){1,2}|[A-Za-z0-9]{5,9})$/', $dni)) {
-                throw new Exception("El formato del DNI o Pasaporte no es válido (normativa OACI 9303).");
-            }
-            if (empty($mail)) {
-                throw new Exception("El email es obligatorio.");
-            }
-            if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("El formato del email no es válido.");
-            }
-            if ($telefono !== '') {
-                $telefono = '+' . preg_replace('/[^0-9]/', '', $telefono);
-                if (!preg_match('/^\+[0-9]{8,15}$/', $telefono)) {
-                    throw new Exception("El teléfono debe cumplir el formato internacional UIT-T E.164 (ej: +5491123456789).");
-                }
-            }
-            if ($idNacionalidad <= 0) {
-                throw new Exception("Debe seleccionar una nacionalidad.");
-            }
-            if ($idProvincia <= 0) {
-                throw new Exception("Debe seleccionar una provincia.");
-            }
-
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
-                throw new Exception("El nombre solo puede contener letras y espacios.");
-            }
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $apellido)) {
-                throw new Exception("El apellido solo puede contener letras y espacios.");
-            }
+            $data = $this->validarYNormalizarCliente($_POST);
 
             $cliente = new Clientes();
             $cliente->setId((int)$id);
-            $cliente->setNombre($nombre);
-            $cliente->setApellido($apellido);
-            $cliente->setDniPasaporte($dni);
-            $cliente->setTelefono($telefono);
-            $cliente->setEmail($mail);
-            $cliente->setObservaciones($observaciones !== '' ? $observaciones : null);
-            $cliente->setIdNacionalidad($idNacionalidad);
-            $cliente->setIdProvincia($idProvincia);
-            $cliente->setIdLocalidad($idLocalidad);
+            $cliente->setNombre($data['nombre']);
+            $cliente->setApellido($data['apellido']);
+            $cliente->setDniPasaporte($data['dni_pasaporte']);
+            $cliente->setTelefono($data['telefono']);
+            $cliente->setEmail($data['email']);
+            $cliente->setObservaciones($data['observaciones']);
+            $cliente->setIdNacionalidad($data['id_nacionalidad']);
+            $cliente->setIdProvincia($data['id_provincia']);
+            $cliente->setIdLocalidad($data['id_localidad']);
 
             $success = $cliente->update($cliente);
 
@@ -296,5 +207,85 @@ class ClienteController
             header('Location: ' . UrlHelper::to('/dashboard/clients/edit?id=' . urlencode((string)$redirectId)));
             exit;
         }
+    }
+
+    /**
+     * Valida y normaliza los datos de un cliente provenientes del formulario.
+     * Aplica normativa OACI 9303 para DNI/pasaporte, E.164 para teléfono y
+     * verifica la coherencia de la cascada nacionalidad / provincia / localidad.
+     *
+     * @throws Exception cuando algún dato no supera la validación.
+     */
+    private function validarYNormalizarCliente(array $post): array
+    {
+        $nombre         = trim($post['nombre'] ?? '');
+        $apellido       = trim($post['apellido'] ?? '');
+        $dni            = trim($post['dni_pasaporte'] ?? '');
+        $telefono       = trim($post['telefono'] ?? '');
+        $email          = trim($post['mail'] ?? '');
+        $observaciones  = trim($post['observaciones'] ?? '');
+        $idNacionalidad = (int)($post['id_nacionalidad'] ?? 0);
+        $idProvincia    = (int)($post['id_provincia'] ?? 0);
+        $idLocalidad    = !empty($post['id_localidad']) ? (int)$post['id_localidad'] : null;
+
+        // --- Textos libres ---
+        Validator::letrasYEspacios($nombre, 'nombre', Validator::MAX_NOMBRE);
+        Validator::letrasYEspacios($apellido, 'apellido', Validator::MAX_APELLIDO);
+        $dni           = Validator::documentoCliente($dni);
+        $telefono      = Validator::telefonoE164($telefono);
+        $email         = Validator::emailValido($email);
+        $observaciones = Validator::observacionesValidas($observaciones);
+
+        // --- Selects obligatorios ---
+        if ($idNacionalidad <= 0) {
+            throw new Exception("Debe seleccionar una nacionalidad.");
+        }
+        if ($idProvincia <= 0) {
+            throw new Exception("Debe seleccionar una provincia.");
+        }
+
+        // --- Existencia y coherencia de la cascada geográfica ---
+        $nacionalidadModel = new Nacionalidad();
+        if (!$nacionalidadModel->exists($idNacionalidad)) {
+            throw new Exception("La nacionalidad seleccionada no es válida.");
+        }
+
+        $provincias = (new Provincia())->getByPais($idNacionalidad) ?? [];
+        $provinciaValida = false;
+        foreach ($provincias as $prov) {
+            if ((int)$prov->getId() === $idProvincia) {
+                $provinciaValida = true;
+                break;
+            }
+        }
+        if (!$provinciaValida) {
+            throw new Exception("La provincia seleccionada no corresponde a la nacionalidad elegida.");
+        }
+
+        if ($idLocalidad !== null) {
+            $localidades = (new Localidad())->getByProvincia($idProvincia) ?? [];
+            $localidadValida = false;
+            foreach ($localidades as $loc) {
+                if ((int)$loc->getId() === $idLocalidad) {
+                    $localidadValida = true;
+                    break;
+                }
+            }
+            if (!$localidadValida) {
+                throw new Exception("La localidad seleccionada no corresponde a la provincia elegida.");
+            }
+        }
+
+        return [
+            'nombre'         => $nombre,
+            'apellido'       => $apellido,
+            'dni_pasaporte'  => $dni,
+            'telefono'       => $telefono,
+            'email'          => $email,
+            'observaciones'  => $observaciones,
+            'id_nacionalidad' => $idNacionalidad,
+            'id_provincia'   => $idProvincia,
+            'id_localidad'   => $idLocalidad,
+        ];
     }
 }

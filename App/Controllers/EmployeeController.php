@@ -5,6 +5,10 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Models\Rol;
+use App\Models\Nacionalidad;
+use App\Models\Provincia;
+use App\Models\Localidad;
+use App\Helpers\Validator;
 use App\Helpers\UrlHelper; // Importamos el helper para las redirecciones dinámicas
 
 class EmployeeController
@@ -97,78 +101,24 @@ class EmployeeController
         try {
             csrf_check();
 
-            $nombre        = trim($_POST['nombre'] ?? '');
-            $apellido      = trim($_POST['apellido'] ?? '');
-            $email         = trim($_POST['email'] ?? '');
-            $telefono      = trim($_POST['telefono'] ?? '');
-            $dni           = trim($_POST['dni'] ?? '');
-            $cuil          = trim($_POST['cuil'] ?? '');
-            $direccion     = trim($_POST['direccion'] ?? '');
-            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
-            $password      = $_POST['password'] ?? '';
-            $confirmPassword = $_POST['confirm_password'] ?? '';
-            $idRol         = (int)($_POST['id_rol'] ?? 0);
-            $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
-            $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
-
-            if (empty($nombre)) {
-                throw new Exception("El nombre es obligatorio.");
-            }
-            if (empty($apellido)) {
-                throw new Exception("El apellido es obligatorio.");
-            }
-            if (empty($email)) {
-                throw new Exception("El correo electrónico es obligatorio.");
-            }
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("El formato del correo electrónico no es válido.");
-            }
-            if (empty($password)) {
-                throw new Exception("La contraseña es obligatoria.");
-            }
-            if (strlen($password) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $password)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $password)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-            }
-            if ($idRol <= 0) {
-                throw new Exception("Debe seleccionar un rol para el empleado.");
-            }
-            if ($idProvincia <= 0) {
-                throw new Exception("Debe seleccionar una provincia.");
-            }
-            if ($idNacionalidad <= 0) {
-                throw new Exception("Debe seleccionar una nacionalidad.");
-            }
-
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
-                throw new Exception("El nombre solo puede contener letras y espacios.");
-            }
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $apellido)) {
-                throw new Exception("El apellido solo puede contener letras y espacios.");
-            }
+            $data = $this->validarYNormalizarEmpleado($_POST, true);
 
             $usuario = new Usuario();
-            $usuario->setNombre($nombre);
-            $usuario->setApellido($apellido);
-            $usuario->setEmail($email);
-            $usuario->setPassword($password);
+            $usuario->setNombre($data['nombre']);
+            $usuario->setApellido($data['apellido']);
+            $usuario->setEmail($data['email']);
+            $usuario->setPassword($data['password']);
 
-            $usuario->setIdRol($idRol);
-            $usuario->setIdProvincia($idProvincia);
-            $usuario->setIdLocalidad($idLocalidad);
-            $usuario->setIdNacionalidad($idNacionalidad);
+            $usuario->setIdRol($data['id_rol']);
+            $usuario->setIdProvincia($data['id_provincia']);
+            $usuario->setIdLocalidad($data['id_localidad']);
+            $usuario->setIdNacionalidad($data['id_nacionalidad']);
 
-            $usuario->setTelefono($telefono);
-            $usuario->setDni($dni);
-            $usuario->setCuil($cuil);
-            $usuario->setDireccion($direccion);
-            $usuario->setFechaNacimiento($fechaNacimiento);
+            $usuario->setTelefono($data['telefono']);
+            $usuario->setDni($data['dni']);
+            $usuario->setCuil($data['cuil']);
+            $usuario->setDireccion($data['direccion']);
+            $usuario->setFechaNacimiento($data['fecha_nacimiento']);
 
             $success = $usuario->save($usuario);
 
@@ -250,63 +200,23 @@ class EmployeeController
                 throw new Exception("ID de empleado inválido.");
             }
 
-            $nombre        = trim($_POST['nombre'] ?? '');
-            $apellido      = trim($_POST['apellido'] ?? '');
-            $email         = trim($_POST['email'] ?? '');
-            $telefono      = trim($_POST['telefono'] ?? '');
-            $dni           = trim($_POST['dni'] ?? '');
-            $cuil          = trim($_POST['cuil'] ?? '');
-            $direccion     = trim($_POST['direccion'] ?? '');
-            $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
-            $idRol         = (int)($_POST['id_rol'] ?? 0);
-            $idProvincia   = (int)($_POST['id_provincia'] ?? 0);
-            $idLocalidad   = !empty($_POST['id_localidad']) ? (int)$_POST['id_localidad'] : null;
-            $idNacionalidad = (int)($_POST['id_nacionalidad'] ?? 0);
-
-            if (empty($nombre)) {
-                throw new Exception("El nombre es obligatorio.");
-            }
-            if (empty($apellido)) {
-                throw new Exception("El apellido es obligatorio.");
-            }
-            if (empty($email)) {
-                throw new Exception("El correo electrónico es obligatorio.");
-            }
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("El formato del correo electrónico no es válido.");
-            }
-            if ($idRol <= 0) {
-                throw new Exception("Debe seleccionar un rol para el empleado.");
-            }
-            if ($idProvincia <= 0) {
-                throw new Exception("Debe seleccionar una provincia.");
-            }
-            if ($idNacionalidad <= 0) {
-                throw new Exception("Debe seleccionar una nacionalidad.");
-            }
-
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $nombre)) {
-                throw new Exception("El nombre solo puede contener letras y espacios.");
-            }
-            if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u", $apellido)) {
-                throw new Exception("El apellido solo puede contener letras y espacios.");
-            }
+            $data = $this->validarYNormalizarEmpleado($_POST, false);
 
             $usuario = new Usuario();
             $usuario->setId((int)$id);
-            $usuario->setNombre($nombre);
-            $usuario->setApellido($apellido);
-            $usuario->setEmail($email);
-            $usuario->setIdRol($idRol);
-            $usuario->setIdProvincia($idProvincia);
-            $usuario->setIdLocalidad($idLocalidad);
-            $usuario->setIdNacionalidad($idNacionalidad);
+            $usuario->setNombre($data['nombre']);
+            $usuario->setApellido($data['apellido']);
+            $usuario->setEmail($data['email']);
+            $usuario->setIdRol($data['id_rol']);
+            $usuario->setIdProvincia($data['id_provincia']);
+            $usuario->setIdLocalidad($data['id_localidad']);
+            $usuario->setIdNacionalidad($data['id_nacionalidad']);
 
-            $usuario->setTelefono($telefono);
-            $usuario->setDni($dni);
-            $usuario->setCuil($cuil);
-            $usuario->setDireccion($direccion);
-            $usuario->setFechaNacimiento($fechaNacimiento);
+            $usuario->setTelefono($data['telefono']);
+            $usuario->setDni($data['dni']);
+            $usuario->setCuil($data['cuil']);
+            $usuario->setDireccion($data['direccion']);
+            $usuario->setFechaNacimiento($data['fecha_nacimiento']);
 
             $success = $usuario->update($usuario);
 
@@ -328,6 +238,126 @@ class EmployeeController
             header('Location: ' . UrlHelper::to('/dashboard/employees/edit?id=' . urlencode((string)$redirectId)));
             exit;
         }
+    }
+
+    /**
+     * Valida y normaliza los datos de un empleado provenientes del formulario.
+     * Aplica reglas de empresa: DNI argentino, CUIL con dígito verificador
+     * (obligatorio solo para argentinos), teléfono E.164 y consistencia de la
+     * cascada nacionalidad / provincia / localidad.
+     *
+     * @throws Exception cuando algún dato no supera la validación.
+     */
+    private function validarYNormalizarEmpleado(array $post, bool $requierePassword): array
+    {
+        $nombre          = trim($post['nombre'] ?? '');
+        $apellido        = trim($post['apellido'] ?? '');
+        $email           = trim($post['email'] ?? '');
+        $telefono        = trim($post['telefono'] ?? '');
+        $dni             = trim($post['dni'] ?? '');
+        $cuil            = trim($post['cuil'] ?? '');
+        $direccion       = trim($post['direccion'] ?? '');
+        $fechaNacimiento = trim($post['fecha_nacimiento'] ?? '');
+        $password        = $post['password'] ?? '';
+        $confirmPassword = $post['confirm_password'] ?? '';
+        $idRol           = (int)($post['id_rol'] ?? 0);
+        $idProvincia     = (int)($post['id_provincia'] ?? 0);
+        $idLocalidad     = !empty($post['id_localidad']) ? (int)$post['id_localidad'] : null;
+        $idNacionalidad  = (int)($post['id_nacionalidad'] ?? 0);
+
+        // --- Textos libres ---
+        Validator::letrasYEspacios($nombre, 'nombre', Validator::MAX_NOMBRE);
+        Validator::letrasYEspacios($apellido, 'apellido', Validator::MAX_APELLIDO);
+        $email           = Validator::emailValido($email);
+        $telefono        = Validator::telefonoE164($telefono);
+        $direccion       = Validator::direccionValida($direccion);
+        $fechaNacimiento = $fechaNacimiento !== '' ? Validator::fechaNacimientoValida($fechaNacimiento) : '';
+        $dni             = $dni !== '' ? Validator::dniEmpleado($dni) : '';
+
+        // --- Selects obligatorios ---
+        if ($idRol <= 0) {
+            throw new Exception("Debe seleccionar un rol para el empleado.");
+        }
+        if ($idNacionalidad <= 0) {
+            throw new Exception("Debe seleccionar una nacionalidad.");
+        }
+        if ($idProvincia <= 0) {
+            throw new Exception("Debe seleccionar una provincia.");
+        }
+
+        // --- Existencia y coherencia de la cascada geográfica ---
+        $nacionalidadModel = new Nacionalidad();
+        if (!$nacionalidadModel->exists($idNacionalidad)) {
+            throw new Exception("La nacionalidad seleccionada no es válida.");
+        }
+
+        $provincias = (new Provincia())->getByPais($idNacionalidad) ?? [];
+        $provinciaValida = false;
+        foreach ($provincias as $prov) {
+            if ((int)$prov->getId() === $idProvincia) {
+                $provinciaValida = true;
+                break;
+            }
+        }
+        if (!$provinciaValida) {
+            throw new Exception("La provincia seleccionada no corresponde a la nacionalidad elegida.");
+        }
+
+        if ($idLocalidad !== null) {
+            $localidades = (new Localidad())->getByProvincia($idProvincia) ?? [];
+            $localidadValida = false;
+            foreach ($localidades as $loc) {
+                if ((int)$loc->getId() === $idLocalidad) {
+                    $localidadValida = true;
+                    break;
+                }
+            }
+            if (!$localidadValida) {
+                throw new Exception("La localidad seleccionada no corresponde a la provincia elegida.");
+            }
+        }
+
+        // --- CUIL: obligatorio y con dígito verificador para argentinos; opcional para extranjeros ---
+        if ($nacionalidadModel->esArgentina($idNacionalidad)) {
+            if ($cuil === '') {
+                throw new Exception("El CUIL es obligatorio para empleados argentinos.");
+            }
+            $cuil = Validator::cuilValido($cuil);
+
+            // Para argentinos el CUIL debe derivar del DNI ingresado
+            if ($dni === '') {
+                throw new Exception("El DNI es obligatorio para empleados argentinos.");
+            }
+            if (!Validator::cuilCoincideConDni($cuil, $dni)) {
+                throw new Exception("El CUIL no coincide con el DNI ingresado.");
+            }
+        } else {
+            $cuil = $cuil !== '' ? Validator::cuilValido($cuil) : '';
+        }
+
+        // --- Credenciales (solo en alta) ---
+        if ($requierePassword) {
+            Validator::passwordValida($password);
+            if ($password !== $confirmPassword) {
+                throw new Exception("Las contraseñas ingresadas no coinciden.");
+            }
+        }
+
+        return [
+            'nombre'           => $nombre,
+            'apellido'         => $apellido,
+            'email'            => $email,
+            'telefono'         => $telefono,
+            'dni'              => $dni,
+            'cuil'             => $cuil,
+            'direccion'        => $direccion,
+            'fecha_nacimiento' => $fechaNacimiento,
+            'password'         => $password,
+            'id_rol'           => $idRol,
+            'id_provincia'     => $idProvincia,
+            'id_localidad'     => $idLocalidad,
+            'id_nacionalidad'  => $idNacionalidad,
+        ];
     }
 
     /**

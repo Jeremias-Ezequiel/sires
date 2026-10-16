@@ -50,6 +50,42 @@ class Nacionalidad extends Model
         $this->id = $id;
     }
 
+    /**
+     * Verifica si un id de nacionalidad existe en la tabla.
+     */
+    public function exists(int $id): bool
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM Nacionalidades WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            return (int)$stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en Nacionalidad::exists: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Determina si el id de nacionalidad corresponde a Argentina.
+     * Soporta duplicados normalizando al id canónico (el de menor id por nombre).
+     */
+    public function esArgentina(int $id): bool
+    {
+        try {
+            $sql = "SELECT MIN(id) AS id
+                    FROM Nacionalidades
+                    WHERE LOWER(TRIM(nombre)) IN ('argentina', 'republica argentina', 'república argentina')
+                    HAVING id IS NOT NULL";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $canonical = (int)$stmt->fetchColumn();
+            return $canonical > 0 && $canonical === $id;
+        } catch (PDOException $e) {
+            error_log("Error en Nacionalidad::esArgentina: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getDescripcion(): string
     {
         return $this->descripcion;
