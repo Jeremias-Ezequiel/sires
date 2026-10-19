@@ -86,6 +86,11 @@
             </div>
         </div>
 
+        <div id="aviso-piso-solo-simple" class="alert alert--warning" style="display: none; margin-bottom: 25px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>En el piso seleccionado solo se pueden registrar habitaciones <strong>simples</strong>.</span>
+        </div>
+
         <div class="form__section-title" id="preview-title" style="display: none;">
             <i class="fas fa-eye"></i> Vista Previa
         </div>
@@ -104,6 +109,8 @@
 <script>
     const HABITACIONES = <?= json_encode($todasHabitaciones ?? []) ?>;
     const PISOS = <?= json_encode($pisos ?? []) ?>;
+    const PISOS_SOLO_SIMPLE = <?= json_encode(business_rules('habitacion.pisos_solo_simple') ?? []) ?>;
+    const TIPO_SIMPLE_ID = <?= (int)\App\Models\TipoHabitacion::SIMPLE ?>;
 
     document.addEventListener('DOMContentLoaded', function() {
         const selectPiso = document.getElementById('piso');
@@ -113,6 +120,34 @@
         const previewTitle = document.getElementById('preview-title');
         const roomPreview = document.getElementById('room-preview');
         const inputPrecio = document.getElementById('precio_noche_base');
+        const selectTipo = document.getElementById('id_tipo_habitacion');
+        const avisoPisoSoloSimple = document.getElementById('aviso-piso-solo-simple');
+
+        function aplicarReglaPisosSoloSimple() {
+            const piso = selectPiso.value !== '' ? parseInt(selectPiso.value) : NaN;
+
+            const habilitarTipo = function() {
+                Array.from(selectTipo.options).forEach(function(opt) {
+                    opt.disabled = false;
+                });
+                if (avisoPisoSoloSimple) avisoPisoSoloSimple.style.display = 'none';
+            };
+
+            const restringirASimple = function() {
+                Array.from(selectTipo.options).forEach(function(opt) {
+                    const val = parseInt(opt.value);
+                    opt.disabled = !(val === TIPO_SIMPLE_ID);
+                    if (val === TIPO_SIMPLE_ID) opt.selected = true;
+                });
+                if (avisoPisoSoloSimple) avisoPisoSoloSimple.style.display = 'flex';
+            };
+
+            if (PISOS_SOLO_SIMPLE.includes(piso)) {
+                restringirASimple();
+            } else {
+                habilitarTipo();
+            }
+        }
 
         function getNextRoomNumber(piso) {
             let max = 0;
@@ -164,6 +199,7 @@
         }
 
         selectPiso.addEventListener('change', actualizarPreview);
+        selectPiso.addEventListener('change', aplicarReglaPisosSoloSimple);
 
         if (inputPrecio) {
             inputPrecio.addEventListener('keypress', function(e) {
@@ -194,5 +230,6 @@
         }
 
         actualizarPreview();
+        aplicarReglaPisosSoloSimple();
     });
 </script>

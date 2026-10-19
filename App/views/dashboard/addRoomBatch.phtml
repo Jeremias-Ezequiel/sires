@@ -69,6 +69,11 @@
             </div>
         </div>
 
+        <div id="aviso-piso-solo-simple" class="alert alert--warning" style="display: none; margin-bottom: 25px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Este piso solo admite habitaciones <strong>simples</strong>; por eso el tipo de habitación quedó restringido.</span>
+        </div>
+
         <div class="form__section-title">
             <i class="fas fa-sort-numeric-down"></i> Rango Numérico
         </div>
@@ -105,12 +110,30 @@
 </section>
 
 <script>
+    const PISOS_SOLO_SIMPLE = <?= json_encode(business_rules('habitacion.pisos_solo_simple') ?? []) ?>;
+    const TIPO_SIMPLE_ID = <?= (int)\App\Models\TipoHabitacion::SIMPLE ?>;
+
     document.addEventListener('DOMContentLoaded', function() {
         const inputPiso = document.getElementById('piso');
         const inputDesde = document.getElementById('numero_desde');
         const inputHasta = document.getElementById('numero_hasta');
         const inputPrecio = document.getElementById('precio_noche_base');
         const preview = document.getElementById('batch-preview');
+        const selectTipo = document.getElementById('id_tipo_habitacion');
+        const avisoPisoSoloSimple = document.getElementById('aviso-piso-solo-simple');
+
+        function aplicarReglaPisosSoloSimple() {
+            const piso = inputPiso.value !== '' ? parseInt(inputPiso.value) : NaN;
+
+            if (PISOS_SOLO_SIMPLE.includes(piso)) {
+                Array.from(selectTipo.options).forEach(function(opt) {
+                    const val = parseInt(opt.value);
+                    opt.disabled = !(val === TIPO_SIMPLE_ID);
+                    if (val === TIPO_SIMPLE_ID) opt.selected = true;
+                });
+                if (avisoPisoSoloSimple) avisoPisoSoloSimple.style.display = 'flex';
+            }
+        }
 
         function actualizarPreview() {
             const piso = parseInt(inputPiso.value) || 0;
@@ -178,6 +201,7 @@
             });
         }
 
+        aplicarReglaPisosSoloSimple();
         actualizarPreview();
     });
 </script>

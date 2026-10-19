@@ -33,3 +33,21 @@ function csrf_check(): void {
         throw new \Exception("Token de seguridad inválido. Intente nuevamente.");
     }
 }
+
+function business_rules(?string $path = null) {
+    $config = require __DIR__ . '/../Config/BusinessRules.php';
+
+    if ($path === null) {
+        return $config;
+    }
+
+    $current = $config;
+    foreach (explode('.', $path) as $segment) {
+        if (!is_array($current) || !array_key_exists($segment, $current)) {
+            return null;
+        }
+        $current = $current[$segment];
+    }
+
+    return $current;
+}

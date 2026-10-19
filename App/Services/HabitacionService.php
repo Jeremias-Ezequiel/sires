@@ -7,6 +7,7 @@ namespace App\Services;
 use Exception;
 use App\Models\Habitacion;
 use App\Models\MotivoBloqueo;
+use App\Rules\RuleEngine;
 use PDO;
 use PDOException;
 
@@ -33,6 +34,12 @@ class HabitacionService
         if ($precioNoche > Habitacion::MAX_PRICE) {
             throw new Exception("El precio por noche no puede superar los $" . number_format(Habitacion::MAX_PRICE, 2, ',', '.') . ".");
         }
+
+        RuleEngine::validate('habitacion.alta', [
+            'piso'               => $piso,
+            'id_tipo_habitacion' => $idTipo,
+            'precio_noche'       => $precioNoche,
+        ]);
 
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
@@ -99,6 +106,12 @@ class HabitacionService
         if ($total > 100) {
             throw new Exception("No se pueden generar más de 100 habitaciones por lote.");
         }
+
+        RuleEngine::validate('habitacion.alta', [
+            'piso'               => $piso,
+            'id_tipo_habitacion' => $idTipo,
+            'precio_noche'       => $precioNoche,
+        ]);
 
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
