@@ -1,36 +1,40 @@
 <?php
 $pageTitle = 'Iniciar Sesión | SIRES';
-$pageCss   = ['login.css'];
+$pageCss   = [];
+$pageExtraHead = '
+    <link rel="preload" href="' . asset('fonts/montserrat-400.woff2') . '" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="' . asset('fonts/montserrat-600.woff2') . '" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="' . asset('fonts/montserrat-700.woff2') . '" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="' . asset('css/login.bundle.css') . '?v=1">
+';
 include __DIR__ . '/../partials/head.phtml';
 ?>
 
     <header class="encabezado-fotos">
         <div class="carrusel-container">
             <div class="carrusel-track">
-                <!-- Cargando las imágenes usando la función global asset() -->
-                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="Hotel 1">
-                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="Hotel 2">
-                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="Hotel 3">
-                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="Hotel 4">
-                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="Hotel 5">
-                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="Hotel 6">
-                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="Hotel 7">
-                <img src="<?= asset('img/login/hotel-img8.webp') ?>" alt="Hotel 8">
+                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="Hotel 1" width="280" height="230" fetchpriority="high">
+                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="Hotel 2" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="Hotel 3" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="Hotel 4" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="Hotel 5" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="Hotel 6" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="Hotel 7" width="280" height="230" loading="lazy">
+                <img src="<?= asset('img/login/hotel-img8.webp') ?>" alt="Hotel 8" width="280" height="230" loading="lazy">
 
-                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="Hotel 1 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="Hotel 2 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="Hotel 3 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="Hotel 4 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="Hotel 5 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="Hotel 6 (Repetida)">
-                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="Hotel 7 (Repetira)">
+                <img src="<?= asset('img/login/hotel-img1.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img2.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img3.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img4.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img5.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img6.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
+                <img src="<?= asset('img/login/hotel-img7.webp') ?>" alt="" width="280" height="230" loading="lazy" aria-hidden="true">
             </div>
         </div>
     </header>
     <div class="main-container">
         <div class="logo-side">
-            <!-- Cargando el logo mediante la función global asset() -->
-            <img src="<?= asset('img/login/logo.png') ?>" alt="Logo SIRES" class="logo-formulario">
+            <img src="<?= asset('img/login/logo.webp') ?>" alt="Logo SIRES - Sistema de Reservas" class="logo-formulario" width="429" height="429" fetchpriority="high">
         </div>
 
         <div class="login-container">
@@ -39,7 +43,7 @@ include __DIR__ . '/../partials/head.phtml';
 
             <?php if (!empty($errorMessage)): ?>
                 <div class="alert alert--error">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                     <?= htmlspecialchars($errorMessage) ?>
                 </div>
             <?php endif; ?>
@@ -51,14 +55,12 @@ include __DIR__ . '/../partials/head.phtml';
             if (!empty($_SESSION['flash_success'])):
             ?>
                 <div class="alert alert--success">
-                    <i class="fa-solid fa-circle-check"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                     <?= htmlspecialchars($_SESSION['flash_success']) ?>
                 </div>
-                <?php unset($_SESSION['flash_success']); // La limpiamos para que no vuelva a aparecer 
-                ?>
+                <?php unset($_SESSION['flash_success']); ?>
             <?php endif; ?>
 
-            <!-- Pasando la ruta de procesamiento del formulario por la función global url() -->
             <form action="<?= url('/login/process') ?>" method="post" novalidate autocomplete="off">
                 <?= csrf_field() ?>
 
@@ -68,11 +70,10 @@ include __DIR__ . '/../partials/head.phtml';
                 <label class="form__label">CONTRASEÑA</label>
                 <div class="form__password">
                     <input type="password" name="password" id="passInput" class="form__input" placeholder="••••••••" autocomplete="new-password">
-                    <i class="fa-solid fa-eye" id="togglePass"></i>
+                    <svg id="togglePass" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-label="Mostrar contraseña" role="button" tabindex="0"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 </div>
 
                 <div class="forgot-password-box">
-                    <!-- Pasando el enlace de recuperación por la función global url() -->
                     <a href="<?= url('/password/recovery') ?>" class="link-yellow">¿Olvidaste tu contraseña?</a>
                 </div>
 
@@ -88,7 +89,10 @@ include __DIR__ . '/../partials/head.phtml';
         togglePass.addEventListener('click', function() {
             const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passInput.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
+            this.innerHTML = type === 'password'
+                ? '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>'
+                : '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>';
+            this.setAttribute('aria-label', type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña');
         });
     </script>
 

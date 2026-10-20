@@ -2,6 +2,7 @@
 $pageTitle    = $pageTitle ?? 'SIRES | Sistema de Reservas';
 $pageCss      = $pageCss ?? [];
 $pageExtraHead = $pageExtraHead ?? '';
+$isLogin      = ($pageTitle === 'Iniciar Sesión | SIRES');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -17,14 +18,23 @@ $pageExtraHead = $pageExtraHead ?? '';
     <link rel="icon" type="image/png" sizes="192x192" href="<?= asset('img/favicon-192x192.png') ?>">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= asset('img/apple-touch-icon.png') ?>">
 
+    <?php if (!$isLogin): ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <?php endif; ?>
+
+    <?php if (!$isLogin): ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <?php endif; ?>
 
     <!-- Estilos globales y específicos de cada página -->
+    <?php if (!$isLogin): ?>
     <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
     <?php foreach ((array)$pageCss as $css): ?>
         <link rel="stylesheet" href="<?= asset('css/pages/' . ltrim($css, '/')) ?>">
     <?php endforeach; ?>
+    <?php endif; ?>
 
     <?= $pageExtraHead ?>
 </head>
