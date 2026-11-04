@@ -4,7 +4,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Rol;
 
 $pageTitle = $pageTitle ?? 'Dashboard | SIRES';
-$pageCss   = $pageCss ?? ['dashboard.css?v=1.1'];
+$pageCss   = $pageCss ?? ['dashboard.min.css?v=1.2'];
 include __DIR__ . '/../partials/head.phtml';
 ?>
 
@@ -13,7 +13,7 @@ include __DIR__ . '/../partials/head.phtml';
         <aside class="sidebar">
             <div class="logo-container">
                 <!-- Cargando el logo mediante la función global asset() -->
-                <img src="<?= asset('img/login/logo.png') ?>" alt="Logo SIRES" class="logo-sires">
+                <img src="<?= asset('img/login/logo.webp') ?>" alt="Logo SIRES" class="logo-sires" width="430" height="430">
             </div>
             <nav>
                 <ul class="nav-links">
