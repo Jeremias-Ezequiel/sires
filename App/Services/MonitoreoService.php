@@ -73,6 +73,7 @@ class MonitoreoService
                 && $minutosDesdeOk <= $def['tolerancia'];
 
             $problema = null;
+            $porScheduler = false;
             if (!isset($eventos[$clave]) && !$cronAlDia) {
                 $problema = 'El EVENT no existe en la base (correr los scripts 01 y 02).';
             } elseif (isset($eventos[$clave]) && $eventos[$clave]['status'] !== 'ENABLED' && !$cronAlDia) {
@@ -82,16 +83,18 @@ class MonitoreoService
             } elseif ($ultima !== null && $ultima['ok'] === null
                 && $ahora - strtotime((string)$ultima['inicio']) > self::MINUTOS_CORRIDA_COLGADA * 60) {
                 $problema = 'Una corrida quedó sin terminar.';
-            } elseif ($schedulerOk || $cronAlDia) {
-                if ($ultimaOk === null) {
-                    // Recién instalado: se espera la primera corrida antes de alertar
-                    $creado = isset($eventos[$clave]) ? strtotime((string)$eventos[$clave]['created']) : $ahora;
-                    if ($ahora - $creado > $def['tolerancia'] * 60) {
-                        $problema = 'Nunca corrió.';
-                    }
-                } elseif ($minutosDesdeOk > $def['tolerancia']) {
-                    $problema = 'No corre desde hace ' . self::duracion($minutosDesdeOk) . '.';
+            } elseif (!$schedulerOk && !$cronAlDia) {
+                // Sin programador los EVENTs no corren, aunque la última corrida haya sido reciente
+                $problema = 'No corre: el programador de tareas de la base está apagado.';
+                $porScheduler = true;
+            } elseif ($ultimaOk === null) {
+                // Recién instalado: se espera la primera corrida antes de alertar
+                $creado = isset($eventos[$clave]) ? strtotime((string)$eventos[$clave]['created']) : $ahora;
+                if ($ahora - $creado > $def['tolerancia'] * 60) {
+                    $problema = 'Nunca corrió.';
                 }
+            } elseif ($minutosDesdeOk > $def['tolerancia']) {
+                $problema = 'No corre desde hace ' . self::duracion($minutosDesdeOk) . '.';
             }
 
             $procesos[$clave] = $def + [
@@ -99,6 +102,7 @@ class MonitoreoService
                 'ultima_ok'        => $ultimaOk,
                 'minutos_desde_ok' => $minutosDesdeOk,
                 'problema'         => $problema,
+                'por_scheduler'    => $porScheduler,
             ];
         }
 
@@ -114,14 +118,15 @@ class MonitoreoService
         $estado = $this->estado();
         $alertas = [];
 
-        $procesosAlDia = array_filter($estado['procesos'], fn($p) => $p['problema'] === null);
-        if (!$estado['scheduler_ok'] && count($procesosAlDia) < count(self::PROCESOS)) {
+        // Programador apagado: una sola alerta (todos los procesos afectados dependen de él)
+        $afectados = array_filter($estado['procesos'], fn($p) => $p['por_scheduler']);
+        if ($afectados !== []) {
             $alertas[] = $this->alerta('El programador de tareas de la base está apagado (event_scheduler = '
-                . $estado['scheduler'] . '): los procesos automáticos no corren.');
+                . $estado['scheduler'] . '): no corren ' . implode(', ', array_column($afectados, 'nombre')) . '.');
         }
 
         foreach ($estado['procesos'] as $p) {
-            if ($p['problema'] !== null && ($estado['scheduler_ok'] || str_contains($p['problema'], 'falló'))) {
+            if ($p['problema'] !== null && !$p['por_scheduler']) {
                 $alertas[] = $this->alerta($p['nombre'] . ': ' . $p['problema']);
             }
         }
