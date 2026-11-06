@@ -3,6 +3,20 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-11-06
+
+### Agregado
+- **Tests de unidad** (PHPUnit) de las reglas de negocio: precio y descuentos por ocupación, seña
+  mínima, penalidad de cancelación, late fee, retención por No-Show y políticas según la fecha de la reserva.
+- **Tests de integración** contra la base de testing: cada test termina con `ROLLBACK` y no deja datos.
+- **Tests end-to-end** (Playwright) dentro del repositorio, en `tests/e2e`, con specs nuevos de
+  limpieza, auditoría y procesos automáticos.
+- **PHPStan** nivel 5 y `composer check` (sintaxis + análisis estático + tests de unidad).
+
+### Cambiado
+- Las reglas de cálculo pasan a `App/Dominio`, sin acceso a la base; los Services las usan sin cambiar
+  su comportamiento.
+
 ## [1.3.0] - 2026-11-06
 
 ### Agregado
