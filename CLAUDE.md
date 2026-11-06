@@ -8,7 +8,7 @@ Gestión de reservas de hotel. PHP 8+ sin framework, arquitectura MVC propia sob
 - Apache con `.htaccess` (rewrites todo a `index.php`; bloquea `.env`, `App/`, `vendor/` y `composer.*`).
 - MySQL/MariaDB vía PDO (prepared statements, excepciones, `FETCH_ASSOC`).
 - Composer solo para autoload (`App\` → `App/`) + helpers y dependencias: `vlucas/phpdotenv`, `nikic/fast-route`, `phpmailer/phpmailer`.
-- Deploy en subdirectorio `/sires`. No hay tests ni linter configurados; verificar con `php -l` sobre los archivos modificados.
+- Deploy en subdirectorio `/sires`. Verificar con `composer check` (`php -l` + PHPStan nivel 5 + tests de unidad); ver "Tests".
 
 ## Estructura y flujo
 
@@ -77,6 +77,14 @@ $r->addRoute('GET', '/dashboard/employees', [
 - `cron/*.php` quedan como **respaldo**: cargan `cron/bootstrap.php` (autoload, dotenv, zona horaria, solo CLI) y delegan en `PagoService::ejecutarCortePagos()`, `PagoService::aplicarLateCheckout()` y `ReservaService::liberarNoShowConPago()`. Loguean en `logs/` (gitignored).
 - Si se cambia la lógica de uno de esos métodos, actualizar también el EVENT equivalente en la BD (y viceversa).
 - Monitoreo: cada EVENT registra su corrida en `Ejecuciones_Automaticas` (INSERT al empezar, UPDATE al terminar o en el EXIT HANDLER); los cron lo hacen con `MonitoreoService::ejecutarConRegistro()`. Un proceso automático nuevo debe sumarse a `MonitoreoService::PROCESOS`. El dump no trae EVENTs: viven en los scripts 01 y 02.
+
+## Tests
+
+- `composer check` antes de cada commit. Dependencias de desarrollo: PHPUnit 11 y PHPStan 2 (`require-dev`).
+- **Unidad** (`tests/Unidad`, suite por defecto): reglas puras de `App/Dominio` (`Tarifa`, `ReglasPago`, `ReglasReserva`, `PoliticaReserva`, `ConfiguracionVersionada`). Sin PDO ni `date()` implícito: fechas, hora actual y configuración entran por parámetro. Una regla de negocio nueva va ahí y se testea; el Service solo lee la base y delega.
+- **Integración** (`tests/Integracion`, `composer test:integracion`): extienden `TestIntegracion`; corren dentro de la VM con su `.env`. `PdoConSavepoints` convierte las transacciones de los Services en SAVEPOINTs y el test termina con ROLLBACK. Nunca crear un `.env` nuevo ni levantar una base local.
+- **E2E** (`tests/e2e`, Playwright, `npx playwright test` desde esa carpeta): credenciales en `tests/e2e/.env` (no se versiona). Un spec que cambia datos sin vuelta atrás va con `@muta` y `test.skip(process.env.E2E_MUTAR !== '1')`.
+- PHPStan: no bajar el nivel ni sumar `ignoreErrors` sin un comentario que explique el falso positivo.
 
 ## Idioma
 

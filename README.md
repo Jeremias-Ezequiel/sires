@@ -69,15 +69,39 @@ reservas ya hechas. Las operativas (horarios, corte de pagos, máximo de noches)
 - Bloqueo temporal tras intentos fallidos de login y límite de pedidos de recuperación de contraseña.
 - Prepared statements en todas las consultas y escape de salida en las vistas.
 
-## Verificación
+## Tests y verificación
 
-No hay tests unitarios en el repositorio. Antes de subir cambios:
+Requieren las dependencias de desarrollo (`composer install`, sin `--no-dev`) y PHP 8.2 o superior.
+
+| Comando | Qué hace |
+|---|---|
+| `composer check` | `php -l` sobre todo el PHP, PHPStan nivel 5 y los tests de unidad. Correrlo antes de cada commit. |
+| `composer test` | Tests de unidad (`tests/Unidad`): reglas de `App/Dominio` sin base de datos. |
+| `composer phpstan` | Análisis estático (`phpstan.neon.dist`). |
+| `composer test:integracion` | Tests de integración (`tests/Integracion`) contra la base real. |
+
+**Unidad.** La lógica pura (precio por noche y descuentos por ocupación, seña mínima, penalidad de
+cancelación, late fee, retención por No-Show y lectura de políticas versionadas) vive en `App/Dominio`,
+sin PDO. Los Services la usan; los tests le pasan fechas y configuraciones fijas.
+
+**Integración.** Se corre dentro de la VM de testing, con el `.env` que ya tiene el proyecto ahí
+(no se crea otro). Cada test abre una transacción y termina con `ROLLBACK`: las transacciones de los
+Services pasan a ser `SAVEPOINT`s dentro de ella, así que la base queda igual. Sin `DB_HOST` o sin
+`pdo_mysql` los tests se saltean.
+
+**End-to-end (Playwright).** En `tests/e2e`, con su propio `package.json`, contra la VM:
 
 ```bash
-find App index.php cron \( -name '*.php' -o -name '*.phtml' \) -print0 | xargs -0 -n1 php -l | grep -v '^No syntax'
+cd tests/e2e
+cp .env.example .env      # URL de la VM y usuarios de prueba por rol
+npm ci
+npx playwright install chromium
+npx playwright test                  # toda la suite
+npx playwright test auditoria        # un archivo
 ```
 
-Las pruebas end-to-end (Playwright) se mantienen fuera de este repositorio.
+Corren con un solo worker porque comparten la base de testing. Varios specs crean reservas; los
+marcados `@muta` hacen cambios que no se pueden volver atrás y solo corren con `E2E_MUTAR=1`.
 
 ## Versionado
 
