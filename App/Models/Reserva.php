@@ -33,6 +33,16 @@ class Reserva extends Model
     public const ESTADO_NO_SHOW = EstadoReserva::NO_SHOW;
     public const ESTADO_NO_SHOW_CON_PAGO = EstadoReserva::NO_SHOW_CON_PAGO;
 
+    /** Días hacia adelante para avisar de reservas pendientes de pago (alerta del inicio). */
+    public const DIAS_AVISO_SIN_PAGO = 3;
+
+    /** Filtros de alerta del inicio que entiende el listado de reservas (?alerta=...). */
+    public const ALERTAS = [
+        'sin_pago_proximas'  => 'Pendientes de pago que llegan en los próximos ' . self::DIAS_AVISO_SIN_PAGO . ' días',
+        'llegadas_atrasadas' => 'Confirmadas que no hicieron check-in',
+        'salidas_vencidas'   => 'Huéspedes con la salida vencida sin check-out',
+    ];
+
     public function countReservasHoy(?string $fecha = null): int
     {
         $fecha = $fecha ?? date('Y-m-d');
@@ -115,10 +125,12 @@ class Reserva extends Model
         ?string $estado,
         ?string $canal,
         int $limit,
-        int $offset
+        int $offset,
+        ?string $alerta = null
     ): array {
         $conditions = [];
         $params = [];
+        $this->aplicarFiltroAlerta($alerta, $conditions, $params);
 
         if ($search !== null && $search !== '') {
             $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
@@ -171,10 +183,11 @@ class Reserva extends Model
         }
     }
 
-    public function countAllWithFilters(?string $search, ?string $estado, ?string $canal): int
+    public function countAllWithFilters(?string $search, ?string $estado, ?string $canal, ?string $alerta = null): int
     {
         $conditions = [];
         $params = [];
+        $this->aplicarFiltroAlerta($alerta, $conditions, $params);
 
         if ($search !== null && $search !== '') {
             $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
@@ -209,6 +222,37 @@ class Reserva extends Model
         } catch (PDOException $e) {
             error_log("Error en Reserva::countAllWithFilters: " . $e->getMessage());
             throw new Exception("Error en la base de datos al contar reservas.");
+        }
+    }
+
+    /**
+     * Mismas condiciones que getContadoresAlerta(), para que el listado muestre
+     * exactamente las reservas que cuenta cada alerta del inicio.
+     */
+    private function aplicarFiltroAlerta(?string $alerta, array &$conditions, array &$params): void
+    {
+        if ($alerta === null || !isset(self::ALERTAS[$alerta])) {
+            return;
+        }
+        $hoy = date('Y-m-d');
+        switch ($alerta) {
+            case 'sin_pago_proximas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_entrada BETWEEN :al_hoy AND :al_limite";
+                $params['al_estado'] = self::ESTADO_PENDIENTE;
+                $params['al_hoy'] = $hoy;
+                $params['al_limite'] = date('Y-m-d', strtotime('+' . self::DIAS_AVISO_SIN_PAGO . ' days'));
+                break;
+            case 'llegadas_atrasadas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_entrada < :al_hoy AND r.fecha_salida > :al_hoy2";
+                $params['al_estado'] = self::ESTADO_CONFIRMADA;
+                $params['al_hoy'] = $hoy;
+                $params['al_hoy2'] = $hoy;
+                break;
+            case 'salidas_vencidas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_salida < :al_hoy";
+                $params['al_estado'] = self::ESTADO_EN_CASA;
+                $params['al_hoy'] = $hoy;
+                break;
         }
     }
 

@@ -46,14 +46,20 @@ class BookingController extends Controller
         $hasEstado = isset($vars['estado_filter']) && $vars['estado_filter'] !== '';
         $hasCanal  = isset($vars['canal_filter']) && $vars['canal_filter'] !== '';
 
+        // Filtro que llega desde una alerta del inicio (solo valores conocidos)
+        $alerta = (string)($vars['alerta'] ?? '');
+        if (!isset(Reserva::ALERTAS[$alerta])) { $alerta = ''; }
+        $hasAlerta = $alerta !== '';
+        $alertaTexto = $hasAlerta ? Reserva::ALERTAS[$alerta] : '';
+
         $reservaModel = new Reserva();
 
-        $totalReservas = $reservaModel->countAllWithFilters($search, $estado, $canal);
+        $totalReservas = $reservaModel->countAllWithFilters($search, $estado, $canal, $alerta);
         $totalPages = (int)ceil($totalReservas / $limit);
         if ($totalPages < 1) { $totalPages = 1; }
         if ($currentPage > $totalPages) { $currentPage = $totalPages; $offset = ($currentPage - 1) * $limit; }
 
-        $reservas = $reservaModel->getAllWithFilters($search, $estado, $canal, $limit, $offset);
+        $reservas = $reservaModel->getAllWithFilters($search, $estado, $canal, $limit, $offset, $alerta);
         $estadosReserva = $reservaModel->getEstadosReserva();
         $canalesOrigen  = $reservaModel->getCanalesOrigen();
 

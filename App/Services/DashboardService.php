@@ -16,9 +16,6 @@ use App\Models\TransaccionPago;
  */
 class DashboardService
 {
-    /** Días hacia adelante para avisar de reservas pendientes de pago. */
-    private const DIAS_AVISO_SIN_PAGO = 3;
-
     /** Días que muestra el gráfico de ocupación. */
     private const DIAS_PROYECCION = 7;
 
@@ -56,16 +53,21 @@ class DashboardService
         $operativas = count(array_filter($habitaciones, fn($h) => $h['visual'] !== 'mantenimiento'));
         $ocupadas = ($conteo['ocupada'] ?? 0) + ($conteo['checkout'] ?? 0);
         $porLimpiar = $conteo['limpieza'] ?? 0;
-        $fueraServicio = $conteo['mantenimiento'] ?? 0;
 
         $pendientesCheckin = count(array_filter($llegadas, fn($l) => $l['accion'] !== 'hecho'));
         $pendientesCheckout = count(array_filter($salidas, fn($s) => $s['accion'] !== 'hecho'));
 
-        // Sucias o en limpieza con un huésped que llega hoy: lo más urgente para housekeeping
-        $suciasConLlegada = count(array_filter($habitaciones,
-            fn($h) => $h['visual'] === 'limpieza' && isset($llegaHoy[(int)$h['id']])));
+        // Conteo por estado real (para que cada alerta coincida con el filtro de Habitaciones)
+        $porEstado = array_count_values(array_map(fn($h) => (int)$h['id_estado_habitacion'], $habitaciones));
+        $sucias = $porEstado[Habitacion::ESTADO_SUCIA] ?? 0;
+        $enMantenimiento = $porEstado[Habitacion::ESTADO_MANTENIMIENTO] ?? 0;
+        $bloqueadas = $porEstado[Habitacion::ESTADO_BLOQUEADA] ?? 0;
 
-        $limiteSinPago = date('Y-m-d', strtotime("+" . self::DIAS_AVISO_SIN_PAGO . " days"));
+        // Sucias con un huésped que llega hoy: lo más urgente para housekeeping
+        $suciasConLlegada = count(array_filter($habitaciones, fn($h) =>
+            (int)$h['id_estado_habitacion'] === Habitacion::ESTADO_SUCIA && isset($llegaHoy[(int)$h['id']])));
+
+        $limiteSinPago = date('Y-m-d', strtotime("+" . Reserva::DIAS_AVISO_SIN_PAGO . " days"));
         $contadores = $this->reservaModel->getContadoresAlerta($hoy, $limiteSinPago);
 
         return [
@@ -88,7 +90,7 @@ class DashboardService
             'salidas'      => $salidas,
             'habitaciones' => $habitaciones,
             'conteo'       => $conteo,
-            'alertas'      => $this->armarAlertas($contadores, $porLimpiar, $fueraServicio, $suciasConLlegada),
+            'alertas'      => $this->armarAlertas($contadores, $sucias, $enMantenimiento, $bloqueadas, $suciasConLlegada),
             'proyeccion'   => $this->proyeccionOcupacion($hoy, $operativas),
         ];
     }
@@ -150,44 +152,37 @@ class DashboardService
         }
     }
 
-    private function armarAlertas(array $c, int $porLimpiar, int $fueraServicio, int $suciasConLlegada): array
+    /**
+     * Cada alerta lleva la ruta con el filtro que muestra exactamente lo que cuenta:
+     * reservas (?alerta=, ver Reserva::ALERTAS), pagos (?estado_pago_filter=) o
+     * habitaciones (?status_filter=).
+     */
+    private function armarAlertas(array $c, int $sucias, int $enMantenimiento, int $bloqueadas, int $suciasConLlegada): array
     {
         $alertas = [];
-        if ($suciasConLlegada > 0) {
-            $alertas[] = ['nivel' => 'danger', 'icono' => 'fa-broom',
-                'texto' => $suciasConLlegada . ' habitación(es) sin limpiar con llegada hoy',
-                'ruta' => '/dashboard/rooms'];
-        }
-        if ($c['salidas_vencidas'] > 0) {
-            $alertas[] = ['nivel' => 'danger', 'icono' => 'fa-door-closed',
-                'texto' => $c['salidas_vencidas'] . ' huésped(es) con la salida vencida sin check-out',
-                'ruta' => '/dashboard/booking'];
-        }
-        if ($c['llegadas_atrasadas'] > 0) {
-            $alertas[] = ['nivel' => 'danger', 'icono' => 'fa-user-clock',
-                'texto' => $c['llegadas_atrasadas'] . ' reserva(s) confirmada(s) que no hicieron check-in',
-                'ruta' => '/dashboard/booking'];
-        }
-        if ($c['sin_pago_proximas'] > 0) {
-            $alertas[] = ['nivel' => 'warning', 'icono' => 'fa-hourglass-half',
-                'texto' => $c['sin_pago_proximas'] . ' reserva(s) sin pago que llegan en los próximos ' . self::DIAS_AVISO_SIN_PAGO . ' días',
-                'ruta' => '/dashboard/payments'];
-        }
-        if ($c['a_reembolsar'] > 0) {
-            $alertas[] = ['nivel' => 'warning', 'icono' => 'fa-rotate-left',
-                'texto' => $c['a_reembolsar'] . ' pago(s) a reembolsar',
-                'ruta' => '/dashboard/payments'];
-        }
-        if ($porLimpiar > 0) {
-            $alertas[] = ['nivel' => 'info', 'icono' => 'fa-broom',
-                'texto' => $porLimpiar . ' habitación(es) pendiente(s) de limpieza',
-                'ruta' => '/dashboard/rooms'];
-        }
-        if ($fueraServicio > 0) {
-            $alertas[] = ['nivel' => 'info', 'icono' => 'fa-screwdriver-wrench',
-                'texto' => $fueraServicio . ' habitación(es) en mantenimiento o bloqueada(s)',
-                'ruta' => '/dashboard/rooms'];
-        }
+        $agregar = function (int $n, string $nivel, string $icono, string $texto, string $ruta) use (&$alertas): void {
+            if ($n > 0) {
+                $alertas[] = ['nivel' => $nivel, 'icono' => $icono, 'texto' => $n . ' ' . $texto, 'ruta' => $ruta];
+            }
+        };
+        $sucia = '/dashboard/rooms?status_filter=' . Habitacion::ESTADO_SUCIA;
+
+        $agregar($suciasConLlegada, 'danger', 'fa-broom', 'habitación(es) sucia(s) con llegada hoy', $sucia);
+        $agregar($c['salidas_vencidas'], 'danger', 'fa-door-closed',
+            'huésped(es) con la salida vencida sin check-out', '/dashboard/booking?alerta=salidas_vencidas');
+        $agregar($c['llegadas_atrasadas'], 'danger', 'fa-user-clock',
+            'reserva(s) confirmada(s) que no hicieron check-in', '/dashboard/booking?alerta=llegadas_atrasadas');
+        $agregar($c['sin_pago_proximas'], 'warning', 'fa-hourglass-half',
+            'reserva(s) sin pago que llegan en los próximos ' . Reserva::DIAS_AVISO_SIN_PAGO . ' días',
+            '/dashboard/booking?alerta=sin_pago_proximas');
+        $agregar($c['a_reembolsar'], 'warning', 'fa-rotate-left', 'pago(s) a reembolsar',
+            '/dashboard/payments?estado_pago_filter=' . ResumenPago::ESTADO_A_REEMBOLSAR);
+        $agregar($sucias, 'info', 'fa-broom', 'habitación(es) sucia(s) por limpiar', $sucia);
+        $agregar($enMantenimiento, 'info', 'fa-screwdriver-wrench', 'habitación(es) en mantenimiento',
+            '/dashboard/rooms?status_filter=' . Habitacion::ESTADO_MANTENIMIENTO);
+        $agregar($bloqueadas, 'info', 'fa-lock', 'habitación(es) bloqueada(s)',
+            '/dashboard/rooms?status_filter=' . Habitacion::ESTADO_BLOQUEADA);
+
         return $alertas;
     }
 

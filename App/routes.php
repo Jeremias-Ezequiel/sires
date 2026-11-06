@@ -12,6 +12,7 @@ use App\Controllers\RoomController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\ApiController;
+use App\Controllers\ConfiguracionController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\SanitizeLoginMiddleware;
@@ -380,6 +381,19 @@ return function (RouteCollector $r) {
     ]);
 
     // Pagos
+    // Configuración de políticas (tabla Configuracion, versionada)
+    $r->addRoute('GET', '/dashboard/settings', [
+        'action' => [ConfiguracionController::class, 'mostrar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/settings/save', [
+        'action' => [ConfiguracionController::class, 'guardar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     $r->addRoute('GET', '/dashboard/payments', [
         'action' => [PaymentController::class, 'showPayments'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],

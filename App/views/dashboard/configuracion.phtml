@@ -1,0 +1,186 @@
+<?php
+/**
+ * Configuración de políticas (solo administrador).
+ * Datos: App\Services\ConfiguracionAdminService::obtenerPanel().
+ * Cada cambio es una fila nueva en Configuracion (ahora o programado); nunca se edita ni borra.
+ */
+
+/** Valor ya convertido -> texto para mostrar. */
+$mostrar = function (array $p, mixed $valor): string {
+    return match ($p['tipo']) {
+        'decimal' => rtrim(rtrim(number_format((float)$valor * 100, 2, ',', '.'), '0'), ','),
+        'json'    => 'Tabla',
+        default   => (string)$valor,
+    };
+};
+
+/** Valor guardado (texto de la BD) -> texto para mostrar en historial / programados. */
+$mostrarCrudo = function (array $p, string $valor) use ($mostrar): string {
+    if ($p['tipo'] === 'json') {
+        $t = json_decode($valor, true) ?: [];
+        $partes = [];
+        foreach ($t as $cap => $hs) {
+            $partes[] = "Hab. $cap: " . implode(' / ', array_map(fn($h, $d) => "{$h}p {$d}%", array_keys($hs), $hs));
+        }
+        return implode(' · ', $partes);
+    }
+    return $mostrar($p, $p['tipo'] === 'decimal' ? (float)$valor : $valor);
+};
+
+$fecha = fn(string $f): string => date('d/m/Y H:i', strtotime($f));
+$quien = fn(array $f): string => trim(($f['usuario_nombre'] ?? '') . ' ' . ($f['usuario_apellido'] ?? '')) ?: 'Sistema (instalación)';
+$minProgramar = date('Y-m-d\TH:i', time() + 60);
+?>
+<header class="main-header employees-header">
+    <div>
+        <h1>Configuración</h1>
+        <p>Políticas del hotel. Cada cambio queda registrado y puede regir desde ahora o desde una fecha futura.</p>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><?= htmlspecialchars($errorMessage) ?></div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && in_array($flashStatus, ['success', 'error'], true)): ?>
+    <div class="alert alert--<?= $flashStatus ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<div class="alert alert--info cfg-aviso">
+    <i class="fas fa-circle-info" aria-hidden="true"></i>
+    <span>Los cambios no modifican el pasado. Cada política indica a qué reservas alcanza: algunas solo a las nuevas, otras a todo lo que pase desde la vigencia.</span>
+</div>
+
+<?php foreach ($panel as $grupo => $politicas): ?>
+    <section class="cfg-grupo" aria-labelledby="cfg-g-<?= md5($grupo) ?>">
+        <h2 class="cfg-grupo__titulo" id="cfg-g-<?= md5($grupo) ?>"><?= htmlspecialchars($grupo) ?></h2>
+        <div class="cfg-grilla">
+            <?php foreach ($politicas as $clave => $p): ?>
+                <article class="panel cfg" id="cfg-<?= $clave ?>">
+                    <header class="cfg__cabecera">
+                        <h3 class="cfg__titulo"><?= htmlspecialchars($p['titulo']) ?></h3>
+                        <?php if ($p['por_defecto']): ?>
+                            <span class="cfg__chip" title="No hay valor en la tabla Configuracion: se usa el de App/Config/Politicas.php">Por defecto</span>
+                        <?php endif; ?>
+                    </header>
+
+                    <?php if ($p['tipo'] === 'json'): ?>
+                        <table class="cfg-tabla">
+                            <thead><tr><th>Habitación</th><th>Huéspedes</th><th class="cfg-num">Descuento</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($p['valor'] as $cap => $porHuespedes): ?>
+                                    <?php foreach ($porHuespedes as $h => $d): ?>
+                                        <tr><td>Para <?= (int)$cap ?></td><td><?= (int)$h ?></td><td class="cfg-num"><?= (int)$d ?>%</td></tr>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p class="cfg__valor"><?= htmlspecialchars($mostrar($p, $p['valor'])) ?> <span class="cfg__unidad"><?= htmlspecialchars($p['unidad']) ?></span></p>
+                    <?php endif; ?>
+
+                    <p class="cfg__meta">
+                        <?php if ($p['vigente']): ?>
+                            Vigente desde <?= $fecha($p['vigente']['vigente_desde']) ?> · <?= htmlspecialchars($quien($p['vigente'])) ?>
+                        <?php else: ?>
+                            Sin registro en la base: valor por defecto del sistema
+                        <?php endif; ?>
+                    </p>
+                    <p class="cfg__ambito"><i class="fas fa-bullseye" aria-hidden="true"></i><?= htmlspecialchars($p['ambito']) ?></p>
+
+                    <?php foreach ($p['programados'] as $prog): ?>
+                        <p class="cfg__programado">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                            Cambia a <strong><?= htmlspecialchars($mostrarCrudo($p, $prog['valor'])) ?><?= $p['tipo'] !== 'json' ? ' ' . htmlspecialchars($p['unidad']) : '' ?></strong>
+                            el <?= $fecha($prog['vigente_desde']) ?>
+                        </p>
+                    <?php endforeach; ?>
+
+                    <details class="cfg__editar">
+                        <summary class="btn-mov"><i class="fas fa-pen" aria-hidden="true"></i>Cambiar</summary>
+                        <form method="POST" action="<?= url('/dashboard/settings/save') ?>" class="cfg-form"
+                              data-confirmar="¿Guardar el cambio de &quot;<?= htmlspecialchars($p['titulo']) ?>&quot;? Queda registrado a tu nombre."
+                              data-confirmar-boton="Guardar cambio">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="clave" value="<?= $clave ?>">
+
+                            <?php if ($p['tipo'] === 'json'): ?>
+                                <div class="cfg-form__tabla">
+                                    <?php foreach ($p['valor'] as $cap => $porHuespedes): ?>
+                                        <?php foreach ($porHuespedes as $h => $d): ?>
+                                            <label class="cfg-form__campo">
+                                                <span>Hab. para <?= (int)$cap ?> · <?= (int)$h ?> huésp.</span>
+                                                <span class="cfg-form__input-unidad">
+                                                    <input type="number" class="form__input" name="tabla[<?= (int)$cap ?>][<?= (int)$h ?>]" value="<?= (int)$d ?>" min="0" max="100" step="1" required>
+                                                    <span>%</span>
+                                                </span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <label class="cfg-form__campo">
+                                    <span>Nuevo valor (<?= htmlspecialchars($p['unidad']) ?>)</span>
+                                    <?php if ($p['tipo'] === 'time'): ?>
+                                        <input type="time" class="form__input" name="valor" value="<?= htmlspecialchars((string)$p['valor']) ?>" required>
+                                    <?php else: ?>
+                                        <input type="number" class="form__input" name="valor"
+                                               value="<?= htmlspecialchars($p['tipo'] === 'decimal' ? (string)round((float)$p['valor'] * 100, 2) : (string)$p['valor']) ?>"
+                                               min="<?= $p['min'] ?>" max="<?= $p['max'] ?>" step="<?= $p['tipo'] === 'decimal' ? '0.01' : '1' ?>" required>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endif; ?>
+
+                            <fieldset class="cfg-form__cuando">
+                                <legend>Rige</legend>
+                                <label><input type="radio" name="cuando" value="ahora" checked> Desde ahora</label>
+                                <label><input type="radio" name="cuando" value="programar"> Desde una fecha</label>
+                                <input type="datetime-local" class="form__input cfg-form__fecha" name="vigente_desde" min="<?= $minProgramar ?>" aria-label="Fecha y hora desde la que rige">
+                            </fieldset>
+
+                            <div class="cfg-form__acciones">
+                                <button type="submit" class="btn btn--primary">Guardar cambio</button>
+                            </div>
+                        </form>
+                    </details>
+
+                    <?php if (count($p['historial']) > 1 || !empty($p['programados'])): ?>
+                        <details class="cfg__historial">
+                            <summary>Historial (<?= count($p['historial']) + count($p['programados']) ?>)</summary>
+                            <table class="cfg-tabla">
+                                <thead><tr><th>Valor</th><th>Rige desde</th><th>Cargado por</th></tr></thead>
+                                <tbody>
+                                    <?php foreach (array_merge(array_reverse($p['programados']), $p['historial']) as $i => $f): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($mostrarCrudo($p, $f['valor'])) ?></td>
+                                            <td><?= $fecha($f['vigente_desde']) ?><?= $f['vigente_desde'] > date('Y-m-d H:i:s') ? ' <span class="cfg__chip">Programado</span>' : '' ?></td>
+                                            <td><?= htmlspecialchars($quien($f)) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </details>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endforeach; ?>
+
+<script src="<?= asset_v('js/confirmar.js') ?>"></script>
+<script>
+    // La fecha solo se pide (y es obligatoria) si se elige "Desde una fecha"
+    document.querySelectorAll('.cfg-form').forEach(function (form) {
+        var fecha = form.querySelector('.cfg-form__fecha');
+        function actualizar() {
+            var programar = form.querySelector('input[name="cuando"]:checked').value === 'programar';
+            fecha.hidden = !programar;
+            fecha.required = programar;
+        }
+        form.querySelectorAll('input[name="cuando"]').forEach(function (r) { r.addEventListener('change', actualizar); });
+        actualizar();
+    });
+</script>

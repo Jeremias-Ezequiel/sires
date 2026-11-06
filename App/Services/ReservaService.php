@@ -323,7 +323,8 @@ class ReservaService
     {
         $db = $this->reservaModel->getConnection();
         $fechaActual = date('Y-m-d');
-        $nochesRetenidas = ConfiguracionService::noShowNochesRetenidas();
+        // Noches retenidas según la política vigente al crear cada reserva (igual que el EVENT)
+        $nochesPorDefecto = \App\Config\Politicas::NOSHOW_NOCHES_RETENIDAS;
 
         $stmt = $db->prepare("
             SELECT r.id, r.id_habitacion,
@@ -332,16 +333,20 @@ class ReservaService
             FROM Reservas r
             JOIN Habitaciones h ON h.id = r.id_habitacion
             JOIN (
-                SELECT id, LEAST(DATE_ADD(fecha_entrada, INTERVAL :noches DAY), fecha_salida) AS fecha_liberacion
-                FROM Reservas
-                WHERE id_estado_reserva = :noshow_pago_sub
+                SELECT rr.id, LEAST(DATE_ADD(rr.fecha_entrada, INTERVAL COALESCE((
+                           SELECT CAST(c.valor AS UNSIGNED) FROM Configuracion c
+                           WHERE c.clave = 'noshow_noches_retenidas' AND c.vigente_desde <= rr.fecha_alta
+                           ORDER BY c.vigente_desde DESC LIMIT 1
+                       ), :noches) DAY), rr.fecha_salida) AS fecha_liberacion
+                FROM Reservas rr
+                WHERE rr.id_estado_reserva = :noshow_pago_sub
             ) t ON t.id = r.id
             WHERE r.id_estado_reserva = :noshow_pago
               AND (t.fecha_liberacion < :fecha_hoy
                    OR (t.fecha_liberacion = :fecha_hoy_2 AND :hora_actual >= :hora_checkout))
         ");
         $stmt->execute([
-            ':noches'          => $nochesRetenidas,
+            ':noches'          => $nochesPorDefecto,
             ':noshow_pago_sub' => Reserva::ESTADO_NO_SHOW_CON_PAGO,
             ':noshow_pago'     => Reserva::ESTADO_NO_SHOW_CON_PAGO,
             ':fecha_hoy'       => $fechaActual,
@@ -421,7 +426,7 @@ class ReservaService
         if ($resumen === null || $resumen->getMontoPagado() <= 0) {
             throw new Exception("Debe realizar al menos un pago para confirmar la reserva.");
         }
-        $senaPct = ConfiguracionService::senaMinimaPct();
+        $senaPct = ConfiguracionService::senaMinimaPct($reservaData['fecha_alta']);
         $senaMinima = round($resumen->getTotal() * $senaPct / 100, 2);
         if ($resumen->getMontoPagado() < $senaMinima) {
             throw new Exception(
@@ -660,12 +665,14 @@ class ReservaService
             // Política de cancelación: sin cargo con suficiente anticipación; si no, se retienen
             // N noches (con tope en lo cobrado). El resto de lo cobrado queda A Reembolsar,
             // sin importar si la reserva estaba pendiente o confirmada.
+            // Condiciones vigentes cuando se hizo la reserva (no las actuales)
+            $horasGratis = ConfiguracionService::cancelacionGratisHoras($reservaData['fecha_alta']);
             $horasAnticipacion = (strtotime($reservaData['fecha_entrada'] . ' 00:00:00') - time()) / 3600;
             $montoRetenido = 0.0;
-            if ($horasAnticipacion < ConfiguracionService::cancelacionGratisHoras()) {
+            if ($horasAnticipacion < $horasGratis) {
                 $nochesReserva = (new \DateTime($reservaData['fecha_entrada']))
                     ->diff(new \DateTime($reservaData['fecha_salida']))->days;
-                $nochesPenalidad = min($nochesReserva, ConfiguracionService::cancelacionPenalidadNoches());
+                $nochesPenalidad = min($nochesReserva, ConfiguracionService::cancelacionPenalidadNoches($reservaData['fecha_alta']));
                 $montoRetenido = self::precioNocheReserva($reservaData) * $nochesPenalidad;
             }
             $estadoPago = (new PagoService())->aplicarRetencion($idReserva, $montoRetenido);
@@ -680,7 +687,7 @@ class ReservaService
                 $resumen = $this->resumenModel->getByReserva($idReserva);
                 $retenido = $resumen !== null ? $resumen->getMontoRetenido() : 0.0;
                 $mensaje .= $retenido > 0
-                    ? ' Por cancelar con menos de ' . ConfiguracionService::cancelacionGratisHoras() .
+                    ? ' Por cancelar con menos de ' . $horasGratis .
                       ' h de anticipación se retienen $' . number_format($retenido, 2, ',', '.') . '.'
                     : ' Sin cargo por cancelación.';
                 $mensaje .= $estadoPago === \App\Models\EstadoPago::A_REEMBOLSAB
@@ -699,7 +706,7 @@ class ReservaService
     /** Día en que se libera un No-Show con pago: entrada + noches retenidas, sin pasar la salida. */
     private static function fechaLiberacionNoShow(array $reserva): string
     {
-        $liberacion = date('Y-m-d', strtotime($reserva['fecha_entrada'] . ' +' . ConfiguracionService::noShowNochesRetenidas() . ' day'));
+        $liberacion = date('Y-m-d', strtotime($reserva['fecha_entrada'] . ' +' . ConfiguracionService::noShowNochesRetenidas($reserva['fecha_alta']) . ' day'));
         return min($liberacion, (string)$reserva['fecha_salida']);
     }
 
@@ -749,7 +756,7 @@ class ReservaService
 
                 $db->commit();
                 $liberacion = self::fechaLiberacionNoShow($reservaData);
-                $noches = ConfiguracionService::noShowNochesRetenidas();
+                $noches = ConfiguracionService::noShowNochesRetenidas($reservaData['fecha_alta']);
                 return [
                     'success' => true,
                     'message' => 'No-Show registrado. La habitación queda retenida hasta el ' .

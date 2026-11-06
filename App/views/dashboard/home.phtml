@@ -283,42 +283,9 @@ $k = $tablero['kpis'] ?? null;
 
 <?php endif; ?>
 
-<!-- Confirmación de check-in / check-out (sin alertas del navegador) -->
-<dialog class="confirmar" id="dialogo-confirmar" aria-labelledby="confirmar-texto">
-    <p id="confirmar-texto" class="confirmar__texto"></p>
-    <div class="confirmar__acciones">
-        <button type="button" class="btn btn--ghost" data-cerrar>Cancelar</button>
-        <button type="button" class="btn btn--primary" id="confirmar-aceptar">Confirmar</button>
-    </div>
-</dialog>
-
+<script src="<?= asset_v('js/confirmar.js') ?>"></script>
 <script>
     (function () {
-        // Confirmación antes de enviar check-in / check-out
-        var dialogo = document.getElementById('dialogo-confirmar');
-        var texto = document.getElementById('confirmar-texto');
-        var aceptar = document.getElementById('confirmar-aceptar');
-        var formPendiente = null;
-
-        document.querySelectorAll('form[data-confirmar]').forEach(function (form) {
-            form.addEventListener('submit', function (ev) {
-                if (form.dataset.confirmado === '1') return;
-                ev.preventDefault();
-                formPendiente = form;
-                texto.textContent = form.dataset.confirmar;
-                aceptar.textContent = form.dataset.confirmarBoton || 'Confirmar';
-                dialogo.showModal();
-                aceptar.focus();
-            });
-        });
-        aceptar.addEventListener('click', function () {
-            if (!formPendiente) return;
-            formPendiente.dataset.confirmado = '1';
-            aceptar.disabled = true;
-            formPendiente.submit();
-        });
-        dialogo.querySelector('[data-cerrar]').addEventListener('click', function () { dialogo.close(); });
-
         // Filtro de habitaciones por estado
         var filtros = document.querySelectorAll('.hab-filtro');
         filtros.forEach(function (btn) {
@@ -342,7 +309,7 @@ $k = $tablero['kpis'] ?? null;
                 if (ev.key !== 'n' && ev.key !== 'N') return;
                 if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
                 var t = ev.target;
-                if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || dialogo.open) return;
+                if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || window.SiresConfirmar.abierto()) return;
                 window.location.href = nueva.href;
             });
         }

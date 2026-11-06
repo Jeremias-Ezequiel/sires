@@ -130,28 +130,31 @@ final class ConfiguracionService
         return (int)self::get('max_noches_reserva');
     }
 
-    /** Seña mínima para confirmar, en % del total. */
-    public static function senaMinimaPct(): float
+    // Condiciones aceptadas por el huésped: se leen a la fecha_alta de la reserva
+    // ($fechaAlta), así un cambio de política no afecta a reservas ya hechas.
+
+    /** Seña mínima para confirmar, en % del total (vigente al crear la reserva). */
+    public static function senaMinimaPct(?string $fechaAlta = null): float
     {
-        return (float)self::get('sena_minima_pct');
+        return (float)self::get('sena_minima_pct', $fechaAlta);
     }
 
-    /** Horas de anticipación (hasta las 00:00 del día de entrada) para cancelar sin cargo. */
-    public static function cancelacionGratisHoras(): int
+    /** Horas de anticipación (hasta las 00:00 del día de entrada) para cancelar sin cargo (vigente al crear la reserva). */
+    public static function cancelacionGratisHoras(?string $fechaAlta = null): int
     {
-        return (int)self::get('cancelacion_gratis_horas');
+        return (int)self::get('cancelacion_gratis_horas', $fechaAlta);
     }
 
-    /** Noches retenidas al cancelar fuera del plazo sin cargo. */
-    public static function cancelacionPenalidadNoches(): int
+    /** Noches retenidas al cancelar fuera del plazo sin cargo (vigente al crear la reserva). */
+    public static function cancelacionPenalidadNoches(?string $fechaAlta = null): int
     {
-        return (int)self::get('cancelacion_penalidad_noches');
+        return (int)self::get('cancelacion_penalidad_noches', $fechaAlta);
     }
 
-    /** Noches que se retiene la habitación (y se cobran) en un No-Show con pago. */
-    public static function noShowNochesRetenidas(): int
+    /** Noches que se retiene la habitación (y se cobran) en un No-Show con pago (vigente al crear la reserva). */
+    public static function noShowNochesRetenidas(?string $fechaAlta = null): int
     {
-        return (int)self::get('noshow_noches_retenidas');
+        return (int)self::get('noshow_noches_retenidas', $fechaAlta);
     }
 
     // ------------------------------------------------------------------

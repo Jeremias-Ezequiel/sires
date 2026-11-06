@@ -27,6 +27,9 @@
 
 <section class="details-section filter-section">
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/booking', 'GET', 'filter-form') ?>
+        <?php if ($hasAlerta): ?>
+            <input type="hidden" name="alerta" value="<?= htmlspecialchars($alerta) ?>">
+        <?php endif; ?>
 
         <div class="form-group-search">
             <label class="form__label">Buscar</label>
@@ -63,13 +66,21 @@
         <button type="submit" class="btn btn--primary">
             <i class="fas fa-filter"></i> Filtrar
         </button>
-        <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+        <?php if ($hasSearch || $hasEstado || $hasCanal || $hasAlerta): ?>
             <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
     </form>
 </section>
+
+<?php if ($hasAlerta): ?>
+    <div class="alert alert--info filtro-alerta">
+        <i class="fas fa-bell" aria-hidden="true"></i>
+        <span>Mostrando: <strong><?= htmlspecialchars($alertaTexto) ?></strong></span>
+        <a href="<?= url('/dashboard/booking') ?>" class="filtro-alerta__quitar">Quitar filtro</a>
+    </div>
+<?php endif; ?>
 
 <?php if (!empty($reservas) && is_array($reservas)): ?>
     <section class="details-section">
@@ -202,7 +213,7 @@
             <h3>No se encontraron reservas</h3>
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
-            <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+            <?php if ($hasSearch || $hasEstado || $hasCanal || $hasAlerta): ?>
                 <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
