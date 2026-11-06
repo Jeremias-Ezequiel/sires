@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         defaultTestSuite="unidad"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true">
+    <testsuites>
+        <!-- Lógica pura (App/Dominio), sin base de datos. Es la que corre `composer test`. -->
+        <testsuite name="unidad">
+            <directory>tests/Unidad</directory>
+        </testsuite>
+        <!-- Contra la base de la VM; cada test termina con ROLLBACK. -->
+        <testsuite name="integracion">
+            <directory>tests/Integracion</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>App/Dominio</directory>
+        </include>
+    </source>
+</phpunit>

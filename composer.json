@@ -14,5 +14,25 @@
         "files": [
             "App/Helpers/functions.php"
         ]
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --testsuite unidad",
+        "test:integracion": "phpunit --testsuite integracion",
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "lint": "find App cron tests index.php \\( -name '*.php' -o -name '*.phtml' \\) -print0 | xargs -0 -n1 -P4 php -l | (! grep -v '^No syntax errors')",
+        "check": [
+            "@lint",
+            "@phpstan",
+            "@test"
+        ]
     }
 }

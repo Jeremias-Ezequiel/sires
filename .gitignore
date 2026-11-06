@@ -117,3 +117,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,phpunit,laravel
 logs/
 *.log
+
+# Herramientas de desarrollo
+.phpstan.cache/

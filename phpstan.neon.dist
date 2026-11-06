@@ -1,0 +1,21 @@
+parameters:
+    level: 5
+    paths:
+        - App
+        - cron
+        - tests
+        - index.php
+    tmpDir: .phpstan.cache
+    ignoreErrors:
+        # Los modelos se cargan con PDO::FETCH_CLASS: PDO asigna esas propiedades y PHPStan no lo ve.
+        -
+            identifier: property.unusedType
+            path: App/Models/*
+        # Interruptor de mantenimiento fijo a propósito (la ruta solo se usa para mostrar la página).
+        -
+            identifier: if.alwaysTrue
+            path: App/Middleware/MaintenanceMiddleware.php
+        # PHPStan supone que inTransaction() no cambia entre dos llamadas; acá sí cambia.
+        -
+            identifier: booleanAnd.rightAlwaysFalse
+            path: App/Services/PagoService.php
