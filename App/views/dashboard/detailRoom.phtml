@@ -13,7 +13,8 @@
         </a>
         <?php if (!isset($habitacion['is_active']) || (int)($habitacion['is_active'] ?? 1) === 0): ?>
             <form method="POST" action="<?= url('/dashboard/rooms/reactivate') ?>"
-                  onsubmit="return confirm('¿Reactivar la habitación? Volverá a estar disponible para la venta.');">
+                  data-confirmar="¿Reactivar la habitación #<?= htmlspecialchars((string)($habitacion['numero'] ?? '')) ?>? Volverá a estar disponible para la venta."
+                  data-confirmar-boton="Sí, reactivar">
                 <?= csrf_field() ?>
                 <input type="hidden" name="id" value="<?= (int)$habitacion['id'] ?>">
                 <button type="submit" class="btn btn--success">
@@ -90,3 +91,5 @@
         </table>
     </div>
 </section>
+
+<script src="<?= asset_v('js/confirmar.js') ?>"></script>
