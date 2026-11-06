@@ -3,6 +3,24 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-11-06
+
+### Agregado
+- **Auditoría** (administración y gerencia): quién hizo qué y cuándo en reservas, pagos, habitaciones,
+  empleados y configuración, con los valores de antes y después. Filtros por usuario, tipo y fechas.
+- **Historial** en el detalle de cada reserva y habitación.
+- **Monitoreo de procesos automáticos:** cada corrida del corte de pagos, el late checkout y la
+  liberación de No-Show queda registrada; el inicio del administrador avisa si un proceso no corre,
+  falla o si el programador de tareas de la base está apagado. Pestaña *Procesos automáticos*.
+- `cron/verificar_events.php` para conectar un monitor externo.
+
+### Cambiado
+- Base de datos: dump `v1.3.0` (migraciones 012 `Ejecuciones_Automaticas` y 013 `Auditoria`). El dump ya
+  no incluye los EVENTs: los crean los scripts 01 y 02, que son obligatorios después de importarlo.
+
+### Corregido
+- Errores al operar reservas y pagos mostraban "There is no active transaction" en vez del mensaje real.
+
 ## [1.2.0] - 2026-11-06
 
 ### Agregado
