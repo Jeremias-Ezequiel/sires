@@ -3,6 +3,19 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.7.0] - 2026-11-06
+
+### Agregado
+- **Comprobantes PDF:** recibo de cada pago, comprobante de cada reembolso y resumen de la reserva, con
+  numeración correlativa propia por tipo (ej. `0001-00000012`). No son facturas fiscales.
+- Se descargan desde el detalle del pago y de la reserva; el mail del pago adjunta el recibo.
+- *Configuración > Datos del hotel*: nombre, razón social, CUIT, condición frente al IVA, domicilio,
+  teléfono, email y punto de venta.
+
+### Cambiado
+- Base de datos: migración `015_comprobantes` (tabla `Comprobantes`, tipo `texto` en `Configuracion` y
+  claves del hotel), incluida en el dump `v1.7.0`. Nueva dependencia `dompdf/dompdf` (requiere `ext-iconv`).
+
 ## [1.6.0] - 2026-11-06
 
 ### Agregado
