@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Models\Usuario;
 use Exception;
 use App\Services\ConfiguracionService;
+use App\Services\LimiteIntentosService;
 use App\Helpers\UrlHelper; // Importamos el helper para el ruteo dinámico
 
 class RecoveryController
@@ -36,7 +37,18 @@ class RecoveryController
             session_start();
         }
 
-        $email = $_POST['email'] ?? '';
+        try {
+            csrf_check();
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ' . UrlHelper::to('/password/recovery'));
+            exit;
+        }
+
+        $email = trim((string)($_POST['email'] ?? ''));
+
+        // Mensaje único para que no se pueda averiguar qué correos están registrados
+        $mensajeEnviado = "¡Solicitud procesada! Si el correo pertenece a un usuario registrado, te enviamos las instrucciones para restablecer tu contraseña.";
 
         if (empty($email)) {
             $_SESSION['error_message'] = "Por favor, ingresá tu correo electrónico.";
@@ -44,20 +56,34 @@ class RecoveryController
             exit;
         }
 
+        $limite = LimiteIntentosService::recuperacion();
+        try {
+            $limite->verificar();
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ' . UrlHelper::to('/password/recovery'));
+            exit;
+        }
+        // Cada solicitud cuenta (exista o no el correo) para evitar el envío masivo de mails
+        $limite->registrarFallo();
+
+        $mail = null;
         try {
             $userModel = new Usuario();
             $usuario = $userModel->findByEmail($email);
 
-            // Si el mail no existe en la base de datos
+            // Si el mail no existe respondemos igual que si existiera
             if (!$usuario) {
-                $_SESSION['error_message'] = "El correo electrónico ingresado no pertenece a ningún usuario registrado.";
-                header('Location: ' . UrlHelper::to('/password/recovery'));
+                $_SESSION['flash_success'] = $mensajeEnviado;
+                header('Location: ' . UrlHelper::to('/login'));
                 exit;
             }
 
+            $minutosToken = ConfiguracionService::minutosTokenRecuperacion();
+
             // 🟢 1. Generamos un token aleatorio seguro de 32 caracteres y expiración según la configuración (minutos_token_recuperacion)
             $token = bin2hex(random_bytes(16));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . ConfiguracionService::minutosTokenRecuperacion() . ' minutes'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . $minutosToken . ' minutes'));
 
             // 🟢 2. Guardamos el token en la base de datos (fila del usuario)
             $usuario->saveResetToken($token, $expiresAt);
@@ -85,8 +111,12 @@ class RecoveryController
             $mail->isHTML(true);
             $mail->Subject = 'Recuperación de Contraseña - SIRES';
 
-            // Construimos el enlace dinámico absoluto inyectando el UrlHelper para que mantenga el index.php en el mail
-            $linkReal = "http://" . $_SERVER['HTTP_HOST'] . UrlHelper::to('/password/reset/' . $token);
+            // Enlace absoluto: la base sale de APP_URL (.env) para no confiar en el header Host del request
+            $baseUrl  = rtrim((string)($_ENV['APP_URL'] ?? ''), '/');
+            if ($baseUrl === '') {
+                $baseUrl = 'http://' . ($_SERVER['SERVER_NAME'] ?? 'localhost');
+            }
+            $linkReal = htmlspecialchars($baseUrl . UrlHelper::to('/password/reset/' . rawurlencode($token)), ENT_QUOTES, 'UTF-8');
 
             // Maquetado del correo electrónico
             $mail->Body = "
@@ -100,7 +130,7 @@ class RecoveryController
                             Cambiar Contraseña
                         </a>
                     </div>
-                    <p style='color: #6b7280; font-size: 13px;'>Este enlace es válido por 1 hora y vencerá de forma automática.</p>
+                    <p style='color: #6b7280; font-size: 13px;'>Este enlace es válido por {$minutosToken} minutos y vencerá de forma automática.</p>
                     <hr style='border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
                     <small style='color: #9ca3af;'>Si vos no solicitaste este cambio, podés ignorar este correo de forma segura.</small>
                 </div>
@@ -110,12 +140,13 @@ class RecoveryController
             $mail->send();
 
             // 🟢 3. Redirigimos al Login informando el éxito del envío
-            $_SESSION['flash_success'] = "¡Solicitud procesada! Te enviamos un correo electrónico con las instrucciones para restablecer tu contraseña.";
+            $_SESSION['flash_success'] = $mensajeEnviado;
             header('Location: ' . UrlHelper::to('/login'));
             exit;
         } catch (Exception $e) {
-            // Atrapamos cualquier error de PHPMailer o Base de datos y lo mostramos en el formulario
-            $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Detalle: " . $mail->ErrorInfo;
+            // El detalle técnico (SMTP/BD) va al log, no al usuario
+            error_log('[SIRES Recuperacion] ' . $e->getMessage() . ($mail ? ' | ' . $mail->ErrorInfo : ''));
+            $_SESSION['error_message'] = "No se pudo enviar el correo de recuperación. Intente nuevamente más tarde.";
             header('Location: ' . UrlHelper::to('/password/recovery'));
             exit;
         }
@@ -147,20 +178,28 @@ class RecoveryController
             session_start();
         }
 
-        $token           = $_POST['token'] ?? '';
+        $token           = (string)($_POST['token'] ?? '');
         $password        = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        try {
+            csrf_check();
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ' . UrlHelper::to('/password/reset/' . rawurlencode($token)));
+            exit;
+        }
 
         // 1. Validaciones básicas de la interfaz de usuario
         if (empty($password) || empty($confirmPassword)) {
             $_SESSION['error_message'] = "Todos los campos de contraseña son obligatorios.";
-            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
+            header('Location: ' . UrlHelper::to('/password/reset/' . rawurlencode($token)));
             exit;
         }
 
         if ($password !== $confirmPassword) {
             $_SESSION['error_message'] = "Las contraseñas ingresadas no coinciden.";
-            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
+            header('Location: ' . UrlHelper::to('/password/reset/' . rawurlencode($token)));
             exit;
         }
 
@@ -179,7 +218,7 @@ class RecoveryController
             // 🛑 NUEVA VALIDACIÓN: Bloquear si la clave nueva es idéntica a la que ya tiene registrada
             if (password_verify($password, $usuario->getPassword())) {
                 $_SESSION['error_message'] = "La nueva contraseña no puede ser igual a tu contraseña actual. Por favor, elegí una diferente.";
-                header('Location: ' . UrlHelper::to('/password/reset/' . $token));
+                header('Location: ' . UrlHelper::to('/password/reset/' . rawurlencode($token)));
                 exit;
             }
 
@@ -193,7 +232,7 @@ class RecoveryController
         } catch (Exception $e) {
             // Atrapamos las excepciones controladas del modelo
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ' . UrlHelper::to('/password/reset/' . $token));
+            header('Location: ' . UrlHelper::to('/password/reset/' . rawurlencode($token)));
             exit;
         }
     }
