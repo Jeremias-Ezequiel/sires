@@ -8,7 +8,6 @@ use App\Dominio\Tarifa;
 use App\Models\EstadoPago;
 use App\Models\Habitacion;
 use App\Models\Reserva;
-use App\Models\Rol;
 use App\Services\ConfiguracionService;
 use App\Services\PagoService;
 use App\Services\ReservaService;
@@ -19,33 +18,6 @@ use App\Services\ReservaService;
  */
 final class ReservaPagoTest extends TestIntegracion
 {
-    private function metodoPago(): int
-    {
-        return (int)$this->valor('SELECT MIN(id) FROM Metodos_Pago WHERE is_active = 1');
-    }
-
-    /** Crea una reserva con ReservaService y devuelve su id. */
-    private function crearReserva(string $entrada, string $salida, int $huespedes = 1): int
-    {
-        $habitacion = $this->habitacionLibre($entrada, $salida);
-        $idCliente = $this->crearCliente();
-        (new ReservaService())->crear([
-            'id_cliente'         => $idCliente,
-            'id_habitacion'      => $habitacion['id'],
-            'id_canal_origen'    => (int)$this->valor('SELECT MIN(id) FROM Canal_Origen'),
-            'fecha_entrada'      => $entrada,
-            'fecha_salida'       => $salida,
-            'cantidad_huespedes' => $huespedes,
-            'creado_por'         => $this->idUsuario(Rol::RECEPCIONISTA),
-        ]);
-        return (int)$this->valor('SELECT MAX(id) FROM Reservas WHERE id_cliente = :c', [':c' => $idCliente]);
-    }
-
-    private function pagar(int $idReserva, float $monto): void
-    {
-        (new PagoService())->registrarPago($idReserva, $this->metodoPago(), $monto, (int)$_SESSION['user_id']);
-    }
-
     /** @return array<string, mixed> */
     private function resumen(int $idReserva): array
     {
