@@ -8,6 +8,7 @@ use App\Models\Habitacion;
 use App\Models\Clientes;
 use App\Models\CanalOrigen;
 use App\Services\ReservaService;
+use App\Dominio\Planning;
 
 class BookingController extends Controller
 {
@@ -67,7 +68,7 @@ class BookingController extends Controller
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }
 
-    public function showNewBookingForm(): void
+    public function showNewBookingForm(array $vars = []): void
     {
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
@@ -80,6 +81,19 @@ class BookingController extends Controller
 
         $old = $_SESSION['old_inputs'] ?? [];
         unset($_SESSION['old_inputs']);
+
+        // Desde el planning: habitación y fecha de entrada precargadas (salida = entrada + 1)
+        if ($old === [] && isset($vars['id_habitacion'], $vars['fecha_entrada'])) {
+            $hoy = date('Y-m-d');
+            $entrada = Planning::normalizarDesde($vars['fecha_entrada'], $hoy);
+            if (filter_var($vars['id_habitacion'], FILTER_VALIDATE_INT) !== false && $entrada >= $hoy) {
+                $old = [
+                    'id_habitacion' => (int)$vars['id_habitacion'],
+                    'fecha_entrada' => $entrada,
+                    'fecha_salida'  => Planning::desplazar($entrada, 1),
+                ];
+            }
+        }
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;

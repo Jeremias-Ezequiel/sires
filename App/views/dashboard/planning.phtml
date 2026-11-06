@@ -1,0 +1,137 @@
+<?php
+/**
+ * Planning de ocupación (Gantt). Datos: App\Services\PlanningService::obtener().
+ * Filas = habitaciones activas; columnas = días; barras = reservas (por estado).
+ * La posición de cada barra va con clases .plan-ini-N / .plan-len-N (dashboard.css), sin style="".
+ */
+
+use App\Dominio\Planning;
+
+$meses = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+$fechaLarga = function (string $f) use ($meses): string {
+    $t = strtotime($f);
+    return (int)date('j', $t) . ' de ' . $meses[(int)date('n', $t)];
+};
+$fechaCorta = fn (string $f): string => date('d/m', strtotime($f));
+?>
+<header class="main-header employees-header">
+    <div>
+        <h1>Planning de ocupación</h1>
+        <p>Habitaciones por día. Clic en una reserva para ver el detalle o en un día libre para reservar.</p>
+    </div>
+    <div class="header-actions-container">
+        <a href="<?= url('/dashboard/booking/add') ?>" class="btn btn--primary">
+            <i class="fas fa-plus" aria-hidden="true"></i> Nueva reserva
+        </a>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($planning !== null):
+    $dias  = $planning['dias'];
+    $ultimo = $planning['columnas'][$dias - 1]['fecha'];
+    $nav = fn (string $desde, ?int $d = null): string => url('/dashboard/planning?' . http_build_query(['desde' => $desde, 'dias' => $d ?? $dias]));
+?>
+    <section class="plan-barra-nav" aria-label="Navegación del planning">
+        <div class="plan-nav">
+            <a class="btn btn--ghost btn--icon" href="<?= $nav($planning['anterior']) ?>" aria-label="<?= $dias ?> días antes" title="<?= $dias ?> días antes">
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </a>
+            <a class="btn btn--ghost" href="<?= $nav($planning['hoy']) ?>">Hoy</a>
+            <a class="btn btn--ghost btn--icon" href="<?= $nav($planning['siguiente']) ?>" aria-label="<?= $dias ?> días después" title="<?= $dias ?> días después">
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+            </a>
+            <h2 class="plan-rango"><?= htmlspecialchars($fechaLarga($planning['desde'])) ?> – <?= htmlspecialchars($fechaLarga($ultimo)) ?> <?= date('Y', strtotime($ultimo)) ?></h2>
+        </div>
+
+        <?= \App\Helpers\UrlHelper::openForm('/dashboard/planning', 'GET', 'plan-ir') ?>
+            <label class="form__label" for="plan-desde">Desde</label>
+            <input type="date" id="plan-desde" name="desde" class="form__input" value="<?= htmlspecialchars($planning['desde']) ?>">
+            <input type="hidden" name="dias" value="<?= $dias ?>">
+            <button type="submit" class="btn btn--ghost">Ir</button>
+        </form>
+
+        <div class="plan-vista" role="group" aria-label="Días visibles">
+            <?php foreach (Planning::DIAS_PERMITIDOS as $d): ?>
+                <a href="<?= $nav($planning['desde'], $d) ?>" class="plan-vista__opcion<?= $d === $dias ? ' plan-vista__opcion--activa' : '' ?>"
+                   <?= $d === $dias ? 'aria-current="true"' : '' ?>><?= $d ?> días</a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <ul class="plan-leyenda" aria-label="Referencias">
+        <?php foreach (Planning::ESTILOS as $clase => [$texto, $icono]): ?>
+            <li class="plan-leyenda__item plan-estado--<?= $clase ?>">
+                <i class="fas <?= $icono ?>" aria-hidden="true"></i><?= htmlspecialchars($texto) ?>
+            </li>
+        <?php endforeach; ?>
+        <li class="plan-leyenda__nota">No se muestran las canceladas ni los No-Show sin pago.</li>
+    </ul>
+
+    <?php if (empty($planning['habitaciones'])): ?>
+        <section class="details-section no-results-container">
+            <div class="no-results-content">
+                <div class="no-results-icon-frame"><i class="fas fa-bed" aria-hidden="true"></i></div>
+                <h3>Sin habitaciones</h3>
+                <p>No hay habitaciones activas para mostrar.</p>
+            </div>
+        </section>
+    <?php else: ?>
+        <div class="plan plan--<?= $dias ?>" role="region" aria-label="Planning del <?= $fechaCorta($planning['desde']) ?> al <?= $fechaCorta($ultimo) ?>" tabindex="0">
+            <div class="plan-fila plan-fila--cabecera">
+                <div class="plan-hab plan-hab--cabecera">Habitación</div>
+                <?php foreach ($planning['columnas'] as $i => $c): ?>
+                    <div class="plan-dia plan-ini-<?= $i ?><?= $c['hoy'] ? ' plan-dia--hoy' : '' ?><?= $c['finde'] ? ' plan-dia--finde' : '' ?><?= $c['primeroDeMes'] ? ' plan-dia--mes' : '' ?>">
+                        <span class="plan-dia__semana"><?= $c['semana'] ?></span>
+                        <span class="plan-dia__numero"><?= $c['numero'] ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php foreach ($planning['habitaciones'] as $h):
+                $numero = htmlspecialchars((string)$h['numero']);
+            ?>
+                <div class="plan-fila<?= $h['reservable'] ? '' : ' plan-fila--no-reservable' ?>">
+                    <div class="plan-hab">
+                        <a class="plan-hab__numero" href="<?= url('/dashboard/rooms/detail?id=' . (int)$h['id']) ?>">#<?= $numero ?></a>
+                        <span class="plan-hab__tipo"><?= htmlspecialchars((string)$h['tipo']) ?></span>
+                        <?php if (!$h['reservable']): ?>
+                            <span class="plan-hab__estado" title="No se puede reservar"><i class="fas fa-wrench" aria-hidden="true"></i><?= htmlspecialchars((string)$h['estado']) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php foreach ($planning['columnas'] as $i => $c):
+                        $clases = 'plan-celda plan-ini-' . $i . ($c['hoy'] ? ' plan-celda--hoy' : '') . ($c['finde'] ? ' plan-celda--finde' : '');
+                        if ($h['reservable'] && !$c['pasado']): ?>
+                            <a class="<?= $clases ?> plan-celda--libre" tabindex="-1"
+                               href="<?= url('/dashboard/booking/add?' . http_build_query(['id_habitacion' => (int)$h['id'], 'fecha_entrada' => $c['fecha']])) ?>"
+                               aria-label="Nueva reserva en la habitación <?= $numero ?> desde el <?= $fechaCorta($c['fecha']) ?>"
+                               title="Reservar #<?= $numero ?> desde el <?= $fechaCorta($c['fecha']) ?>"><i class="fas fa-plus" aria-hidden="true"></i></a>
+                        <?php else: ?>
+                            <div class="<?= $clases ?>"></div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+
+                    <?php foreach ($h['barras'] as $b):
+                        $texto = '#' . $b['id'] . ' · ' . $b['huesped'];
+                        $detalle = $texto . ' · ' . $b['estado'] . ' · ' . $fechaCorta($b['entrada']) . ' al ' . $fechaCorta($b['salida'])
+                            . ' · ' . $b['huespedes'] . ($b['huespedes'] === 1 ? ' huésped' : ' huéspedes');
+                    ?>
+                        <a class="plan-reserva plan-estado--<?= $b['estilo'] ?> plan-ini-<?= $b['inicio'] ?> plan-len-<?= $b['span'] ?><?= $b['sigueAntes'] ? ' plan-reserva--sigue-antes' : '' ?><?= $b['sigueDespues'] ? ' plan-reserva--sigue-despues' : '' ?>"
+                           href="<?= url('/dashboard/booking/detail?id=' . $b['id']) ?>"
+                           title="<?= htmlspecialchars($detalle) ?>" aria-label="<?= htmlspecialchars('Reserva ' . $detalle) ?>">
+                            <i class="fas <?= $b['icono'] ?>" aria-hidden="true"></i>
+                            <span class="plan-reserva__texto"><?= htmlspecialchars($texto) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>

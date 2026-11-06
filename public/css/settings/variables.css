@@ -175,6 +175,26 @@
   --estado-bloqueada: var(--room-maintenance);
   --estado-pendiente: var(--color-warning);
 
+  /* Reservas en el planning (borde + ícono fuerte, fondo suave, texto AA) */
+  --reserva-pendiente: var(--color-warning);
+  --reserva-pendiente-bg: var(--color-warning-bg);
+  --reserva-pendiente-text: var(--color-warning-text);
+  --reserva-confirmada: var(--room-reserved);
+  --reserva-confirmada-bg: var(--room-reserved-bg);
+  --reserva-confirmada-text: var(--room-reserved-text);
+  --reserva-en-casa: var(--room-occupied);
+  --reserva-en-casa-bg: var(--room-occupied-bg);
+  --reserva-en-casa-text: var(--room-occupied-text);
+  --reserva-sale-hoy: var(--room-checkout);
+  --reserva-sale-hoy-bg: var(--room-checkout-bg);
+  --reserva-sale-hoy-text: var(--room-checkout-text);
+  --reserva-no-show: var(--color-danger);
+  --reserva-no-show-bg: var(--color-danger-bg);
+  --reserva-no-show-text: var(--color-danger-text);
+  --reserva-finalizada: var(--color-text-soft);
+  --reserva-finalizada-bg: var(--color-neutral-bg);
+  --reserva-finalizada-text: var(--color-text-muted);
+
   /* ======================================================================
      RADIOS
      ====================================================================== */

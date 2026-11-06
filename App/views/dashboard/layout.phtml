@@ -55,6 +55,11 @@ include __DIR__ . '/../partials/head.phtml';
                                 <i class="fas fa-calendar-alt"></i>Reservas
                             </a>
                         </li>
+                        <li>
+                            <a href="<?= url('/dashboard/planning') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'planning.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-calendar-week"></i>Planning
+                            </a>
+                        </li>
                     <?php endif; ?>
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>

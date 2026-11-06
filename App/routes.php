@@ -10,6 +10,7 @@ use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Controllers\HousekeepingController;
+use App\Controllers\PlanningController;
 use App\Controllers\AuditoriaController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
@@ -303,6 +304,12 @@ return function (RouteCollector $r) {
     // Reservas
     $r->addRoute('GET', '/dashboard/booking', [
         'action' => [BookingController::class, 'showBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/planning', [
+        'action' => [PlanningController::class, 'mostrar'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);

@@ -2251,3 +2251,416 @@ a.hab:hover {
   font-weight: 600;
   color: var(--color-text);
 }
+
+
+/* ==========================================================================
+   [PLANNING] Ocupación tipo Gantt (views/dashboard/planning.phtml)
+   Filas = habitaciones, columnas = días. Cada fila es una grilla de una sola
+   línea: celdas y barras comparten grid-row 1 y se ubican con .plan-ini-N
+   (columna inicial, 0 = primer día) y .plan-len-N (noches visibles).
+   ========================================================================== */
+.plan-barra-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 12px;
+}
+
+.plan-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-rango {
+  margin: 0 0 0 8px;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.plan-ir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-ir .form__label {
+  margin: 0;
+}
+
+.plan-ir .form__input {
+  width: auto;
+}
+
+.plan-vista {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.plan-vista__opcion {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: var(--fs-base);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+
+.plan-vista__opcion + .plan-vista__opcion {
+  border-left: 1px solid var(--color-border);
+}
+
+.plan-vista__opcion:hover {
+  background-color: var(--color-tint-3);
+}
+
+.plan-vista__opcion--activa {
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  font-weight: 600;
+}
+
+.plan-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+
+.plan-leyenda__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 8px;
+  border-left: 3px solid;
+  border-radius: var(--radius-sm);
+}
+
+.plan-leyenda__nota {
+  color: var(--color-text-muted);
+}
+
+/* Colores por estado: barra y leyenda */
+.plan-estado--pendiente { border-color: var(--reserva-pendiente); background-color: var(--reserva-pendiente-bg); color: var(--reserva-pendiente-text); }
+.plan-estado--confirmada { border-color: var(--reserva-confirmada); background-color: var(--reserva-confirmada-bg); color: var(--reserva-confirmada-text); }
+.plan-estado--en-casa { border-color: var(--reserva-en-casa); background-color: var(--reserva-en-casa-bg); color: var(--reserva-en-casa-text); }
+.plan-estado--sale-hoy { border-color: var(--reserva-sale-hoy); background-color: var(--reserva-sale-hoy-bg); color: var(--reserva-sale-hoy-text); }
+.plan-estado--no-show { border-color: var(--reserva-no-show); background-color: var(--reserva-no-show-bg); color: var(--reserva-no-show-text); }
+.plan-estado--finalizada { border-color: var(--reserva-finalizada); background-color: var(--reserva-finalizada-bg); color: var(--reserva-finalizada-text); }
+.plan-estado--pendiente i { color: var(--reserva-pendiente); }
+.plan-estado--confirmada i { color: var(--reserva-confirmada); }
+.plan-estado--en-casa i { color: var(--reserva-en-casa); }
+.plan-estado--sale-hoy i { color: var(--reserva-sale-hoy); }
+.plan-estado--no-show i { color: var(--reserva-no-show); }
+.plan-estado--finalizada i { color: var(--reserva-finalizada); }
+
+/* Contenedor con scroll: la cabecera y la columna de habitaciones quedan fijas */
+.plan {
+  --plan-col-hab: 150px;
+  --plan-col-dia: minmax(48px, 1fr);
+  --plan-alto-fila: 44px;
+  /* El ancho no depende del contenido: con 30 días scrollea adentro, no ensancha la página */
+  contain: inline-size;
+  width: 100%;
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+  min-height: 240px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.plan--30 {
+  --plan-col-dia: 44px;
+}
+
+.plan-fila {
+  display: grid;
+  grid-template-columns: var(--plan-col-hab) repeat(14, var(--plan-col-dia));
+  grid-template-rows: var(--plan-alto-fila);
+  min-width: max-content;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan--30 .plan-fila {
+  grid-template-columns: var(--plan-col-hab) repeat(30, var(--plan-col-dia));
+}
+
+.plan--14 .plan-fila {
+  min-width: 100%;
+}
+
+.plan-fila:last-child {
+  border-bottom: 0;
+}
+
+.plan-fila > * {
+  grid-row: 1;
+}
+
+.plan-fila--cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  grid-template-rows: 48px;
+  background-color: var(--color-surface-alt);
+}
+
+.plan-hab {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 12px;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.plan-hab--cabecera {
+  background-color: var(--color-surface-alt);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.plan-hab__numero {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.plan-hab__numero:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.plan-hab__tipo,
+.plan-hab__estado {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-hab__estado i {
+  margin-right: 4px;
+  color: var(--room-maintenance);
+}
+
+.plan-dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--color-tint-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.plan-dia__semana {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.plan-dia__numero {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.plan-dia--finde,
+.plan-celda--finde {
+  background-color: var(--color-tint-2);
+}
+
+.plan-dia--mes {
+  border-left: 2px solid var(--color-border);
+}
+
+.plan-dia--hoy {
+  background-color: var(--color-accent-bg);
+  box-shadow: inset 0 -3px 0 var(--color-accent);
+}
+
+.plan-dia--hoy .plan-dia__numero,
+.plan-dia--hoy .plan-dia__semana {
+  color: var(--color-accent-text);
+}
+
+.plan-celda {
+  border-right: 1px solid var(--color-tint-3);
+}
+
+.plan-celda--hoy {
+  background-color: var(--color-accent-soft);
+}
+
+.plan-celda--libre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.plan-celda--libre:hover,
+.plan-celda--libre:focus-visible {
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
+  outline: none;
+}
+
+.plan-fila--no-reservable .plan-celda {
+  background-color: var(--color-tint-1);
+}
+
+/* Barra de una reserva */
+.plan-reserva {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 6px 2px;
+  padding: 0 8px;
+  border: 1px solid;
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
+}
+
+.plan-reserva:hover,
+.plan-reserva:focus-visible {
+  box-shadow: var(--shadow-md);
+  outline: none;
+}
+
+.plan-reserva:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.plan-reserva__texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* La estadía sigue fuera de lo visible: sin borde redondeado de ese lado */
+.plan-reserva--sigue-antes {
+  margin-left: 0;
+  border-left-style: dashed;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.plan-reserva--sigue-despues {
+  margin-right: 0;
+  border-right-style: dashed;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Posición de barras y columnas (hasta 30 días) */
+.plan-ini-0 { grid-column-start: 2; }
+.plan-ini-1 { grid-column-start: 3; }
+.plan-ini-2 { grid-column-start: 4; }
+.plan-ini-3 { grid-column-start: 5; }
+.plan-ini-4 { grid-column-start: 6; }
+.plan-ini-5 { grid-column-start: 7; }
+.plan-ini-6 { grid-column-start: 8; }
+.plan-ini-7 { grid-column-start: 9; }
+.plan-ini-8 { grid-column-start: 10; }
+.plan-ini-9 { grid-column-start: 11; }
+.plan-ini-10 { grid-column-start: 12; }
+.plan-ini-11 { grid-column-start: 13; }
+.plan-ini-12 { grid-column-start: 14; }
+.plan-ini-13 { grid-column-start: 15; }
+.plan-ini-14 { grid-column-start: 16; }
+.plan-ini-15 { grid-column-start: 17; }
+.plan-ini-16 { grid-column-start: 18; }
+.plan-ini-17 { grid-column-start: 19; }
+.plan-ini-18 { grid-column-start: 20; }
+.plan-ini-19 { grid-column-start: 21; }
+.plan-ini-20 { grid-column-start: 22; }
+.plan-ini-21 { grid-column-start: 23; }
+.plan-ini-22 { grid-column-start: 24; }
+.plan-ini-23 { grid-column-start: 25; }
+.plan-ini-24 { grid-column-start: 26; }
+.plan-ini-25 { grid-column-start: 27; }
+.plan-ini-26 { grid-column-start: 28; }
+.plan-ini-27 { grid-column-start: 29; }
+.plan-ini-28 { grid-column-start: 30; }
+.plan-ini-29 { grid-column-start: 31; }
+.plan-len-1 { grid-column-end: span 1; }
+.plan-len-2 { grid-column-end: span 2; }
+.plan-len-3 { grid-column-end: span 3; }
+.plan-len-4 { grid-column-end: span 4; }
+.plan-len-5 { grid-column-end: span 5; }
+.plan-len-6 { grid-column-end: span 6; }
+.plan-len-7 { grid-column-end: span 7; }
+.plan-len-8 { grid-column-end: span 8; }
+.plan-len-9 { grid-column-end: span 9; }
+.plan-len-10 { grid-column-end: span 10; }
+.plan-len-11 { grid-column-end: span 11; }
+.plan-len-12 { grid-column-end: span 12; }
+.plan-len-13 { grid-column-end: span 13; }
+.plan-len-14 { grid-column-end: span 14; }
+.plan-len-15 { grid-column-end: span 15; }
+.plan-len-16 { grid-column-end: span 16; }
+.plan-len-17 { grid-column-end: span 17; }
+.plan-len-18 { grid-column-end: span 18; }
+.plan-len-19 { grid-column-end: span 19; }
+.plan-len-20 { grid-column-end: span 20; }
+.plan-len-21 { grid-column-end: span 21; }
+.plan-len-22 { grid-column-end: span 22; }
+.plan-len-23 { grid-column-end: span 23; }
+.plan-len-24 { grid-column-end: span 24; }
+.plan-len-25 { grid-column-end: span 25; }
+.plan-len-26 { grid-column-end: span 26; }
+.plan-len-27 { grid-column-end: span 27; }
+.plan-len-28 { grid-column-end: span 28; }
+.plan-len-29 { grid-column-end: span 29; }
+.plan-len-30 { grid-column-end: span 30; }
+
+@media (max-width: 768px) {
+  .plan {
+    --plan-col-hab: 96px;
+    --plan-col-dia: 44px;
+    max-height: none;
+  }
+
+  .plan-hab__tipo {
+    display: none;
+  }
+}
