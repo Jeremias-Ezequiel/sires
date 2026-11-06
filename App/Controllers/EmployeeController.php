@@ -504,18 +504,7 @@ class EmployeeController
             $password = $_POST['password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
 
-            if (empty($password)) {
-                throw new Exception("La contraseña es obligatoria.");
-            }
-            if (strlen($password) < 8) {
-                throw new Exception("La contraseña debe tener al menos 8 caracteres.");
-            }
-            if (!preg_match('/[A-Z]/', $password)) {
-                throw new Exception("La contraseña debe contener al menos una letra mayúscula.");
-            }
-            if (!preg_match('/\d/', $password)) {
-                throw new Exception("La contraseña debe contener al menos un número.");
-            }
+            Validator::passwordValida($password);
             if ($password !== $confirmPassword) {
                 throw new Exception("Las contraseñas ingresadas no coinciden.");
             }
