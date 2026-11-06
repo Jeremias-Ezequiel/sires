@@ -3,6 +3,20 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.6.0] - 2026-11-06
+
+### Agregado
+- **Mails al huésped:** confirmación al crear la reserva, recordatorio antes de la entrada (los días se
+  configuran en *Configuración > Mails al huésped*, 3 por defecto) y comprobante de cada pago.
+- Los mails se encolan y los manda `cron/mails.php` cada 5 minutos, con reintentos (hasta 5). La
+  confirmación y el recordatorio de una reserva cancelada no se mandan.
+- El detalle de la reserva muestra los mails enviados, pendientes y con error.
+- *Procesos automáticos* incluye el envío de mails y avisa si hay mails esperando y el cron no corre.
+
+### Cambiado
+- Base de datos: migración `014_cola_mails` (tabla `Cola_Mails` y clave `recordatorio_dias_antes`),
+  incluida en el dump `v1.6.0`. Requiere una línea de crontab para `cron/mails.php` (ver README).
+
 ## [1.5.0] - 2026-11-06
 
 ### Agregado
