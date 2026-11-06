@@ -38,6 +38,17 @@ Los realizan EVENTs de la base de datos (requieren `event_scheduler = ON`):
 
 `cron/*.php` son un respaldo por CLI que ejecuta la misma lógica (`php cron/payment-cutoff.php`, etc.).
 
+**Mails al huésped** (confirmación, recordatorio N días antes y comprobante de pago): se encolan en la
+tabla `Cola_Mails` y los manda `cron/mails.php`, que **sí necesita el crontab** (un EVENT no puede
+mandar mails). Usa el SMTP del `.env` (`SMTP_*`; remitente opcional en `MAIL_FROM` y `MAIL_FROM_NAME`):
+
+```cron
+*/5 * * * * php /ruta/a/sires/cron/mails.php >> /ruta/a/sires/logs/mails.log 2>&1
+```
+
+Si el cron no corre, los mails quedan pendientes y el inicio del administrador lo avisa
+(Auditoría > Procesos automáticos).
+
 ## Configuración del negocio
 
 Las políticas (horas de corte, seña mínima, cancelación, late checkout, No-Show, etc.) viven en la
