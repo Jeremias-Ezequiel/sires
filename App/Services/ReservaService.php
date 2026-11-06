@@ -10,6 +10,9 @@ use App\Models\Reserva;
 use App\Models\Habitacion;
 use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
+use App\Dominio\ReglasPago;
+use App\Dominio\ReglasReserva;
+use App\Dominio\Tarifa;
 use PDO;
 use PDOException;
 
@@ -67,7 +70,7 @@ class ReservaService
             throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
         }
         $maxNoches = ConfiguracionService::maxNochesReserva();
-        $noches = (new \DateTime($fechaEntrada))->diff(new \DateTime($fechaSalida))->days;
+        $noches = Tarifa::noches($fechaEntrada, $fechaSalida);
         if ($noches > $maxNoches) {
             throw new Exception("La reserva no puede superar las " . $maxNoches . " noches (se pidieron " . $noches . ").");
         }
@@ -99,13 +102,13 @@ class ReservaService
         string $fechaSalida,
         int $cantHuespedes
     ): void {
-        $noches = (new \DateTime($fechaEntrada))->diff(new \DateTime($fechaSalida))->days;
+        $noches = Tarifa::noches($fechaEntrada, $fechaSalida);
         $precioEfectivo = Habitacion::precioEfectivoNoche(
             (float)$habitacionRow['precio_noche_base'],
             (int)$habitacionRow['id_tipo_habitacion'],
             $cantHuespedes
         );
-        $total = $precioEfectivo * $noches;
+        $total = Tarifa::total($precioEfectivo, $noches);
 
         $this->reservaModel->actualizarPrecioPactado($idReserva, $precioEfectivo);
 
@@ -131,7 +134,7 @@ class ReservaService
     /** Precio por noche acordado de una reserva (fila de findById), con fallback al precio actual. */
     private static function precioNocheReserva(array $reserva): float
     {
-        if (isset($reserva['precio_noche_pactado']) && $reserva['precio_noche_pactado'] !== null) {
+        if (isset($reserva['precio_noche_pactado'])) {
             return (float)$reserva['precio_noche_pactado'];
         }
         return Habitacion::precioEfectivoNoche(
@@ -393,7 +396,7 @@ class ReservaService
 
                 $pagoService->aplicarRetencion(
                     $idReserva,
-                    (float)$row['precio_noche'] * (int)$row['noches_retenidas']
+                    ReglasReserva::retencionNoShow((float)$row['precio_noche'], (int)$row['noches_retenidas'])
                 );
 
                 $this->habitacionModel->cambiarEstado(
@@ -435,8 +438,8 @@ class ReservaService
             throw new Exception("Debe realizar al menos un pago para confirmar la reserva.");
         }
         $senaPct = ConfiguracionService::senaMinimaPct($reservaData['fecha_alta']);
-        $senaMinima = round($resumen->getTotal() * $senaPct / 100, 2);
-        if ($resumen->getMontoPagado() < $senaMinima) {
+        $senaMinima = ReglasPago::senaMinima($resumen->getTotal(), $senaPct);
+        if (!ReglasPago::alcanzaSena($resumen->getMontoPagado(), $resumen->getTotal(), $senaPct)) {
             throw new Exception(
                 "Para confirmar se necesita una seña mínima del " . rtrim(rtrim(number_format($senaPct, 2, ',', ''), '0'), ',') .
                 " % ($" . number_format($senaMinima, 2, ',', '.') . "). Cobrado: $" .
@@ -687,15 +690,14 @@ class ReservaService
             // N noches (con tope en lo cobrado). El resto de lo cobrado queda A Reembolsar,
             // sin importar si la reserva estaba pendiente o confirmada.
             // Condiciones vigentes cuando se hizo la reserva (no las actuales)
-            $horasGratis = ConfiguracionService::cancelacionGratisHoras($reservaData['fecha_alta']);
-            $horasAnticipacion = (strtotime($reservaData['fecha_entrada'] . ' 00:00:00') - time()) / 3600;
-            $montoRetenido = 0.0;
-            if ($horasAnticipacion < $horasGratis) {
-                $nochesReserva = (new \DateTime($reservaData['fecha_entrada']))
-                    ->diff(new \DateTime($reservaData['fecha_salida']))->days;
-                $nochesPenalidad = min($nochesReserva, ConfiguracionService::cancelacionPenalidadNoches($reservaData['fecha_alta']));
-                $montoRetenido = self::precioNocheReserva($reservaData) * $nochesPenalidad;
-            }
+            $politica = ConfiguracionService::politicaReserva($reservaData['fecha_alta']);
+            $horasGratis = $politica->cancelacionGratisHoras;
+            $montoRetenido = ReglasReserva::retencionCancelacion(
+                self::precioNocheReserva($reservaData),
+                Tarifa::noches($reservaData['fecha_entrada'], $reservaData['fecha_salida']),
+                ReglasReserva::horasAnticipacion($reservaData['fecha_entrada'], time()),
+                $politica
+            );
             $estadoPago = (new PagoService())->aplicarRetencion($idReserva, $montoRetenido);
 
             // No se toca la habitación: una reserva pendiente o confirmada nunca la ocupó,
@@ -728,8 +730,11 @@ class ReservaService
     /** Día en que se libera un No-Show con pago: entrada + noches retenidas, sin pasar la salida. */
     private static function fechaLiberacionNoShow(array $reserva): string
     {
-        $liberacion = date('Y-m-d', strtotime($reserva['fecha_entrada'] . ' +' . ConfiguracionService::noShowNochesRetenidas($reserva['fecha_alta']) . ' day'));
-        return min($liberacion, (string)$reserva['fecha_salida']);
+        return ReglasReserva::fechaLiberacionNoShow(
+            (string)$reserva['fecha_entrada'],
+            (string)$reserva['fecha_salida'],
+            ConfiguracionService::noShowNochesRetenidas($reserva['fecha_alta'])
+        );
     }
 
     public function marcarNoShow(int $idReserva): array
@@ -742,12 +747,14 @@ class ReservaService
             throw new Exception("Solo se puede marcar como No-Show reservas confirmadas.");
         }
 
-        $hoy = date('Y-m-d');
-        if ((string)$reservaData['fecha_entrada'] > $hoy) {
-            throw new Exception("No se puede marcar como No-Show antes de la fecha de entrada.");
-        }
-        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < ConfiguracionService::horaNoShow()) {
-            throw new Exception("El No-Show solo puede marcarse después de las " . ConfiguracionService::horaNoShow() . " del día de entrada.");
+        $errorNoShow = ReglasReserva::errorNoShow(
+            (string)$reservaData['fecha_entrada'],
+            date('Y-m-d'),
+            date('H:i'),
+            ConfiguracionService::horaNoShow()
+        );
+        if ($errorNoShow !== null) {
+            throw new Exception($errorNoShow);
         }
 
         $idHabitacion = (int)$reservaData['id_habitacion'];

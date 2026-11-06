@@ -8,6 +8,7 @@ use PDO;
 use PDOException;
 use Exception;
 use App\Services\ConfiguracionService;
+use App\Dominio\Tarifa;
 
 class Habitacion extends Model
 {
@@ -92,9 +93,8 @@ class Habitacion extends Model
                 JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
                 LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id";
 
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
+        // Siempre hay al menos el filtro de is_active.
+        $sql .= " WHERE " . implode(" AND ", $conditions);
 
         $sql .= " ORDER BY h.numero ASC";
 
@@ -614,16 +614,17 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
 
     public static function descuentoOcupacion(int $capacidad, int $huespedes): float
     {
-        $tabla = ConfiguracionService::descuentoOcupacion()[$capacidad] ?? null;
-        if ($tabla === null) return 0.0;
-        return (float)($tabla[$huespedes] ?? 0);
+        return Tarifa::descuentoOcupacion(ConfiguracionService::descuentoOcupacion(), $capacidad, $huespedes);
     }
 
     public static function precioEfectivoNoche(float $precioBase, int $idTipo, int $huespedes): float
     {
-        $capacidad = self::capacidadParaTipo($idTipo);
-        $dsc = self::descuentoOcupacion($capacidad, $huespedes);
-        return $precioBase * (1 - $dsc / 100);
+        return Tarifa::precioEfectivoNoche(
+            $precioBase,
+            self::capacidadParaTipo($idTipo),
+            $huespedes,
+            ConfiguracionService::descuentoOcupacion()
+        );
     }
 
     // =====================================================================

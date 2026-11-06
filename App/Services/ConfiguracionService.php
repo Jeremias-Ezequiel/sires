@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Config\Database;
 use App\Config\Politicas;
+use App\Dominio\ConfiguracionVersionada;
+use App\Dominio\PoliticaReserva;
 use JsonException;
 use PDO;
 use PDOException;
@@ -60,17 +62,11 @@ final class ConfiguracionService
         try {
             $db = (new Database())->getConnection();
             $stmt = $db->prepare(
-                "SELECT valor, tipo FROM Configuracion
-                 WHERE clave = :clave AND vigente_desde <= :ref
-                 ORDER BY vigente_desde DESC
-                 LIMIT 1"
+                "SELECT valor, tipo, vigente_desde FROM Configuracion
+                 WHERE clave = :clave AND vigente_desde <= :ref"
             );
             $stmt->execute([':clave' => $clave, ':ref' => $ref]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($row) {
-                $valor = self::convertir((string)$row['valor'], (string)$row['tipo']);
-            }
+            $valor = ConfiguracionVersionada::valorVigente($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], $ref, $valor);
         } catch (PDOException | JsonException | \UnexpectedValueException $e) {
             error_log('[SIRES CONFIG] Usando valor por defecto de ' . $clave . ': ' . $e->getMessage());
         }
@@ -157,35 +153,15 @@ final class ConfiguracionService
         return (int)self::get('noshow_noches_retenidas', $fechaAlta);
     }
 
-    // ------------------------------------------------------------------
-
-    /** Convierte el valor guardado como texto según su tipo. */
-    private static function convertir(string $valor, string $tipo): mixed
+    /** Condiciones de la reserva vigentes a su $fechaAlta (null = las de hoy). */
+    public static function politicaReserva(?string $fechaAlta = null): PoliticaReserva
     {
-        switch ($tipo) {
-            case 'int':
-                if (filter_var($valor, FILTER_VALIDATE_INT) === false) {
-                    throw new \UnexpectedValueException("'{$valor}' no es un entero");
-                }
-                return (int)$valor;
-            case 'decimal':
-                if (!is_numeric($valor)) {
-                    throw new \UnexpectedValueException("'{$valor}' no es un decimal");
-                }
-                return (float)$valor;
-            case 'time':
-                if (!preg_match('/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/', $valor)) {
-                    throw new \UnexpectedValueException("'{$valor}' no es una hora HH:MM");
-                }
-                return substr($valor, 0, 5);
-            case 'json':
-                $datos = json_decode($valor, true, 512, JSON_THROW_ON_ERROR);
-                if (!is_array($datos)) {
-                    throw new \UnexpectedValueException('el JSON no es un objeto');
-                }
-                return $datos;
-            default:
-                return $valor;
-        }
+        return new PoliticaReserva(
+            self::senaMinimaPct($fechaAlta),
+            self::cancelacionGratisHoras($fechaAlta),
+            self::cancelacionPenalidadNoches($fechaAlta),
+            self::noShowNochesRetenidas($fechaAlta),
+            self::factorLateCheckout($fechaAlta),
+        );
     }
 }

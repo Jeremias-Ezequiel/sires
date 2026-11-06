@@ -10,6 +10,8 @@ use App\Models\ResumenPago;
 use App\Models\EstadoPago;
 use App\Models\TransaccionPago;
 use App\Models\Habitacion;
+use App\Dominio\ReglasPago;
+use App\Dominio\Tarifa;
 use PDO;
 use PDOException;
 
@@ -40,19 +42,16 @@ class PagoService
             return $existente;
         }
 
-        $entrada = new \DateTime($reserva['fecha_entrada']);
-        $salida  = new \DateTime($reserva['fecha_salida']);
-
-        if ($salida <= $entrada) {
+        if (new \DateTime($reserva['fecha_salida']) <= new \DateTime($reserva['fecha_entrada'])) {
             throw new Exception("La reserva no tiene fechas válidas para calcular el total.");
         }
 
-        $noches     = $entrada->diff($salida)->days;
+        $noches     = Tarifa::noches($reserva['fecha_entrada'], $reserva['fecha_salida']);
         $precioBase = (float)$reserva['precio_noche_base'];
         $idTipo     = (int)$reserva['id_tipo_habitacion'];
         $huespedes  = (int)$reserva['cantidad_huespedes'];
         $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
-        $total      = $precioEfectivo * $noches;
+        $total      = Tarifa::total($precioEfectivo, $noches);
 
         if ($total <= 0) {
             throw new Exception("No se pudo calcular un total válido para la reserva.");
@@ -150,12 +149,7 @@ class PagoService
             $nuevoMontoPagado = $resumen->getMontoPagado() + $montoAbonado;
             $nuevoSaldo       = $resumen->getSaldoPendiente() - $montoAbonado;
 
-            $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
-            if ($nuevoSaldo <= 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
-            } elseif ($nuevoMontoPagado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
-            }
+            $nuevoEstado = ReglasPago::estadoTrasPago($nuevoSaldo, $nuevoMontoPagado);
 
             $resumen->setIdEstadoPago($nuevoEstado);
             $resumen->setMontoPagado($nuevoMontoPagado);
@@ -223,15 +217,13 @@ class PagoService
             $montoTotalAnt = (float)$row['monto_total'];
             $montoCobrado  = (float)$row['monto_cobrado'];
 
-            $entrada    = new \DateTime($reserva['fecha_entrada']);
-            $salida     = new \DateTime($reserva['fecha_salida']);
-            $noches     = $entrada->diff($salida)->days;
+            $noches     = Tarifa::noches($reserva['fecha_entrada'], $reserva['fecha_salida']);
             $precioBase = (float)$reserva['precio_noche_base'];
             $idTipo     = (int)$reserva['id_tipo_habitacion'];
             $huespedes  = (int)$reserva['cantidad_huespedes'];
             $precioEfectivo = $precioNocheFijo
                 ?? Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
-            $nuevoTotal = $precioEfectivo * $noches;
+            $nuevoTotal = Tarifa::total($precioEfectivo, $noches);
 
             if ($nuevoTotal <= 0) {
                 throw new Exception("No se pudo calcular un total válido para la reserva.");
@@ -247,16 +239,7 @@ class PagoService
                 );
             }
 
-            $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
-            if ($nuevoSaldo <= 0 && $montoCobrado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
-            } elseif ($montoCobrado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
-            }
-
-            if (in_array($resumen->getIdEstadoPago(), [ResumenPago::ESTADO_REEMBOLSADO, ResumenPago::ESTADO_RETENIDO], true)) {
-                $nuevoEstado = $resumen->getIdEstadoPago();
-            }
+            $nuevoEstado = ReglasPago::estadoTrasRecalculo($nuevoSaldo, $montoCobrado, $resumen->getIdEstadoPago());
 
             $update = $db->prepare(
                 "UPDATE Resumen_Pago
@@ -320,13 +303,11 @@ class PagoService
         );
         $lock->execute([':id' => $idReserva]);
         $row = $lock->fetch(PDO::FETCH_ASSOC);
-        if (!$row || (float)$row['monto_cobrado'] <= 0) {
+        $retencion = $row ? ReglasPago::retencion((float)$row['monto_cobrado'], $montoRetenido) : null;
+        if ($retencion === null) {
             return null;
         }
-
-        $cobrado  = (float)$row['monto_cobrado'];
-        $retenido = round(min(max($montoRetenido, 0.0), $cobrado), 2);
-        $estado   = $cobrado > $retenido ? EstadoPago::A_REEMBOLSAB : EstadoPago::RETENIDO;
+        ['retenido' => $retenido, 'estado' => $estado] = $retencion;
 
         $upd = $db->prepare(
             "UPDATE Resumen_Pago
@@ -383,7 +364,7 @@ class PagoService
                 $idReserva   = (int)$row['id'];
                 $idResumen   = (int)$row['id_resumen'];
                 $precioNoche = (float)$row['precio_noche'];
-                $feeLateCheckout = round($precioNoche * ConfiguracionService::factorLateCheckout($row['fecha_alta']), 2);
+                $feeLateCheckout = ReglasPago::lateFee($precioNoche, ConfiguracionService::factorLateCheckout($row['fecha_alta']));
 
                 if ($feeLateCheckout <= 0) {
                     $db->rollBack();
@@ -548,12 +529,10 @@ class PagoService
             $idTipo        = (int)$row['id_tipo_habitacion'];
             $huespedes     = (int)$row['cantidad_huespedes'];
 
-            $entrada = new \DateTime($reserva['fecha_entrada']);
-            $salida  = new \DateTime($reserva['fecha_salida']);
-            $noches  = $entrada->diff($salida)->days;
+            $noches  = Tarifa::noches($reserva['fecha_entrada'], $reserva['fecha_salida']);
 
             $precioEfectivo = Habitacion::precioEfectivoNoche($precioNoche, $idTipo, $huespedes);
-            $nuevoTotal = $precioEfectivo * $noches;
+            $nuevoTotal = Tarifa::total($precioEfectivo, $noches);
 
             if ($nuevoTotal <= 0) {
                 throw new Exception("No se pudo calcular un total válido.");
@@ -569,12 +548,7 @@ class PagoService
 
             $nuevoSaldo = $nuevoTotal - $montoCobrado;
 
-            $nuevoEstado = ResumenPago::ESTADO_PENDIENTE;
-            if ($nuevoSaldo <= 0 && $montoCobrado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGADO_TOTAL;
-            } elseif ($montoCobrado > 0) {
-                $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
-            }
+            $nuevoEstado = ReglasPago::estadoTrasRecalculo($nuevoSaldo, $montoCobrado);
 
             $update = $db->prepare(
                 "UPDATE Resumen_Pago
@@ -673,7 +647,7 @@ class PagoService
                  WHERE id = :id"
             );
             $update->execute([
-                ':estado'  => $montoRetenido > 0 ? ResumenPago::ESTADO_RETENIDO : ResumenPago::ESTADO_REEMBOLSADO,
+                ':estado'  => ReglasPago::estadoTrasReembolso($montoRetenido),
                 ':total'   => $montoRetenido,
                 ':cobrado' => $montoRetenido,
                 ':saldo'   => 0.0,
