@@ -316,7 +316,7 @@ class ReservaService
      * el día entrada + noshow_noches_retenidas (sin pasar la salida) a la hora de checkout.
      * - La reserva pasa a NO_SHOW.
      * - Se retienen esas noches al precio pactado (tope: lo cobrado); el resto queda A Reembolsar.
-     * - La habitación pasa de Ocupada a Disponible si no hay otro huésped En casa.
+     * - La habitación pasa de Retenida a Disponible.
      * Misma lógica que el EVENT liberacion_no_show. Respaldo: cron/no-show-release.php.
      */
     public function liberarNoShowConPago(): array
@@ -383,18 +383,11 @@ class ReservaService
                     (float)$row['precio_noche'] * (int)$row['noches_retenidas']
                 );
 
-                $updH = $db->prepare(
-                    "UPDATE Habitaciones h SET h.id_estado_habitacion = :disp
-                     WHERE h.id = :id AND h.id_estado_habitacion = :ocupada
-                       AND NOT EXISTS (SELECT 1 FROM Reservas o
-                                       WHERE o.id_habitacion = h.id AND o.id_estado_reserva = :encasa)"
+                $this->habitacionModel->cambiarEstado(
+                    $idHabitacion,
+                    Habitacion::ESTADO_DISPONIBLE,
+                    Habitacion::ESTADO_RETENIDA
                 );
-                $updH->execute([
-                    ':disp'    => Habitacion::ESTADO_DISPONIBLE,
-                    ':id'      => $idHabitacion,
-                    ':ocupada' => Habitacion::ESTADO_OCUPADA,
-                    ':encasa'  => Reserva::ESTADO_EN_CASA
-                ]);
 
                 $db->commit();
                 $contador++;
@@ -490,10 +483,13 @@ class ReservaService
             $estadoHabitacion = (int)$lock->fetchColumn();
 
             if ($vieneDeNoShow) {
-                if ($estadoHabitacion !== Habitacion::ESTADO_OCUPADA) {
-                    throw new Exception(
-                        "La habitación debería estar ocupada (retenida por No-Show)."
-                    );
+                // La habitación quedó Retenida al marcar el No-Show (o Disponible si no se pudo retener).
+                $estadoOrigen = $estadoHabitacion;
+                if ($estadoOrigen !== Habitacion::ESTADO_RETENIDA && $estadoOrigen !== Habitacion::ESTADO_DISPONIBLE) {
+                    throw new Exception("La habitación no está retenida ni disponible para el check-in.");
+                }
+                if (!$this->habitacionModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_OCUPADA, $estadoOrigen)) {
+                    throw new Exception("Error al ocupar la habitación.");
                 }
             } else {
                 if ($estadoHabitacion === Habitacion::ESTADO_OCUPADA) {
@@ -519,9 +515,6 @@ class ReservaService
                 $estadoActual
             );
             if (!$reservaOk) {
-                if (!$vieneDeNoShow) {
-                    $this->habitacionModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_DISPONIBLE);
-                }
                 throw new Exception("Error al actualizar el estado de la reserva.");
             }
 
@@ -747,9 +740,10 @@ class ReservaService
                     throw new Exception("No se pudo marcar la reserva como No-Show.");
                 }
 
+                // Se retiene solo si está libre: si hay otro huésped o falta limpiarla, se deja como está.
                 $this->habitacionModel->cambiarEstado(
                     $idHabitacion,
-                    Habitacion::ESTADO_OCUPADA,
+                    Habitacion::ESTADO_RETENIDA,
                     Habitacion::ESTADO_DISPONIBLE
                 );
 

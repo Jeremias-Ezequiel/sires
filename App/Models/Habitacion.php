@@ -29,6 +29,7 @@ class Habitacion extends Model
     public const ESTADO_BLOQUEADA = EstadoHabitacion::BLOQUEADA;
     public const ESTADO_SUCIA = EstadoHabitacion::SUCIA;
     public const ESTADO_LIMPIANDO = EstadoHabitacion::LIMPIANDO;
+    public const ESTADO_RETENIDA = EstadoHabitacion::RETENIDA;
 
     // Capacidad de personas según tipo de habitación
     public const TIPOS_POR_CAPACIDAD = [

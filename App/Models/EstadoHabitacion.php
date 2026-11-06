@@ -19,6 +19,8 @@ class EstadoHabitacion extends Model
     public const BLOQUEADA = 4;
     public const SUCIA = 5;
     public const LIMPIANDO = 6;
+    /** Retenida por No-Show con pago: nadie la ocupa, pero se guarda para el huésped hasta la liberación. */
+    public const RETENIDA = 7;
 
     public function getAll(): ?array
     {
