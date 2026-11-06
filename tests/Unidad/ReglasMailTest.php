@@ -40,6 +40,16 @@ final class ReglasMailTest extends TestCase
         $this->assertFalse(ReglasMail::correspondeRecordatorio('2026-11-09 08:00:00', '2026-11-10', 3));
     }
 
+    public function testDescarteDeMailsDeReservasCanceladas(): void
+    {
+        $cancelada = \App\Models\EstadoReserva::CANCELADA;
+        $this->assertNotNull(ReglasMail::motivoDescarte('confirmacion', $cancelada));
+        $this->assertNotNull(ReglasMail::motivoDescarte('recordatorio', $cancelada));
+        $this->assertNull(ReglasMail::motivoDescarte('comprobante_pago', $cancelada));
+        $this->assertNull(ReglasMail::motivoDescarte('confirmacion', \App\Models\EstadoReserva::CONFIRMADA));
+        $this->assertNull(ReglasMail::motivoDescarte('confirmacion', null));
+    }
+
     public function testClavesUnicas(): void
     {
         $this->assertSame('confirmacion:15', ReglasMail::claveConfirmacion(15));

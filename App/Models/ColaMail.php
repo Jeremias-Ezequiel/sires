@@ -48,10 +48,12 @@ class ColaMail extends Model
     public function listosParaEnviar(int $limite): array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, tipo, id_reserva, destinatario, asunto, cuerpo_html, intentos
-             FROM Cola_Mails
-             WHERE estado = :pendiente AND proximo_intento <= :ahora
-             ORDER BY proximo_intento, id
+            "SELECT m.id, m.tipo, m.id_reserva, m.destinatario, m.asunto, m.cuerpo_html, m.intentos,
+                    r.id_estado_reserva
+             FROM Cola_Mails m
+             LEFT JOIN Reservas r ON r.id = m.id_reserva
+             WHERE m.estado = :pendiente AND m.proximo_intento <= :ahora
+             ORDER BY m.proximo_intento, m.id
              LIMIT :limite"
         );
         $stmt->bindValue(':pendiente', self::ESTADO_PENDIENTE);

@@ -73,6 +73,18 @@ final class MailServiceTest extends TestIntegracion
         $this->assertNotNull($mail['fecha_envio']);
     }
 
+    public function testConfirmacionDeReservaCanceladaSeDescarta(): void
+    {
+        $id = $this->crearReserva(self::dentroDe(540), self::dentroDe(541));
+        (new \App\Services\ReservaService())->cancelar($id);
+        (new MailService(self::transporte(false)))->procesarCola(500);
+
+        $mail = $this->mails($id)[0];
+        $this->assertSame(ColaMail::ESTADO_ERROR, $mail['estado']);
+        $this->assertStringContainsString('se canceló', (string)$mail['ultimo_error']);
+        $this->assertNull($mail['fecha_envio']);
+    }
+
     public function testFalloProgramaReintentoYFallaLaCorrida(): void
     {
         $id = $this->crearReserva(self::dentroDe(530), self::dentroDe(531));

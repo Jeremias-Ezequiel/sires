@@ -153,6 +153,12 @@ final class MailService
 
             foreach ($this->cola->listosParaEnviar($limite) as $m) {
                 $id = (int)$m['id'];
+                $estadoReserva = $m['id_estado_reserva'] === null ? null : (int)$m['id_estado_reserva'];
+                $descarte = ReglasMail::motivoDescarte((string)$m['tipo'], $estadoReserva);
+                if ($descarte !== null) {
+                    $this->cola->registrarFallo($id, (int)$m['intentos'], null, $descarte);
+                    continue;
+                }
                 try {
                     $this->transporte->enviar((string)$m['destinatario'], (string)$m['asunto'], (string)$m['cuerpo_html']);
                     $this->cola->marcarEnviado($id);

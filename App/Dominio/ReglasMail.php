@@ -57,6 +57,19 @@ final class ReglasMail
         return substr($fechaAlta, 0, 10) < $inicioVentana;
     }
 
+    /**
+     * Motivo para no mandar un mail que sigue en la cola, o null si se manda.
+     * La confirmación y el recordatorio de una reserva cancelada ya no tienen sentido;
+     * el comprobante de pago sí (el pago existió).
+     */
+    public static function motivoDescarte(string $tipo, ?int $idEstadoReserva): ?string
+    {
+        if ($tipo !== 'comprobante_pago' && $idEstadoReserva === \App\Models\EstadoReserva::CANCELADA) {
+            return 'No se envió: la reserva se canceló antes.';
+        }
+        return null;
+    }
+
     public static function claveConfirmacion(int $idReserva): string
     {
         return 'confirmacion:' . $idReserva;
