@@ -27,6 +27,10 @@ RewriteRule \.env$ index.php [QSA,L]
 RewriteRule ^(?i)App/.*$ index.php [QSA,L]
 RewriteRule ^(?i)vendor/.*$ index.php [QSA,L]
 RewriteRule ^(?i)composer\.(json|lock)$ index.php [QSA,L]
+RewriteRule ^(?i)cron/.*$ index.php [QSA,L]
+RewriteRule ^(?i)logs/.*$ index.php [QSA,L]
+RewriteRule ^(?i)[^/]+\.(md|sh)$ index.php [QSA,L]
+RewriteRule ^(?i)\.env\.example$ index.php [QSA,L]
 
 # Si la petición apunta a un archivo estático REAL (CSS, JS, imágenes, etc.) se carga normalmente
 RewriteCond %{REQUEST_FILENAME} -f [OR]

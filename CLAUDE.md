@@ -18,8 +18,8 @@ Gestión de reservas de hotel. PHP 8+ sin framework, arquitectura MVC propia sob
 - `App/Services/*` = lógica de negocio compleja: transacciones, bloqueos `FOR UPDATE`, validaciones.
 - `App/Middleware/*` = clases con métodos **estáticos** invocadas desde la definición de ruta.
 - `App/Core/ErrorHandler.php` registrado en `index.php`; loguea con prefijo `[SIRES ...]`. Rutas `/api/*` responden JSON.
-- `App/Helpers/functions.php` = helpers globales cargados por Composer: `url()`, `asset()`, `csrf_token()`, `csrf_field()`, `csrf_check()`.
-- Vistas: `App/views/partials/` (head/footer), `App/views/dashboard/layout.phtml`.
+- `App/Helpers/functions.php` = helpers globales cargados por Composer: `url()`, `asset()`, `asset_v()` (asset con `?v=filemtime`, usar para CSS/JS), `csrf_token()`, `csrf_field()`, `csrf_check()`.
+- Vistas: `App/views/partials/` (head/footer, `pagination.phtml`, `theme-switcher.phtml`), `App/views/dashboard/layout.phtml`.
 
 ## Convenciones de rutas (`App/routes.php`)
 
@@ -38,8 +38,9 @@ $r->addRoute('GET', '/dashboard/employees', [
 
 - Toda ruta protegida: `AuthMiddleware::verifyLogin` (+ `authorize` por `roles`).
 - Formularios POST: incluir `csrf_field()` en la vista y `CsrfMiddleware::verify` en la ruta (o `csrf_check()` si es un POST interno).
-- Siempre prepared statements; escapar salida de datos de BD en las vistas.
-- `.env` no se versiona (ver `.env.example`): `DB_HOST/PORT/NAME/USER/PASS`, `API_RELOJ_URL/USER/PASS`.
+- Siempre prepared statements; escapar salida de datos de BD en las vistas. En JS, todo dato insertado con `innerHTML` pasa por `escHtml()` (global, definido en `partials/head.phtml`).
+- Login y recuperación de contraseña limitados con `App\Services\LimiteIntentosService` (contadores en archivos del directorio temporal). La sesión se configura en `index.php` (cookie HttpOnly/SameSite, `session_regenerate_id` al loguear).
+- `.env` no se versiona (ver `.env.example`): `DB_HOST/PORT/NAME/USER/PASS`, `APP_URL` (base del link del mail de recuperación), `SMTP_HOST/PORT/USER/PASS`, `API_RELOJ_URL/USER/PASS`.
 
 ## URLs
 
@@ -55,6 +56,14 @@ $r->addRoute('GET', '/dashboard/employees', [
 - Lo que el hotel se queda al cancelar, por No-Show o en el corte de pagos va en `Resumen_Pago.monto_retenido` (vía `PagoService::aplicarRetencion()`): queda `A Reembolsar` si se cobró más, o `Retenido` (estado de pago 6) si no. Los reembolsos se registran como transacción negativa.
 - Constantes de estado: los valores viven en las clases catálogo (`EstadoReserva`, `EstadoHabitacion`, `EstadoPago`); `Reserva::ESTADO_*`, `Habitacion::ESTADO_*`, etc. son alias.
 - Lógica de negocio en `Services/`, no en controllers ni crons. Controllers nuevos: `extends Controller` (`redirect()`, `flash()`, `recordarInputs()`). La sesión se inicia en `index.php`.
+
+## Estilos (CSS)
+
+- Colores SOLO como tokens en `public/css/settings/variables.css` (paleta + derivados con `color-mix()` + `--estado-*`). Ningún otro CSS ni vista usa hex/rgba literales ni `style="color..."`: usar `var(--color-...)` o una clase.
+- Temas en `public/css/settings/themes.css` (`:root[data-theme="..."]`, solo redefinen la paleta); listado en `partials/theme-switcher.phtml`.
+- Clases utilitarias y piezas chicas en `public/css/components/utilities.css`; evitar `style=""` salvo `display: none` que maneja JS.
+- `pages/dashboard.css` carga después de `global.css`: si una utilidad choca con una regla del dashboard, subir especificidad.
+- Después de tocar cualquier CSS fuente: `bash build-css.sh` (regenera `login.bundle.css` y `pages/dashboard.min.css`, y avisa si hay colores literales).
 
 ## Base de datos
 
