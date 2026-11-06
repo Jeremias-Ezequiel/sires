@@ -311,14 +311,14 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
-            $idMotivoBloqueo = $vars['motivo'] ?? '';
+            $id = $_POST['id'] ?? '';
+            $idMotivoBloqueo = $_POST['motivo'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
             }
 
-            $motivoParam = !empty($idMotivoBloqueo) ? (int)$idMotivoBloqueo : null;
+            $motivoParam = filter_var($idMotivoBloqueo, FILTER_VALIDATE_INT) !== false ? (int)$idMotivoBloqueo : null;
             $resultado = $this->habitacionService->bloquear((int)$id, $motivoParam);
 
             $_SESSION['flash_message'] = $resultado['message'];
@@ -342,7 +342,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -371,7 +371,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -400,7 +400,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -429,7 +429,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -458,7 +458,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -487,7 +487,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");
@@ -516,7 +516,7 @@ class RoomController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
 
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de habitación inválido.");

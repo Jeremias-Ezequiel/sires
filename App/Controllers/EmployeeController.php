@@ -370,7 +370,7 @@ class EmployeeController
         }
 
         try {
-            $idToDeactivate = $vars['id'] ?? '';
+            $idToDeactivate = $_POST['id'] ?? '';
             
             if (empty($idToDeactivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");
@@ -410,7 +410,7 @@ class EmployeeController
         }
 
         try {
-            $idToActivate = $vars['id'] ?? '';
+            $idToActivate = $_POST['id'] ?? '';
             
             if (empty($idToActivate)) {
                 throw new Exception("Ocurrió un error al seleccionar el usuario. Intente nuevamente.");

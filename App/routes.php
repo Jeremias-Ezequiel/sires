@@ -142,15 +142,15 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/deactivate', [
+    $r->addRoute('POST', '/dashboard/employees/deactivate', [
         'action' => [EmployeeController::class, 'deactivateEmployee'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/activate', [
+    $r->addRoute('POST', '/dashboard/employees/activate', [
         'action' => [EmployeeController::class, 'activateEmployee'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
@@ -235,53 +235,53 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
+    $r->addRoute('POST', '/dashboard/rooms/deactivate', [
         'action' => [RoomController::class, 'deactivateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/activate', [
+    $r->addRoute('POST', '/dashboard/rooms/activate', [
         'action' => [RoomController::class, 'activateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/baja', [
+    $r->addRoute('POST', '/dashboard/rooms/baja', [
         'action' => [RoomController::class, 'bajaLogicaRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/reactivate', [
+    $r->addRoute('POST', '/dashboard/rooms/reactivate', [
         'action' => [RoomController::class, 'reactivateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
     // Limpieza (Turnaround)
-    $r->addRoute('GET', '/dashboard/rooms/cleaning/start', [
+    $r->addRoute('POST', '/dashboard/rooms/cleaning/start', [
         'action' => [RoomController::class, 'startCleaning'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/cleaning/complete', [
+    $r->addRoute('POST', '/dashboard/rooms/cleaning/complete', [
         'action' => [RoomController::class, 'completeCleaning'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     // Mantenimiento
-    $r->addRoute('GET', '/dashboard/rooms/maintenance/start', [
+    $r->addRoute('POST', '/dashboard/rooms/maintenance/start', [
         'action' => [RoomController::class, 'putInMaintenance'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/maintenance/end', [
+    $r->addRoute('POST', '/dashboard/rooms/maintenance/end', [
         'action' => [RoomController::class, 'outOfMaintenance'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
