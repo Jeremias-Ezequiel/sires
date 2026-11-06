@@ -1,7 +1,7 @@
 .form__label {
   display: block;
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -20,7 +20,7 @@
   color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__input:focus,
@@ -136,7 +136,7 @@
   color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__search-input:focus {
@@ -158,7 +158,7 @@
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__select-filter:focus {

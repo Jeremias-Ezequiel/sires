@@ -16,7 +16,7 @@
 
 .btn--primary {
   background-color: var(--color-accent);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border-radius: 30px;
   padding: 0 24px;
   height: 46px;

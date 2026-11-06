@@ -3,14 +3,17 @@ body {
     padding: 0;
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.45;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 .system-footer {
     text-align: center;
     padding: 8px 0;
-    font-size: 9pt;
+    font-size: 12px;
     color: var(--color-text-muted);
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
@@ -18,4 +21,17 @@ body {
 
 .system-footer .system-version {
     font-weight: 600;
+}
+
+/* Números alineados en tablas y montos */
+table,
+.monto,
+.kpi-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible en todo elemento interactivo (navegación por teclado) */
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }

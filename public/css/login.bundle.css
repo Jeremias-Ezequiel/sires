@@ -19,60 +19,92 @@
      1. PALETA
      ====================================================================== */
 
-  /* Fondos */
-  --color-bg: #0a192f;              /* fondo de la página */
-  --color-bg-deep: #000000;         /* detrás del carrusel del login */
-  --color-surface: #112240;         /* paneles, sidebar, tarjetas */
-  --color-surface-alt: #1e293b;     /* fecha del dashboard, encabezados de sección */
-  --color-surface-modal: #0d1527;   /* caja de los modales */
-  --color-input: #151f32;
-  --color-input-focus: #1a263d;
+  /* Marca (escala del azul del logo) */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-500: #6aaaf7;
+  --color-primary-600: #4a97f5;
+  --color-primary-700: #6aaaf7;
+  --color-primary-900: #14396e;
+
+  /* Fondos (nunca blanco puro de fondo general) */
+  --color-bg: #0f1623;              /* fondo de la página */
+  --color-bg-deep: #0b111c;         /* detrás del carrusel del login */
+  --color-surface: #172033;         /* paneles, tarjetas, tablas, modales */
+  --color-surface-alt: #1d2940;     /* filas alternas, headers de tabla */
+  --color-surface-modal: #172033;   /* caja de los modales */
+  --color-input: #131b2b;
+  --color-input-focus: #172033;
 
   /* Bordes */
-  --color-border: #233554;
-  --color-border-strong: #334155;
+  --color-border: #2a3a55;
+  --color-border-strong: #34476a;
 
-  /* Texto */
-  --color-text: #e6f1ff;            /* texto principal */
-  --color-text-strong: #ffffff;     /* títulos de modal, fecha */
-  --color-text-muted: #8892b0;      /* etiquetas, texto secundario */
-  --color-text-soft: #94a3b8;       /* descripciones de modal, íconos de select */
+  /* Texto (nunca negro puro) */
+  --color-text: #e6ebf3;            /* texto principal */
+  --color-text-strong: #f4f7fb;     /* títulos de modal, fecha */
+  --color-text-muted: #9aa7bb;      /* etiquetas, texto secundario */
+  --color-text-soft: #9aa7bb;       /* descripciones de modal, íconos de select */
 
-  /* Acento de marca (botones principales, links, activo del menú) */
-  --color-accent: #fbbf24;
-  --color-accent-hover: #e5b83b;
-  --color-on-accent: #0a192f;       /* texto sobre el acento */
+  /* Acento de marca = azul primario (botones, links, activo del menú, foco) */
+  --color-accent: var(--color-primary-600);
+  --color-accent-hover: var(--color-primary-700);
+  --color-on-accent: #0f1623;       /* texto sobre el acento */
 
   /* Acción secundaria (botón azul de login/recuperación) */
-  --color-primary: #1d4ed8;
-  --color-primary-hover: #2563eb;
+  --color-primary: var(--color-primary-600);
+  --color-primary-hover: var(--color-primary-700);
 
-  /* Semánticos */
+  /* Feedback general (no confundir con estados de habitación) */
   --color-info: #38bdf8;
   --color-info-hover: #7dd3fc;
-  --color-success: #22c55e;
-  --color-success-strong: #10b981;
-  --color-success-strong-hover: #059669;
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
-  --color-warning: #f59e0b;
-  --color-warning-hover: #d97706;
-  --color-orange: #f97316;
-  --color-highlight: #eab308;
+  --color-success: #4ade80;
+  --color-success-strong: #16a34a;
+  --color-success-strong-hover: #15803d;
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-warning: #fbbf24;
+  --color-warning-hover: #f59e0b;
+  --color-orange: #fb923c;
+  --color-highlight: #facc15;
   --color-purple: #c084fc;
-  --color-neutral: #6b7280;
+  --color-neutral: #9ca3af;
 
   /* Texto sobre colores sólidos (badges, botones de estado) */
-  --color-on-solid: #ffffff;
-  --color-on-highlight: #000000;
+  --color-on-solid: #0f1623;
+  --color-on-highlight: #0f1623;
 
   /* Base de los "tintes": superposiciones sutiles sobre el fondo.
-     Blanco en temas oscuros, negro en temas claros. */
+     Negro azulado en temas claros, blanco en temas oscuros. */
   --color-tint-base: #ffffff;
 
   /* Base de sombras y overlay de modales */
   --color-shadow: #000000;
-  --color-overlay-base: #090f1d;
+  --color-overlay-base: #05080e;
+
+  /* Sidebar (en el tema claro usa el azul oscuro de marca, --color-primary-900) */
+  --sidebar-bg: #111b2d;
+  --sidebar-text: #9aa7bb;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-hover-bg: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-active-bg: var(--color-primary-600);
+  --sidebar-active-text: #0f1623;
+  --sidebar-border: var(--color-border);
+  --sidebar-danger: #fca5a5;        /* "Cerrar sesión" sobre el fondo oscuro */
+  --sidebar-danger-bg: color-mix(in srgb, #f87171 14%, transparent);
+
+  /* Estados de habitación: significado fijo (DESIGN.md §4). No reasignar. */
+  --room-available: #16a34a;
+  --room-occupied: #d6336c;
+  --room-reserved: #0ea5e9;
+  --room-checkout: #ea580c;
+  --room-cleaning: #ca8a04;
+  --room-maintenance: #6b7280;
+
+  /* Con qué se mezcla el color de estado para que su texto sea legible
+     (oscuro en temas claros, claro en temas oscuros). */
+  --room-text-base: var(--color-text);
 
   /* ======================================================================
      2. DERIVADOS (no hace falta tocarlos en los temas)
@@ -102,6 +134,7 @@
 
   --color-warning-bg: color-mix(in srgb, var(--color-warning) 10%, transparent);
   --color-warning-border: color-mix(in srgb, var(--color-warning) 22%, transparent);
+  --color-warning-text: color-mix(in srgb, var(--color-warning) 80%, var(--color-text));
 
   --color-purple-bg: color-mix(in srgb, var(--color-purple) 10%, transparent);
   --color-purple-border: color-mix(in srgb, var(--color-purple) 25%, transparent);
@@ -109,17 +142,33 @@
   --color-neutral-bg: color-mix(in srgb, var(--color-text-soft) 10%, transparent);
   --color-neutral-border: color-mix(in srgb, var(--color-text-soft) 20%, transparent);
 
+  /* Estados de habitación: fondo suave y texto legible (AA) */
+  --room-available-bg: color-mix(in srgb, var(--room-available) 12%, transparent);
+  --room-occupied-bg: color-mix(in srgb, var(--room-occupied) 12%, transparent);
+  --room-reserved-bg: color-mix(in srgb, var(--room-reserved) 12%, transparent);
+  --room-checkout-bg: color-mix(in srgb, var(--room-checkout) 12%, transparent);
+  --room-cleaning-bg: color-mix(in srgb, var(--room-cleaning) 14%, transparent);
+  --room-maintenance-bg: color-mix(in srgb, var(--room-maintenance) 14%, transparent);
+
+  --room-available-text: color-mix(in srgb, var(--room-available) 60%, var(--room-text-base));
+  --room-occupied-text: color-mix(in srgb, var(--room-occupied) 60%, var(--room-text-base));
+  --room-reserved-text: color-mix(in srgb, var(--room-reserved) 55%, var(--room-text-base));
+  --room-checkout-text: color-mix(in srgb, var(--room-checkout) 60%, var(--room-text-base));
+  --room-cleaning-text: color-mix(in srgb, var(--room-cleaning) 55%, var(--room-text-base));
+  --room-maintenance-text: color-mix(in srgb, var(--room-maintenance) 60%, var(--room-text-base));
+
   /* ======================================================================
      3. ESTADOS (habitaciones, reservas, timeline)
      ====================================================================== */
 
-  --estado-disponible: var(--color-success);
-  --estado-ocupada: var(--color-danger);
-  --estado-reservada: var(--color-accent);
-  --estado-sucia: var(--color-warning);
-  --estado-limpiando: var(--color-info);
-  --estado-mantenimiento: var(--color-orange);
-  --estado-bloqueada: var(--color-neutral);
+  --estado-disponible: var(--room-available);
+  --estado-ocupada: var(--room-occupied);
+  --estado-reservada: var(--room-reserved);
+  --estado-checkout: var(--room-checkout);
+  --estado-sucia: var(--room-cleaning);
+  --estado-limpiando: var(--room-cleaning);
+  --estado-mantenimiento: var(--room-maintenance);
+  --estado-bloqueada: var(--room-maintenance);
   --estado-pendiente: var(--color-warning);
   --estado-seleccion: var(--color-highlight);
 
@@ -127,7 +176,7 @@
      RADIOS
      ====================================================================== */
   --radius-xs: 4px;
-  --radius-sm: 6px;
+  --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
@@ -136,13 +185,20 @@
   /* ======================================================================
      SOMBRAS
      ====================================================================== */
-  --shadow-sm: 0 4px 6px -1px color-mix(in srgb, var(--color-shadow) 10%, transparent);
-  --shadow-md: 0 8px 24px color-mix(in srgb, var(--color-shadow) 25%, transparent);
-  --shadow-lg: 0 10px 30px color-mix(in srgb, var(--color-shadow) 50%, transparent);
-  --shadow-xl: 0 20px 50px color-mix(in srgb, var(--color-shadow) 60%, transparent);
-  --shadow-accent: 0 4px 12px var(--color-accent-border);
-  --shadow-primary: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
-  --focus-ring: 0 0 0 3px var(--color-accent-bg);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-shadow) 8%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-shadow) 12%, transparent);
+  --shadow-lg: 0 6px 16px color-mix(in srgb, var(--color-shadow) 16%, transparent);
+  --shadow-xl: 0 12px 32px color-mix(in srgb, var(--color-shadow) 22%, transparent);
+  --shadow-accent: 0 2px 6px var(--color-accent-border);
+  --shadow-primary: 0 2px 6px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, #6aaaf7 50%, transparent);
+
+  /* Transiciones funcionales (máx. 150-200 ms, DESIGN.md §10) */
+  --transition-fast: 150ms ease;
+
+  /* Tipografía */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 14px;
 
   /* Flecha de los <select> (sigue el color del tema) */
   --select-arrow:
@@ -161,128 +217,80 @@
 
    Se activa con <html data-theme="nombre">. El selector "Tema" del menú
    lateral lo guarda por navegador (localStorage 'sires-tema').
-   Sin data-theme se usa la paleta por defecto (azul noche + dorado).
+   Sin data-theme se usa la paleta por defecto (oscuro, gris azulado; nunca negro puro).
+
+   Los colores de estado de habitación (--room-*) NO se redefinen en los
+   temas: su significado es fijo. Solo cambia --room-text-base para que el
+   texto de los badges siga siendo legible.
 
    Para probar un tema nuevo: copiar un bloque, cambiar el nombre y los
    valores, y agregarlo a la lista TEMAS de App/views/partials/theme-switcher.phtml.
    ========================================================================== */
 
-/* --- Esmeralda: verde profundo + dorado --------------------------------- */
-:root[data-theme="esmeralda"] {
-  --color-bg: #0b1f1a;
-  --color-surface: #12302a;
-  --color-surface-alt: #1a3b33;
-  --color-surface-modal: #0d2520;
-  --color-input: #143029;
-  --color-input-focus: #1a3a32;
-  --color-border: #24493f;
-  --color-border-strong: #2f5a4e;
-  --color-text: #e8f5f0;
-  --color-text-muted: #8fb3a6;
-  --color-text-soft: #9cbcb1;
-  --color-accent: #e0b84c;
-  --color-accent-hover: #cfa63a;
-  --color-on-accent: #0b1f1a;
-  --color-overlay-base: #06130f;
-}
-
-/* --- Grafito: gris neutro + azul ---------------------------------------- */
-:root[data-theme="grafito"] {
-  --color-bg: #121417;
-  --color-surface: #1b1e23;
-  --color-surface-alt: #24282e;
-  --color-surface-modal: #16181c;
-  --color-input: #1f2329;
-  --color-input-focus: #262b32;
-  --color-border: #2e333b;
-  --color-border-strong: #3a404a;
-  --color-text: #eceff3;
-  --color-text-muted: #9aa3ad;
-  --color-text-soft: #a3abb5;
-  --color-accent: #4f8cff;
-  --color-accent-hover: #3b7af0;
-  --color-on-accent: #ffffff;
-  --color-overlay-base: #08090b;
-}
-
-/* --- Vino: bordó + champagne -------------------------------------------- */
-:root[data-theme="vino"] {
-  --color-bg: #1c0f14;
-  --color-surface: #2a161e;
-  --color-surface-alt: #351d27;
-  --color-surface-modal: #22121a;
-  --color-input: #2e1922;
-  --color-input-focus: #38202b;
-  --color-border: #4a2a37;
-  --color-border-strong: #5a3443;
-  --color-text: #f6ebef;
-  --color-text-muted: #bc9ba8;
-  --color-text-soft: #c4a6b2;
-  --color-accent: #e8c99b;
-  --color-accent-hover: #d9b57f;
-  --color-on-accent: #1c0f14;
-  --color-overlay-base: #0f070a;
-}
-
-/* --- Océano: azul petróleo + coral -------------------------------------- */
-:root[data-theme="oceano"] {
-  --color-bg: #0a1d24;
-  --color-surface: #102a33;
-  --color-surface-alt: #17353f;
-  --color-surface-modal: #0c232b;
-  --color-input: #12303a;
-  --color-input-focus: #183a45;
-  --color-border: #214651;
-  --color-border-strong: #2b5562;
-  --color-text: #e6f4f7;
-  --color-text-muted: #8eb1bb;
-  --color-text-soft: #9bbac3;
-  --color-accent: #ff8a65;
-  --color-accent-hover: #f2744d;
-  --color-on-accent: #0a1d24;
-  --color-overlay-base: #051015;
-}
-
-/* --- Claro: fondo blanco + azul marino ---------------------------------- */
+/* --- Claro: fondo gris azulado claro + azul de marca -------------------- */
 :root[data-theme="claro"] {
-  --color-bg: #f3f5f9;
-  --color-bg-deep: #0a192f;
+  --color-primary-500: #2f80ed;
+  --color-primary-600: #1f6fd9;
+  --color-primary-700: #1a5bb5;
+
+  --color-bg: #f3f6fa;
+  --color-bg-deep: #14396e;
   --color-surface: #ffffff;
-  --color-surface-alt: #e9edf3;
+  --color-surface-alt: #eaf0f7;
   --color-surface-modal: #ffffff;
-  --color-input: #f7f9fc;
+  --color-input: #ffffff;
   --color-input-focus: #ffffff;
-  --color-border: #d5dce6;
-  --color-border-strong: #c3ccd8;
-  --color-text: #1b2533;
-  --color-text-strong: #0b1220;
-  --color-text-muted: #5b6878;
-  --color-text-soft: #6b7787;
-  --color-accent: #1d4ed8;
-  --color-accent-hover: #1e40af;
+  --color-border: #d5dde8;
+  --color-border-strong: #c2ccda;
+  --color-text: #1b2433;
+  --color-text-strong: #111827;
+  --color-text-muted: #5b6779;
+  --color-text-soft: #5b6779;
   --color-on-accent: #ffffff;
-  --color-info: #0284c7;
-  --color-info-hover: #0369a1;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-highlight: #ca8a04;
-  --color-tint-base: #0b1220;
-  --color-shadow: #1b2533;
-  --color-overlay-base: #1b2533;
+
+  --color-info: #0369a1;
+  --color-info-hover: #075985;
+  --color-success: #15803d;
+  --color-success-strong: #15803d;
+  --color-success-strong-hover: #166534;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-warning: #b45309;
+  --color-warning-hover: #92400e;
+  --color-orange: #c2410c;
+  --color-highlight: #a16207;
+  --color-purple: #7e22ce;
+  --color-neutral: #6b7280;
+  --color-on-highlight: #ffffff;
+  --color-on-solid: #ffffff;
+
+  --color-tint-base: #14396e;
+  --color-shadow: #14396e;
+  --color-overlay-base: #0f1623;
+
+  --sidebar-bg: var(--color-primary-900);
+  --sidebar-text: #c9d6ea;
+  --sidebar-active-text: #ffffff;
+  --sidebar-border: color-mix(in srgb, #ffffff 8%, transparent);
+
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 45%, transparent);
 }
 body {
     margin: 0;
     padding: 0;
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.45;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 .system-footer {
     text-align: center;
     padding: 8px 0;
-    font-size: 9pt;
+    font-size: 12px;
     color: var(--color-text-muted);
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
@@ -290,6 +298,19 @@ body {
 
 .system-footer .system-version {
     font-weight: 600;
+}
+
+/* Números alineados en tablas y montos */
+table,
+.monto,
+.kpi-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible en todo elemento interactivo (navegación por teclado) */
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 .alert {
   padding: 15px 20px;
@@ -353,7 +374,7 @@ body {
 
 .btn--primary {
   background-color: var(--color-accent);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border-radius: 30px;
   padding: 0 24px;
   height: 46px;
@@ -539,7 +560,7 @@ body {
 .form__label {
   display: block;
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -558,7 +579,7 @@ body {
   color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__input:focus,
@@ -674,7 +695,7 @@ body {
   color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__search-input:focus {
@@ -696,7 +717,7 @@ body {
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__select-filter:focus {
@@ -719,23 +740,65 @@ body {
   }
 }
 .badge {
-  padding: 5px 12px;
+  padding: 3px 10px;
   border-radius: var(--radius-xs);
-  font-size: 0.8rem;
-  font-weight: bold;
-  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
   color: var(--color-on-solid);
+  border: 1px solid transparent;
 }
 
-.badge--disponible { background-color: var(--estado-disponible); }
-.badge--ocupada { background-color: var(--estado-ocupada); }
-.badge--reservada { background-color: var(--estado-reservada); color: var(--color-on-accent); }
-.badge--sucia { background-color: var(--estado-sucia); }
-.badge--limpiando { background-color: var(--estado-limpiando); }
-.badge--mantenimiento { background-color: var(--estado-mantenimiento); }
-.badge--bloqueada { background-color: var(--estado-bloqueada); }
-.badge--pendiente { background-color: var(--estado-pendiente); }
-.badge--warning { background-color: var(--color-warning); }
+/* Estados: fondo suave + texto/borde fuerte + ícono (DESIGN.md §4).
+   El ícono se agrega por CSS (Font Awesome) para no tocar el HTML. */
+.badge--disponible,
+.badge--ocupada,
+.badge--reservada,
+.badge--sucia,
+.badge--limpiando,
+.badge--mantenimiento,
+.badge--bloqueada,
+.badge--pendiente,
+.badge--warning {
+  border-left-width: 3px;
+}
+
+.badge--disponible::before,
+.badge--ocupada::before,
+.badge--reservada::before,
+.badge--sucia::before,
+.badge--limpiando::before,
+.badge--mantenimiento::before,
+.badge--bloqueada::before,
+.badge--pendiente::before,
+.badge--warning::before {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.9em;
+}
+
+.badge--disponible { background-color: var(--room-available-bg); color: var(--room-available-text); border-color: var(--room-available); }
+.badge--disponible::before { content: '\f00c'; }       /* check */
+.badge--ocupada { background-color: var(--room-occupied-bg); color: var(--room-occupied-text); border-color: var(--room-occupied); }
+.badge--ocupada::before { content: '\f007'; }          /* persona */
+.badge--reservada { background-color: var(--room-reserved-bg); color: var(--room-reserved-text); border-color: var(--room-reserved); }
+.badge--reservada::before { content: '\f133'; }        /* calendario */
+.badge--sucia { background-color: var(--room-cleaning-bg); color: var(--room-cleaning-text); border-color: var(--room-cleaning); }
+.badge--sucia::before { content: '\f51a'; }            /* escoba */
+.badge--limpiando { background-color: var(--room-cleaning-bg); color: var(--room-cleaning-text); border-color: var(--room-cleaning); }
+.badge--limpiando::before { content: '\f5c3'; }        /* aerosol: limpieza en curso */
+.badge--mantenimiento { background-color: var(--room-maintenance-bg); color: var(--room-maintenance-text); border-color: var(--room-maintenance); }
+.badge--mantenimiento::before { content: '\f0ad'; }    /* llave */
+.badge--bloqueada { background-color: var(--room-maintenance-bg); color: var(--room-maintenance-text); border-color: var(--room-maintenance); }
+.badge--bloqueada::before { content: '\f023'; }        /* candado */
+.badge--pendiente { background-color: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning); }
+.badge--pendiente::before { content: '\f017'; }        /* reloj */
+.badge--warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning); }
+.badge--warning::before { content: '\f071'; }          /* alerta */
 
 .badge--recepcionista {
   background: var(--color-info-bg);
@@ -791,7 +854,7 @@ body {
   opacity: 0;
   pointer-events: none;
   z-index: 9999;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
 }
 
 .modal.is-active {
@@ -809,7 +872,7 @@ body {
   text-align: center;
   box-shadow: var(--shadow-lg);
   transform: scale(0.9);
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease;
 }
 
 .modal.is-active .modal__box {
@@ -870,7 +933,7 @@ body {
 
 .text-lg  { font-size: 1.1em; }
 .text-sm  { font-size: 0.85em; }
-.text-xs  { font-size: 0.78em; }
+.text-xs  { font-size: 12px; }
 .text-bold { font-weight: 600; }
 .text-nowrap { white-space: nowrap; }
 
@@ -935,7 +998,7 @@ body {
 .chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
 
 .badge--lg   { padding: 6px 14px; font-size: 0.95em; }
-.badge--sm   { font-size: 0.75em; }
+.badge--sm   { font-size: 12px; padding: 1px 8px; }
 .badge--chip { margin: 2px; padding: 4px 10px; }
 
 /* Pantallas de autenticación centradas (recuperar/restablecer clave) */
@@ -953,11 +1016,11 @@ body {
 /* Doble clase: dashboard.css (que carga después) define .nav-link */
 .nav-link.nav-link--danger,
 .nav-link.nav-link--danger:hover {
-  color: var(--color-danger);
+  color: var(--sidebar-danger);
 }
 
 .nav-link.nav-link--danger:hover {
-  background-color: var(--color-danger-bg);
+  background-color: var(--sidebar-danger-bg);
 }
 
 /* --- Paginación ----------------------------------------------------------- */
@@ -1062,16 +1125,16 @@ body {
 .theme-switcher {
   margin-top: auto;
   padding: 12px 8px 0;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .theme-switcher label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--color-text-muted);
+  color: var(--sidebar-text);
   margin-bottom: 6px;
 }
 

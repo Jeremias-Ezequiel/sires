@@ -44,7 +44,7 @@
 }
 
 .maintenance-card h1 {
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-sans);
     font-size: 22pt;
     font-weight: 700;
     color: var(--color-text);

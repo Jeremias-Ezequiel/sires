@@ -13,7 +13,7 @@
 
 .text-lg  { font-size: 1.1em; }
 .text-sm  { font-size: 0.85em; }
-.text-xs  { font-size: 0.78em; }
+.text-xs  { font-size: 12px; }
 .text-bold { font-weight: 600; }
 .text-nowrap { white-space: nowrap; }
 
@@ -78,7 +78,7 @@
 .chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
 
 .badge--lg   { padding: 6px 14px; font-size: 0.95em; }
-.badge--sm   { font-size: 0.75em; }
+.badge--sm   { font-size: 12px; padding: 1px 8px; }
 .badge--chip { margin: 2px; padding: 4px 10px; }
 
 /* Pantallas de autenticación centradas (recuperar/restablecer clave) */
@@ -96,11 +96,11 @@
 /* Doble clase: dashboard.css (que carga después) define .nav-link */
 .nav-link.nav-link--danger,
 .nav-link.nav-link--danger:hover {
-  color: var(--color-danger);
+  color: var(--sidebar-danger);
 }
 
 .nav-link.nav-link--danger:hover {
-  background-color: var(--color-danger-bg);
+  background-color: var(--sidebar-danger-bg);
 }
 
 /* --- Paginación ----------------------------------------------------------- */
@@ -205,16 +205,16 @@
 .theme-switcher {
   margin-top: auto;
   padding: 12px 8px 0;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .theme-switcher label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--color-text-muted);
+  color: var(--sidebar-text);
   margin-bottom: 6px;
 }
 

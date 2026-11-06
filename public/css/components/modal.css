@@ -12,7 +12,7 @@
   opacity: 0;
   pointer-events: none;
   z-index: 9999;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
 }
 
 .modal.is-active {
@@ -30,7 +30,7 @@
   text-align: center;
   box-shadow: var(--shadow-lg);
   transform: scale(0.9);
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease;
 }
 
 .modal.is-active .modal__box {
