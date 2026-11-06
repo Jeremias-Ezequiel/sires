@@ -236,6 +236,7 @@ final class MailService
             throw new Exception('el cliente no tiene email');
         }
         return [
+            'hotel'        => SmtpTransporte::nombreRemitente(),
             'reserva'      => $reserva,
             'noches'       => Tarifa::noches((string)$reserva['fecha_entrada'], (string)$reserva['fecha_salida']),
             'politica'     => ConfiguracionService::politicaReserva((string)$reserva['fecha_alta']),
