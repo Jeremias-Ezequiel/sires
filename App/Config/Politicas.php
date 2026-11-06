@@ -94,6 +94,13 @@ final class Politicas
     ];
 
     // ------------------------------------------------------------------
+    // Mails al huésped
+    // ------------------------------------------------------------------
+
+    /** Días antes de la entrada en que se manda el recordatorio. Clave: recordatorio_dias_antes. */
+    public const RECORDATORIO_DIAS_ANTES = 3;
+
+    // ------------------------------------------------------------------
     // Seguridad
     // ------------------------------------------------------------------
 

@@ -198,6 +198,7 @@ class ReservaService
             $this->crearResumenInicial($nuevoIdReserva, $habitacionRow, $fechaEntrada, $fechaSalida, $cantHuespedes);
 
             $this->auditoria->registrar('reserva.crear', 'reserva', $nuevoIdReserva, 'Alta de reserva');
+            (new MailService())->encolarConfirmacion($nuevoIdReserva);
             $db->commit();
             return ['success' => true, 'message' => 'Reserva registrada exitosamente.'];
         } catch (Exception $e) {

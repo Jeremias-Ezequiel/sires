@@ -145,6 +145,7 @@ class PagoService
             if (!$saved) {
                 throw new Exception("No se pudo registrar la transacción de pago.");
             }
+            $idTransaccion = (int)$db->lastInsertId();
 
             $nuevoMontoPagado = $resumen->getMontoPagado() + $montoAbonado;
             $nuevoSaldo       = $resumen->getSaldoPendiente() - $montoAbonado;
@@ -169,6 +170,7 @@ class PagoService
             }
 
             $this->auditoria->registrar('pago.registrar', 'reserva', $idReserva, 'Pago registrado por $' . number_format($montoAbonado, 2, ',', '.'), $antes);
+            (new MailService())->encolarComprobantePago($idReserva, $idTransaccion);
             $db->commit();
             return ['success' => true, 'message' => $mensaje];
         } catch (Exception $e) {

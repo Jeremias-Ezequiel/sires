@@ -267,6 +267,14 @@ class BookingController extends Controller
                 }
             }
 
+            // Mails al huésped de esta reserva (Cola_Mails)
+            $mails = [];
+            try {
+                $mails = (new \App\Models\ColaMail())->porReserva((int)$id);
+            } catch (\Throwable $e) {
+                error_log("[SIRES MAIL] " . $e->getMessage());
+            }
+
             $contentView = __DIR__ . '/../views/dashboard/detailBooking.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 

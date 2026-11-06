@@ -77,6 +77,12 @@ class ConfiguracionAdminService
             'unidad' => '% de una noche', 'min' => 0, 'max' => 100,
             'ambito' => 'Solo reservas creadas desde la vigencia. Las anteriores mantienen la condición con la que se reservaron.',
         ],
+        // --- Mails al huésped ---
+        'recordatorio_dias_antes' => [
+            'grupo' => 'Mails al huésped', 'tipo' => 'int', 'titulo' => 'Recordatorio de llegada',
+            'unidad' => 'días antes de la entrada', 'min' => 1, 'max' => 30,
+            'ambito' => 'Recordatorios que se encolen desde la vigencia (cron/mails.php).',
+        ],
         // --- Seguridad ---
         'minutos_token_recuperacion' => [
             'grupo' => 'Seguridad', 'tipo' => 'int', 'titulo' => 'Validez del link de recuperación',

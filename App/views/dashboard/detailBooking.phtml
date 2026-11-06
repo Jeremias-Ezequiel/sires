@@ -166,6 +166,45 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
     </div>
 </section>
 
+<?php if (!empty($mails)):
+    $estadoMail = [
+        \App\Models\ColaMail::ESTADO_ENVIADO   => ['badge--disponible', 'Enviado'],
+        \App\Models\ColaMail::ESTADO_PENDIENTE => ['badge--pendiente', 'Pendiente'],
+        \App\Models\ColaMail::ESTADO_ERROR     => ['badge--warning', 'No se pudo enviar'],
+    ];
+?>
+    <section class="details-section" aria-labelledby="mails-titulo">
+        <h2 id="mails-titulo" class="aud-historial__titulo">
+            <i class="fas fa-envelope" aria-hidden="true"></i> Mails al huésped
+        </h2>
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr><th>Mail</th><th>Para</th><th>Estado</th><th>Fecha</th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($mails as $m):
+                        [$claseMail, $textoMail] = $estadoMail[$m['estado']] ?? ['badge--warning', $m['estado']];
+                        $esPendienteConError = $m['estado'] === \App\Models\ColaMail::ESTADO_PENDIENTE && (int)$m['intentos'] > 0;
+                    ?>
+                        <tr>
+                            <td><?= htmlspecialchars(\App\Models\ColaMail::TIPOS[$m['tipo']] ?? $m['tipo']) ?></td>
+                            <td><?= htmlspecialchars($m['destinatario']) ?></td>
+                            <td>
+                                <span class="badge <?= $claseMail ?>"><?= htmlspecialchars($esPendienteConError ? 'Reintentando (' . (int)$m['intentos'] . ')' : $textoMail) ?></span>
+                                <?php if (!empty($m['ultimo_error']) && $m['estado'] !== \App\Models\ColaMail::ESTADO_ENVIADO): ?>
+                                    <div class="text-muted"><?= htmlspecialchars($m['ultimo_error']) ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string)($m['fecha_envio'] ?? $m['fecha_alta'])))) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+<?php endif; ?>
+
 <?php if (isset($historial) && $historial !== null): ?>
     <section class="details-section aud-historial" aria-labelledby="aud-historial-titulo">
         <h2 id="aud-historial-titulo" class="aud-historial__titulo">

@@ -1,0 +1,19 @@
+<?php
+/**
+ * Recordatorio N días antes de la entrada (Configuracion.recordatorio_dias_antes).
+ * @var array $reserva
+ * @var callable $e
+ * @var callable $dinero
+ * @var callable $fecha
+ */
+$saldo = (float)($reserva['saldo_pendiente'] ?? 0);
+?>
+<h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">¡Te esperamos, <?= $e($reserva['cliente_nombre']) ?>!</h1>
+<p style="margin:0 0 8px;">Te recordamos que tu estadía empieza el <strong><?= $e($fecha((string)$reserva['fecha_entrada'])) ?></strong>.</p>
+
+<?php require __DIR__ . '/_detalle-reserva.phtml'; ?>
+
+<?php if ($saldo > 0): ?>
+    <p style="margin:0 0 8px;">Queda un saldo pendiente de <strong><?= $e($dinero($saldo)) ?></strong>, que podés abonar al llegar.</p>
+<?php endif; ?>
+<p style="margin:0;">Si tus planes cambiaron, avisanos lo antes posible.</p>

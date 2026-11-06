@@ -36,6 +36,7 @@ final class ConfiguracionService
         'cancelacion_gratis_horas'   => 'CANCELACION_GRATIS_HORAS',
         'cancelacion_penalidad_noches' => 'CANCELACION_PENALIDAD_NOCHES',
         'noshow_noches_retenidas'    => 'NOSHOW_NOCHES_RETENIDAS',
+        'recordatorio_dias_antes'    => 'RECORDATORIO_DIAS_ANTES',
     ];
 
     /** @var array<string, mixed> Caché por petición: "clave@fecha" => valor. */
@@ -118,6 +119,12 @@ final class ConfiguracionService
     public static function horaNoShow(): string
     {
         return (string)self::get('hora_no_show');
+    }
+
+    /** Días antes de la entrada en que se manda el recordatorio al huésped (vigente hoy). */
+    public static function recordatorioDiasAntes(): int
+    {
+        return (int)self::get('recordatorio_dias_antes');
     }
 
     /** Máximo de noches por reserva. */

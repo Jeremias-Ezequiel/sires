@@ -1,0 +1,44 @@
+<?php
+/**
+ * Layout de los mails al huésped (App\Services\MailService::render()).
+ * Excepción a la regla de colores: los clientes de correo no soportan variables CSS ni
+ * hojas externas, así que acá van estilos inline con los valores del tema claro (DESIGN.md §3).
+ *
+ * @var string $contenido HTML de la plantilla
+ * @var string $hotel
+ * @var callable $e
+ */
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><?= $e($hotel) ?></title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f6fa;font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;color:#1b2433;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f6fa;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border:1px solid #d5dde8;border-radius:8px;">
+                <tr>
+                    <td style="padding:20px 24px;background-color:#14396e;border-radius:8px 8px 0 0;color:#ffffff;font-size:20px;font-weight:600;">
+                        <?= $e($hotel) ?>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:24px;font-size:15px;line-height:1.5;">
+                        <?= $contenido ?>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 24px;border-top:1px solid #d5dde8;font-size:13px;color:#5b6779;">
+                        Este mail se envió automáticamente. Si tenés alguna consulta, respondé a este correo o comunicate con la recepción.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
