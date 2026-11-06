@@ -3,6 +3,28 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-11-06
+
+### Agregado
+- **Limpieza (housekeeping):** lista de habitaciones en limpieza y por limpiar en orden sugerido
+  (urgente, llega huésped hoy, mañana, sin llegada; luego la más antigua y por piso), con el motivo
+  y cuánto lleva sucia. Pensada para el celular y se actualiza sola.
+- Recepción, gerencia y administración pueden marcar una limpieza como **urgente**.
+- El rol Limpieza puede iniciar y terminar limpiezas; su inicio es la lista de housekeeping.
+- En pantallas de menos de 600 px el menú lateral pasa a una barra superior.
+
+### Cambiado
+- Requiere la migración `011_habitaciones_limpieza` (columnas `sucia_desde` y `limpieza_urgente`
+  en `Habitaciones` y sus triggers).
+
+### Seguridad
+- Sin `X-Powered-By`; `Strict-Transport-Security` bajo HTTPS.
+- Un token CSRF inválido sin página de origen vuelve al inicio; en `/api/*` responde JSON 419.
+
+### Corregido
+- Errores de habitaciones y limpieza mostraban "There is no active transaction" en vez del mensaje real.
+- Reactivar una habitación desde su detalle usa el diálogo del sistema en lugar del `confirm()` del navegador.
+
 ## [1.1.1] - 2026-11-06
 
 ### Seguridad
