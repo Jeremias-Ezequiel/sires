@@ -116,6 +116,8 @@ class ReservaService
             $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $cantHuespedes);
             $total   = $precioEfectivo * $noches;
 
+            $this->reservaModel->actualizarPrecioPactado($nuevoIdReserva, $precioEfectivo);
+
             $insertResumen = $db->prepare(
                 "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
                  VALUES (:id_reserva, :estado, :total, 0, :saldo)"

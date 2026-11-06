@@ -55,6 +55,8 @@ class PagoService
             throw new Exception("No se pudo calcular un total válido para la reserva.");
         }
 
+        $this->reservaModel->actualizarPrecioPactado((int)$reserva['id'], $precioEfectivo);
+
         $resumen = new ResumenPago();
         $resumen->setIdReserva((int)$reserva['id']);
         $resumen->setIdEstadoPago(ResumenPago::ESTADO_PENDIENTE);
@@ -257,6 +259,8 @@ class PagoService
                 ':id'     => $resumen->getId()
             ]);
 
+            $this->reservaModel->actualizarPrecioPactado((int)$reserva['id'], $precioEfectivo);
+
             if ($montoTotalAnt !== $nuevoTotal) {
                 $updateObs = $db->prepare(
                     "UPDATE Reservas
@@ -289,11 +293,13 @@ class PagoService
     /**
      * Aplica el cargo por late checkout a las reservas EN_CASA cuya salida es hoy
      * y que siguen sin checkout después de la hora de checkout (Configuracion.hora_checkout).
-     * El cargo es factor_late_checkout (vigente a la fecha_alta de la reserva) × precio base de la noche.
+     * El cargo es factor_late_checkout (vigente a la fecha_alta de la reserva) × precio pactado de la noche (o el precio base si la reserva no lo tiene).
      * Lo ejecuta cron/late-checkout-fee.php.
      *
-     * Idempotencia: se marca en observaciones con el texto "Late Checkout Fee Aplicado".
-     * No modificar ese texto sin migrar a la columna dedicada (ver REFACTOR-BD.md).
+     * Idempotencia: columna Reservas.late_fee_aplicado. Se marca primero la reserva
+     * (solo si seguía en 0) y recién entonces se suma el cargo, así no se cobra dos veces
+     * aunque el EVENT cargo_late_checkout corra al mismo tiempo. El texto
+     * "Late Checkout Fee Aplicado" en observaciones se mantiene (lo usa el EVENT y los datos viejos).
      */
     public function aplicarLateCheckout(): array
     {
@@ -302,13 +308,14 @@ class PagoService
         $stmt = $db->prepare("
             SELECT r.id, r.id_habitacion, r.fecha_salida, r.fecha_alta, rp.id AS id_resumen,
                    rp.monto_cobrado, rp.saldo_pendiente, rp.monto_total,
-                   h.precio_noche_base
+                   COALESCE(r.precio_noche_pactado, h.precio_noche_base) AS precio_noche
             FROM Reservas r
             JOIN Resumen_Pago rp ON rp.id_reserva = r.id
             JOIN Habitaciones h ON h.id = r.id_habitacion
             WHERE r.id_estado_reserva = :encasa
               AND r.fecha_salida = :fecha_hoy
               AND :hora_actual >= :hora_checkout
+              AND r.late_fee_aplicado = 0
               AND (r.observaciones IS NULL OR r.observaciones NOT LIKE '%Late Checkout Fee Aplicado%')
         ");
         $stmt->execute([
@@ -326,35 +333,45 @@ class PagoService
             try {
                 $idReserva   = (int)$row['id'];
                 $idResumen   = (int)$row['id_resumen'];
-                $precioNoche = (float)$row['precio_noche_base'];
+                $precioNoche = (float)$row['precio_noche'];
                 $feeLateCheckout = round($precioNoche * ConfiguracionService::factorLateCheckout($row['fecha_alta']), 2);
 
-                $nuevoTotal = (float)$row['monto_total'] + $feeLateCheckout;
-                $nuevoSaldo = (float)$row['saldo_pendiente'] + $feeLateCheckout;
-
-                $updResumen = $db->prepare(
-                    "UPDATE Resumen_Pago
-                     SET monto_total = :total, saldo_pendiente = :saldo
-                     WHERE id = :id"
-                );
-                $updResumen->execute([
-                    ':total' => $nuevoTotal,
-                    ':saldo' => $nuevoSaldo,
-                    ':id'    => $idResumen
-                ]);
+                if ($feeLateCheckout <= 0) {
+                    $db->rollBack();
+                    continue;
+                }
 
                 $updReserva = $db->prepare(
                     "UPDATE Reservas
-                     SET observaciones = CONCAT(
-                         COALESCE(observaciones, ''),
-                         ' | Late Checkout Fee Aplicado: $', :fee, :detalle
-                     )
-                     WHERE id = :id"
+                     SET late_fee_aplicado = 1,
+                         observaciones = CONCAT(
+                             COALESCE(observaciones, ''),
+                             ' | Late Checkout Fee Aplicado: $', :fee, :detalle
+                         )
+                     WHERE id = :id AND late_fee_aplicado = 0"
                 );
                 $updReserva->execute([
                     ':fee'     => number_format($feeLateCheckout, 2, ',', '.'),
                     ':detalle' => ' por salida despues de las ' . ConfiguracionService::horaCheckout() . ' hs.',
                     ':id'      => $idReserva
+                ]);
+
+                if ($updReserva->rowCount() === 0) {
+                    // Ya lo aplicó otro proceso (EVENT o cron) entre el SELECT y este UPDATE.
+                    $db->rollBack();
+                    continue;
+                }
+
+                $updResumen = $db->prepare(
+                    "UPDATE Resumen_Pago
+                     SET monto_total = monto_total + :fee_total,
+                         saldo_pendiente = saldo_pendiente + :fee_saldo
+                     WHERE id = :id"
+                );
+                $updResumen->execute([
+                    ':fee_total' => $feeLateCheckout,
+                    ':fee_saldo' => $feeLateCheckout,
+                    ':id'        => $idResumen
                 ]);
 
                 $db->commit();
@@ -520,6 +537,8 @@ class PagoService
                 ':estado' => $nuevoEstado,
                 ':id'     => (int)$row['id']
             ]);
+
+            $this->reservaModel->actualizarPrecioPactado($idReserva, $precioEfectivo);
 
             $updateObs = $db->prepare(
                 "UPDATE Reservas

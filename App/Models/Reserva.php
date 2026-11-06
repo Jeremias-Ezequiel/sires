@@ -351,6 +351,23 @@ class Reserva extends Model
         }
     }
 
+    /**
+     * Guarda el precio efectivo por noche pactado (con descuento por ocupación).
+     * Lo usa el late checkout para no depender del precio actual de la habitación.
+     */
+    public function actualizarPrecioPactado(int $id, float $precioNoche): void
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "UPDATE Reservas SET precio_noche_pactado = :precio WHERE id = :id"
+            );
+            $stmt->execute([':precio' => round($precioNoche, 2), ':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::actualizarPrecioPactado: " . $e->getMessage());
+            throw new Exception("Error interno al guardar el precio de la reserva.");
+        }
+    }
+
     public function getId(): int
     {
         return $this->id;

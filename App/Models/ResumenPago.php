@@ -304,7 +304,11 @@ class ResumenPago extends Model
         $resumen->setTotal($nuevoTotal);
         $resumen->setSaldoPendiente($nuevoSaldo);
 
-        return $this->update($resumen);
+        $ok = $this->update($resumen);
+        if ($ok) {
+            (new Reserva())->actualizarPrecioPactado((int)$reserva['id'], $precioEfectivo);
+        }
+        return $ok;
     }
 
     public function getId(): int
