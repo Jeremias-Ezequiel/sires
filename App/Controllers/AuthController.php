@@ -6,6 +6,7 @@ use Exception;
 use App\Models\Usuario;
 use App\Middleware\AuthMiddleware;
 use App\Helpers\UrlHelper;
+use App\Services\LimiteIntentosService;
 
 class AuthController
 {
@@ -36,6 +37,12 @@ class AuthController
                 throw new Exception("Por favor, complete todos los campos.");
             }
 
+            // 2.b Límite de intentos fallidos (por email + IP y por IP)
+            $limiteEmail = LimiteIntentosService::login();
+            $limiteIp    = LimiteIntentosService::loginPorIp();
+            $limiteEmail->verificar($email);
+            $limiteIp->verificar();
+
             // 3. Instanciamos el modelo vacío para usar sus capacidades
             $usuarioModel = new Usuario();
 
@@ -49,6 +56,8 @@ class AuthController
             // 6. Verificación de credenciales usando el método de negocio de tu modelo
             // verifyPassword internamente maneja de forma segura password_verify()
             if (!$user || !$user->verifyPassword($password)) {
+                $limiteEmail->registrarFallo($email);
+                $limiteIp->registrarFallo();
                 throw new Exception("Las credenciales ingresadas son incorrectas.");
             }
 
@@ -61,6 +70,13 @@ class AuthController
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+
+            $limiteEmail->limpiar($email);
+
+            // Nuevo ID de sesión y nuevo token CSRF (evita fijación de sesión)
+            session_regenerate_id(true);
+            unset($_SESSION['_csrf_token']);
+            $_SESSION['last_activity'] = time();
 
             $_SESSION['user_name'] = $user->getNombre();
             $_SESSION['user_id'] = $user->getId();
