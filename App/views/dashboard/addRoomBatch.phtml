@@ -36,6 +36,8 @@
 
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/rooms/add/batch/process', 'POST', 'batch-room-form') ?>
 
+    <?= csrf_field() ?>
+
         <div class="form__section-title">
             <i class="fas fa-layer-group"></i> Nuevo Piso
         </div>

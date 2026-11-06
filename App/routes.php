@@ -200,7 +200,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/add/process', [
         'action' => [RoomController::class, 'addRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE]
     ]);
 
@@ -212,7 +212,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/edit/process', [
         'action' => [RoomController::class, 'editRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
       
     ]);
@@ -225,7 +225,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/add/batch/process', [
         'action' => [RoomController::class, 'addBatchRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
     ]);
 
