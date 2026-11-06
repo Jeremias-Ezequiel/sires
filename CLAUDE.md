@@ -7,7 +7,7 @@ Gestión de reservas de hotel. PHP 8+ sin framework, arquitectura MVC propia sob
 - PHP 8+ con `declare(strict_types=1)` en casi todos los archivos.
 - Apache con `.htaccess` (rewrites todo a `index.php`; bloquea `.env`, `App/`, `vendor/` y `composer.*`).
 - MySQL/MariaDB vía PDO (prepared statements, excepciones, `FETCH_ASSOC`).
-- Composer solo para autoload (`App\` → `App/`) + helpers y dependencias: `vlucas/phpdotenv`, `nikic/fast-route`, `phpmailer/phpmailer`.
+- Composer solo para autoload (`App\` → `App/`) + helpers y dependencias: `vlucas/phpdotenv`, `nikic/fast-route`, `phpmailer/phpmailer`, `dompdf/dompdf` (requiere `ext-iconv`; el PHP local no la tiene: instalar con `--ignore-platform-req=ext-iconv` y probar PDFs en la VM).
 - Deploy en subdirectorio `/sires`. Verificar con `composer check` (`php -l` + PHPStan nivel 5 + tests de unidad); ver "Tests".
 
 ## Estructura y flujo
@@ -50,6 +50,7 @@ $r->addRoute('GET', '/dashboard/employees', [
 ## Reglas de negocio
 
 - Única fuente: tabla `Configuracion` (versionada por `vigente_desde`), leída con `App\Services\ConfiguracionService` (corte de pago, hora de checkout, factor late checkout, descuentos por ocupación, expiración de token, hora de No-Show, máximo de noches, seña mínima, política de cancelación, noches retenidas por No-Show, días de aviso del recordatorio). `App/Config/Politicas.php` = valores por defecto si falta la tabla o la clave, y `ZONA_HORARIA`. Nunca hardcodear estos valores.
+- `Configuracion.tipo`: `int`, `decimal`, `time`, `json` o `texto` (datos del hotel `hotel_*`, desde 1.7.0).
 - Cambiar una política = INSERT en `Configuracion` con un `vigente_desde` nuevo; nunca UPDATE ni DELETE (pantalla `/dashboard/settings`, solo administrador). Las condiciones que acepta el huésped se leen a `Reservas.fecha_alta` (pasar la fecha a `ConfiguracionService`): seña mínima, cancelación sin cargo, penalidad de cancelación, noches retenidas por No-Show y factor de late checkout. Las operativas (horarios, corte de pagos, máximo de noches, token) rigen desde la fecha actual.
 - El JS de las vistas recibe los valores con `json_encode(ConfiguracionService::...)`. Cálculo de precio compartido en `public/js/reserva-precio.js`.
 - `Reservas.precio_noche_pactado` guarda el precio efectivo por noche (al crear/editar/recalcular); `Reservas.late_fee_aplicado` es la marca de idempotencia del late checkout.
@@ -77,12 +78,13 @@ $r->addRoute('GET', '/dashboard/employees', [
 - `cron/*.php` quedan como **respaldo**: cargan `cron/bootstrap.php` (autoload, dotenv, zona horaria, solo CLI) y delegan en `PagoService::ejecutarCortePagos()`, `PagoService::aplicarLateCheckout()` y `ReservaService::liberarNoShowConPago()`. Loguean en `logs/` (gitignored).
 - Si se cambia la lógica de uno de esos métodos, actualizar también el EVENT equivalente en la BD (y viceversa).
 - **Mails al huésped** (`MailService`): `encolarConfirmacion()` (en `ReservaService::crear`), `encolarComprobantePago()` (en `PagoService::registrarPago`) y los recordatorios se guardan en `Cola_Mails` dentro de la transacción de la operación; un error al encolar se loguea y no corta la operación. `cron/mails.php` (crontab cada 5 min, sin EVENT) encola recordatorios y manda los pendientes con reintentos (`App\Dominio\ReglasMail`). Plantillas en `App/views/mail/` (`layout.phtml` + una por tipo): única excepción a la regla de colores, con estilos inline literales porque los clientes de correo no soportan variables CSS. Envío detrás de `App\Services\Mail\Transporte` (en tests, un transporte falso).
+- **Comprobantes PDF** (`ComprobanteService`, tabla `Comprobantes`): recibo de pago y de reembolso se emiten en la misma transacción del movimiento (`PagoService::registrarPago` / `procesarReembolso`); el resumen, con número nuevo en cada descarga. Numeración propia por tipo y punto de venta (`App\Dominio\Comprobante`), no fiscal. El PDF se arma siempre desde `Comprobantes.datos` (copia al emitir), nunca releyendo la reserva. Plantillas en `App/views/comprobantes/` (estilos inline literales, igual que los mails); render con `App\Services\Plantilla`. El mail del pago adjunta el recibo.
 - Monitoreo: cada EVENT registra su corrida en `Ejecuciones_Automaticas` (INSERT al empezar, UPDATE al terminar o en el EXIT HANDLER); los cron lo hacen con `MonitoreoService::ejecutarConRegistro()`. Un proceso automático nuevo debe sumarse a `MonitoreoService::PROCESOS` (con `'solo_cron' => true` si no tiene EVENT). El dump no trae EVENTs: viven en los scripts 01 y 02.
 
 ## Tests
 
 - `composer check` antes de cada commit. Dependencias de desarrollo: PHPUnit 11 y PHPStan 2 (`require-dev`).
-- **Unidad** (`tests/Unidad`, suite por defecto): reglas puras de `App/Dominio` (`Tarifa`, `ReglasPago`, `ReglasReserva`, `PoliticaReserva`, `ConfiguracionVersionada`, `Planning`, `ReglasMail`). Sin PDO ni `date()` implícito: fechas, hora actual y configuración entran por parámetro. Una regla de negocio nueva va ahí y se testea; el Service solo lee la base y delega.
+- **Unidad** (`tests/Unidad`, suite por defecto): reglas puras de `App/Dominio` (`Tarifa`, `ReglasPago`, `ReglasReserva`, `PoliticaReserva`, `ConfiguracionVersionada`, `Planning`, `ReglasMail`, `Comprobante`). Sin PDO ni `date()` implícito: fechas, hora actual y configuración entran por parámetro. Una regla de negocio nueva va ahí y se testea; el Service solo lee la base y delega.
 - **Integración** (`tests/Integracion`, `composer test:integracion`): extienden `TestIntegracion`; corren dentro de la VM con su `.env`. `PdoConSavepoints` convierte las transacciones de los Services en SAVEPOINTs y el test termina con ROLLBACK. Nunca crear un `.env` nuevo ni levantar una base local.
 - **E2E** (`tests/e2e`, Playwright, `npx playwright test` desde esa carpeta): credenciales en `tests/e2e/.env` (no se versiona). Un spec que cambia datos sin vuelta atrás va con `@muta` y `test.skip(process.env.E2E_MUTAR !== '1')`.
 - PHPStan: no bajar el nivel ni sumar `ignoreErrors` sin un comentario que explique el falso positivo.

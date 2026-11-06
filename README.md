@@ -5,7 +5,7 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
 
 ## Requisitos
 
-- PHP 8.1 o superior con `pdo_mysql`, `mbstring` y `openssl`.
+- PHP 8.1 o superior con `pdo_mysql`, `mbstring`, `openssl`, `dom` e `iconv` (las dos últimas, para los PDF con dompdf).
 - Apache con `mod_rewrite` y `AllowOverride All` (usa el `.htaccess` del proyecto).
 - MySQL 8 / MariaDB 10.6 o superior, con `event_scheduler = ON` para los procesos automáticos.
 - Composer.
