@@ -29,12 +29,48 @@ final class Politicas
      */
     public const HORAS_CORTE_PAGO = 48;
 
+    /**
+     * Seña mínima para confirmar una reserva, en % del total.
+     * Clave en Configuracion: sena_minima_pct.
+     */
+    public const SENA_MINIMA_PCT = 30;
+
+    // ------------------------------------------------------------------
+    // Reservas
+    // ------------------------------------------------------------------
+
+    /** Máximo de noches de una reserva (alta y edición). Clave: max_noches_reserva. */
+    public const MAX_NOCHES_RESERVA = 30;
+
+    /**
+     * Cancelación manual sin cargo si faltan al menos estas horas para el día de entrada
+     * (contadas hasta las 00:00 de fecha_entrada). Clave: cancelacion_gratis_horas.
+     */
+    public const CANCELACION_GRATIS_HORAS = 72;
+
+    /**
+     * Noches retenidas (sobre el precio pactado, con tope en lo cobrado) al cancelar
+     * con menos anticipación. El resto de lo cobrado queda A Reembolsar.
+     * Clave: cancelacion_penalidad_noches.
+     */
+    public const CANCELACION_PENALIDAD_NOCHES = 1;
+
+    /**
+     * No-Show con pago: noches que se retiene la habitación y que se cobran como penalidad
+     * (con tope en lo cobrado). Se libera el día entrada + N a la hora de checkout.
+     * Clave: noshow_noches_retenidas (también la lee el EVENT liberacion_no_show).
+     */
+    public const NOSHOW_NOCHES_RETENIDAS = 1;
+
     // ------------------------------------------------------------------
     // Horarios
     // ------------------------------------------------------------------
 
-    /** Hora límite de checkout. También es la hora mínima para marcar No-Show. Formato HH:MM. */
+    /** Hora límite de checkout. Formato HH:MM. */
     public const HORA_CHECKOUT = '11:00';
+
+    /** Hora del día de entrada desde la que se puede marcar No-Show. Clave: hora_no_show. */
+    public const HORA_NO_SHOW = '23:00';
 
     // ------------------------------------------------------------------
     // Cargos

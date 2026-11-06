@@ -18,6 +18,8 @@ class EstadoPago extends Model
     public const PAGADO_TOTAL = 3;
     public const REEMBOLSADO = 4;
     public const A_REEMBOLSAB = 5;
+    /** El hotel se quedó con lo cobrado (penalidad por cancelación, No-Show o corte de pagos). */
+    public const RETENIDO = 6;
 
     public function getAll(): ?array
     {

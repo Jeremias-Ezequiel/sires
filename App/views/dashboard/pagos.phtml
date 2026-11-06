@@ -79,6 +79,8 @@
                             $pagoStatusClass = 'badge--pendiente';
                         } elseif (strpos($estadoPagoLower, 'parcial') !== false) {
                             $pagoStatusClass = 'badge--reservada';
+                        } elseif (strpos($estadoPagoLower, 'retenid') !== false) {
+                            $pagoStatusClass = 'badge--warning';
                         } elseif (strpos($estadoPagoLower, 'reembols') !== false) {
                             $pagoStatusClass = 'badge--ocupada';
                         } elseif (strpos($estadoPagoLower, 'a reembolsar') !== false) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Exception;
+use App\Models\Clientes;
 use App\Models\Reserva;
 use App\Models\Habitacion;
 use App\Models\ResumenPago;
@@ -25,25 +26,47 @@ class ReservaService
         $this->resumenModel   = new ResumenPago();
     }
 
-    /** Estados de habitación en los que no se puede asignar una reserva. */
+    /**
+     * Estados de habitación en los que no se puede asignar una reserva.
+     * Ocupada, Sucia y Limpiando son estados del día: no impiden reservar a futuro
+     * (el check-in sigue exigiendo que la habitación esté Disponible).
+     */
     private const ESTADOS_HABITACION_NO_RESERVABLES = [
         Habitacion::ESTADO_MANTENIMIENTO,
         Habitacion::ESTADO_BLOQUEADA,
-        Habitacion::ESTADO_SUCIA,
-        Habitacion::ESTADO_LIMPIANDO,
     ];
 
+    public static function habitacionReservable(int $idEstadoHabitacion): bool
+    {
+        return !in_array($idEstadoHabitacion, self::ESTADOS_HABITACION_NO_RESERVABLES, true);
+    }
+
     /**
-     * Validaciones comunes a crear y editar: fechas, existencia de la habitación y capacidad.
+     * Validaciones comunes a crear y editar: cliente, fechas, existencia de la habitación y capacidad.
      * Devuelve la fila de la habitación.
      */
-    private function validarDatosBasicos(int $idHabitacion, string $fechaEntrada, string $fechaSalida, int $cantHuespedes): array
+    private function validarDatosBasicos(int $idCliente, int $idHabitacion, string $fechaEntrada, string $fechaSalida, int $cantHuespedes): array
     {
+        if ($idCliente <= 0 || (new Clientes())->getById($idCliente) === null) {
+            throw new Exception("El cliente seleccionado no existe.");
+        }
+
         if ($fechaEntrada === '' || $fechaSalida === '') {
             throw new Exception("Las fechas de entrada y salida son obligatorias.");
         }
+        if (!self::esFechaValida($fechaEntrada)) {
+            throw new Exception("La fecha de entrada no es válida.");
+        }
+        if (!self::esFechaValida($fechaSalida)) {
+            throw new Exception("La fecha de salida no es válida.");
+        }
         if ($fechaSalida <= $fechaEntrada) {
             throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
+        }
+        $maxNoches = ConfiguracionService::maxNochesReserva();
+        $noches = (new \DateTime($fechaEntrada))->diff(new \DateTime($fechaSalida))->days;
+        if ($noches > $maxNoches) {
+            throw new Exception("La reserva no puede superar las " . $maxNoches . " noches (se pidieron " . $noches . ").");
         }
 
         $habitacionRow = $this->habitacionModel->findById($idHabitacion);
@@ -62,6 +85,66 @@ class ReservaService
         return $habitacionRow;
     }
 
+    /**
+     * Guarda el precio pactado por noche y crea el Resumen_Pago inicial (sin cobros)
+     * de una reserva recién insertada. Debe llamarse dentro de la transacción del alta.
+     */
+    private function crearResumenInicial(
+        int $idReserva,
+        array $habitacionRow,
+        string $fechaEntrada,
+        string $fechaSalida,
+        int $cantHuespedes
+    ): void {
+        $noches = (new \DateTime($fechaEntrada))->diff(new \DateTime($fechaSalida))->days;
+        $precioEfectivo = Habitacion::precioEfectivoNoche(
+            (float)$habitacionRow['precio_noche_base'],
+            (int)$habitacionRow['id_tipo_habitacion'],
+            $cantHuespedes
+        );
+        $total = $precioEfectivo * $noches;
+
+        $this->reservaModel->actualizarPrecioPactado($idReserva, $precioEfectivo);
+
+        $insertResumen = $this->reservaModel->getConnection()->prepare(
+            "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
+             VALUES (:id_reserva, :estado, :total, 0, :saldo)"
+        );
+        $insertResumen->execute([
+            ':id_reserva' => $idReserva,
+            ':estado'     => ResumenPago::ESTADO_PENDIENTE,
+            ':total'      => $total,
+            ':saldo'      => $total
+        ]);
+    }
+
+    private static function validarEntradaNoPasada(string $fechaEntrada): void
+    {
+        if ($fechaEntrada < date('Y-m-d')) {
+            throw new Exception("La fecha de entrada no puede ser anterior a hoy.");
+        }
+    }
+
+    /** Precio por noche acordado de una reserva (fila de findById), con fallback al precio actual. */
+    private static function precioNocheReserva(array $reserva): float
+    {
+        if (isset($reserva['precio_noche_pactado']) && $reserva['precio_noche_pactado'] !== null) {
+            return (float)$reserva['precio_noche_pactado'];
+        }
+        return Habitacion::precioEfectivoNoche(
+            (float)$reserva['precio_noche_base'],
+            (int)$reserva['id_tipo_habitacion'],
+            (int)$reserva['cantidad_huespedes']
+        );
+    }
+
+    /** Verifica que la fecha tenga formato Y-m-d y exista en el calendario (ej. rechaza 2026-02-30). */
+    private static function esFechaValida(string $fecha): bool
+    {
+        $dt = \DateTime::createFromFormat('!Y-m-d', $fecha);
+        return $dt !== false && $dt->format('Y-m-d') === $fecha;
+    }
+
     public function crear(array $datos): array
     {
         $idHabitacion   = (int)$datos['id_habitacion'];
@@ -69,7 +152,8 @@ class ReservaService
         $fechaSalida    = trim($datos['fecha_salida'] ?? '');
         $cantHuespedes  = (int)$datos['cantidad_huespedes'];
 
-        $habitacionRow = $this->validarDatosBasicos($idHabitacion, $fechaEntrada, $fechaSalida, $cantHuespedes);
+        $habitacionRow = $this->validarDatosBasicos((int)($datos['id_cliente'] ?? 0), $idHabitacion, $fechaEntrada, $fechaSalida, $cantHuespedes);
+        self::validarEntradaNoPasada($fechaEntrada);
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
@@ -104,30 +188,8 @@ class ReservaService
                 throw new Exception("No se pudo registrar la reserva.");
             }
 
-            $idStmt = $db->prepare("SELECT LAST_INSERT_ID()");
-            $idStmt->execute();
-            $nuevoIdReserva = (int)$idStmt->fetchColumn();
-
-            $entrada = new \DateTime($fechaEntrada);
-            $salida  = new \DateTime($fechaSalida);
-            $noches  = $entrada->diff($salida)->days;
-            $precioBase = (float)$habitacionRow['precio_noche_base'];
-            $idTipo = (int)$habitacionRow['id_tipo_habitacion'];
-            $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $cantHuespedes);
-            $total   = $precioEfectivo * $noches;
-
-            $this->reservaModel->actualizarPrecioPactado($nuevoIdReserva, $precioEfectivo);
-
-            $insertResumen = $db->prepare(
-                "INSERT INTO Resumen_Pago (id_reserva, id_estado_pago, monto_total, monto_cobrado, saldo_pendiente)
-                 VALUES (:id_reserva, :estado, :total, 0, :saldo)"
-            );
-            $insertResumen->execute([
-                ':id_reserva' => $nuevoIdReserva,
-                ':estado'     => ResumenPago::ESTADO_PENDIENTE,
-                ':total'      => $total,
-                ':saldo'      => $total
-            ]);
+            $nuevoIdReserva = (int)$db->lastInsertId();
+            $this->crearResumenInicial($nuevoIdReserva, $habitacionRow, $fechaEntrada, $fechaSalida, $cantHuespedes);
 
             $db->commit();
             return ['success' => true, 'message' => 'Reserva registrada exitosamente.'];
@@ -153,16 +215,33 @@ class ReservaService
         $fechaSalida    = trim($datos['fecha_salida'] ?? '');
         $cantHuespedes  = (int)$datos['cantidad_huespedes'];
 
-        $this->validarDatosBasicos($idHabitacion, $fechaEntrada, $fechaSalida, $cantHuespedes);
+        $this->validarDatosBasicos((int)($datos['id_cliente'] ?? 0), $idHabitacion, $fechaEntrada, $fechaSalida, $cantHuespedes);
 
         $reservaActual = $this->reservaModel->findById($idReserva);
         if (!$reservaActual) {
             throw new Exception("La reserva no existe.");
         }
 
-        $habitacionActual = $this->habitacionModel->findById((int)$reservaActual['id_habitacion']);
-        if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+        $estadoReserva = (int)$reservaActual['id_estado_reserva'];
+        if ($estadoReserva === Reserva::ESTADO_EN_CASA) {
             throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
+        }
+        if ($estadoReserva !== Reserva::ESTADO_PENDIENTE && $estadoReserva !== Reserva::ESTADO_CONFIRMADA) {
+            throw new Exception("Solo se pueden editar reservas pendientes o confirmadas.");
+        }
+
+        // Una confirmada cuyo día de entrada ya llegó se resuelve con check-in o No-Show, no corriendo la fecha.
+        $entradaActual = (string)$reservaActual['fecha_entrada'];
+        if ($fechaEntrada !== $entradaActual) {
+            self::validarEntradaNoPasada($fechaEntrada);
+        }
+        if ($estadoReserva === Reserva::ESTADO_CONFIRMADA
+            && $entradaActual <= date('Y-m-d')
+            && $fechaEntrada !== $entradaActual) {
+            throw new Exception(
+                "No se puede cambiar la fecha de entrada de una reserva confirmada cuyo día de entrada ya llegó. " .
+                "Realice el check-in o márquela como No-Show."
+            );
         }
 
         $db = $this->reservaModel->getConnection();
@@ -198,11 +277,28 @@ class ReservaService
                 throw new Exception("No se pudo actualizar la reserva.");
             }
 
+            // Se respeta el precio pactado si no cambian la habitación ni la ocupación
+            // (ej. solo se corren las fechas). Si cambian, se reprecia con el precio actual.
+            $precioPactado = $reservaActual['precio_noche_pactado'] ?? null;
+            $mantienePrecio = !$cambiaHabitacion
+                && $cantHuespedes === (int)$reservaActual['cantidad_huespedes']
+                && $precioPactado !== null;
+
             $mensaje = "Reserva actualizada exitosamente.";
             $reservaData = $this->reservaModel->findById($idReserva);
             if ($reservaData !== null) {
-                (new PagoService())->recalcularResumen($reservaData);
-                $mensaje = "Reserva actualizada y resumen de pago recalculado exitosamente.";
+                (new PagoService())->recalcularResumen(
+                    $reservaData,
+                    $mantienePrecio ? (float)$precioPactado : null
+                );
+                $mensaje = $mantienePrecio
+                    ? "Reserva actualizada. Se mantuvo el precio pactado por noche."
+                    : "Reserva actualizada y resumen de pago recalculado con el precio actual.";
+
+                $resumenNuevo = $this->resumenModel->getByReserva($idReserva);
+                if ($resumenNuevo !== null && $resumenNuevo->getSaldoPendiente() > 0 && $resumenNuevo->getMontoPagado() > 0) {
+                    $mensaje .= " Saldo pendiente: $" . number_format($resumenNuevo->getSaldoPendiente(), 2, ',', '.') . ".";
+                }
             }
 
             $db->commit();
@@ -216,32 +312,46 @@ class ReservaService
     }
 
     /**
-     * Libera las habitaciones retenidas por No-Show con pago una vez pasada la fecha
-     * de salida (o el mismo día después de la hora de checkout).
-     * La reserva pasa a NO_SHOW y la habitación a DISPONIBLE.
-     * Lo ejecuta cron/no-show-release.php.
+     * Libera las reservas retenidas por No-Show con pago al terminar la retención:
+     * el día entrada + noshow_noches_retenidas (sin pasar la salida) a la hora de checkout.
+     * - La reserva pasa a NO_SHOW.
+     * - Se retienen esas noches al precio pactado (tope: lo cobrado); el resto queda A Reembolsar.
+     * - La habitación pasa de Ocupada a Disponible si no hay otro huésped En casa.
+     * Misma lógica que el EVENT liberacion_no_show. Respaldo: cron/no-show-release.php.
      */
     public function liberarNoShowConPago(): array
     {
         $db = $this->reservaModel->getConnection();
         $fechaActual = date('Y-m-d');
+        $nochesRetenidas = ConfiguracionService::noShowNochesRetenidas();
 
         $stmt = $db->prepare("
-            SELECT r.id, r.id_habitacion
+            SELECT r.id, r.id_habitacion,
+                   DATEDIFF(t.fecha_liberacion, r.fecha_entrada) AS noches_retenidas,
+                   COALESCE(r.precio_noche_pactado, h.precio_noche_base) AS precio_noche
             FROM Reservas r
+            JOIN Habitaciones h ON h.id = r.id_habitacion
+            JOIN (
+                SELECT id, LEAST(DATE_ADD(fecha_entrada, INTERVAL :noches DAY), fecha_salida) AS fecha_liberacion
+                FROM Reservas
+                WHERE id_estado_reserva = :noshow_pago_sub
+            ) t ON t.id = r.id
             WHERE r.id_estado_reserva = :noshow_pago
-              AND (r.fecha_salida < :fecha_hoy
-                   OR (r.fecha_salida = :fecha_hoy_2 AND :hora_actual >= :hora_checkout))
+              AND (t.fecha_liberacion < :fecha_hoy
+                   OR (t.fecha_liberacion = :fecha_hoy_2 AND :hora_actual >= :hora_checkout))
         ");
         $stmt->execute([
-            ':noshow_pago'   => Reserva::ESTADO_NO_SHOW_CON_PAGO,
-            ':fecha_hoy'     => $fechaActual,
-            ':fecha_hoy_2'   => $fechaActual,
-            ':hora_actual'   => date('H:i:s'),
-            ':hora_checkout' => ConfiguracionService::horaCheckoutSql(),
+            ':noches'          => $nochesRetenidas,
+            ':noshow_pago_sub' => Reserva::ESTADO_NO_SHOW_CON_PAGO,
+            ':noshow_pago'     => Reserva::ESTADO_NO_SHOW_CON_PAGO,
+            ':fecha_hoy'       => $fechaActual,
+            ':fecha_hoy_2'     => $fechaActual,
+            ':hora_actual'     => date('H:i:s'),
+            ':hora_checkout'   => ConfiguracionService::horaCheckoutSql(),
         ]);
 
         $aLiberar = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $pagoService = new PagoService();
 
         $contador = 0;
         foreach ($aLiberar as $row) {
@@ -268,14 +378,22 @@ class ReservaService
                     continue;
                 }
 
+                $pagoService->aplicarRetencion(
+                    $idReserva,
+                    (float)$row['precio_noche'] * (int)$row['noches_retenidas']
+                );
+
                 $updH = $db->prepare(
-                    "UPDATE Habitaciones SET id_estado_habitacion = :disp
-                     WHERE id = :id AND id_estado_habitacion = :ocupada"
+                    "UPDATE Habitaciones h SET h.id_estado_habitacion = :disp
+                     WHERE h.id = :id AND h.id_estado_habitacion = :ocupada
+                       AND NOT EXISTS (SELECT 1 FROM Reservas o
+                                       WHERE o.id_habitacion = h.id AND o.id_estado_reserva = :encasa)"
                 );
                 $updH->execute([
                     ':disp'    => Habitacion::ESTADO_DISPONIBLE,
                     ':id'      => $idHabitacion,
-                    ':ocupada' => Habitacion::ESTADO_OCUPADA
+                    ':ocupada' => Habitacion::ESTADO_OCUPADA,
+                    ':encasa'  => Reserva::ESTADO_EN_CASA
                 ]);
 
                 $db->commit();
@@ -310,6 +428,15 @@ class ReservaService
         if ($resumen === null || $resumen->getMontoPagado() <= 0) {
             throw new Exception("Debe realizar al menos un pago para confirmar la reserva.");
         }
+        $senaPct = ConfiguracionService::senaMinimaPct();
+        $senaMinima = round($resumen->getTotal() * $senaPct / 100, 2);
+        if ($resumen->getMontoPagado() < $senaMinima) {
+            throw new Exception(
+                "Para confirmar se necesita una seña mínima del " . rtrim(rtrim(number_format($senaPct, 2, ',', ''), '0'), ',') .
+                " % ($" . number_format($senaMinima, 2, ',', '.') . "). Cobrado: $" .
+                number_format($resumen->getMontoPagado(), 2, ',', '.') . "."
+            );
+        }
 
         $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CONFIRMADA, Reserva::ESTADO_PENDIENTE);
         if (!$ok) {
@@ -329,6 +456,12 @@ class ReservaService
         $hoy = date('Y-m-d');
         if ((string)$reservaData['fecha_entrada'] > $hoy) {
             throw new Exception("No se puede realizar el check-in antes de la fecha de entrada.");
+        }
+        if ((string)$reservaData['fecha_salida'] <= $hoy) {
+            throw new Exception(
+                "No se puede realizar el check-in: la estadía ya venció (fecha de salida " .
+                date('d/m/Y', strtotime((string)$reservaData['fecha_salida'])) . ")."
+            );
         }
 
         $estadoActual = (int)$reservaData['id_estado_reserva'];
@@ -358,18 +491,15 @@ class ReservaService
 
             if ($vieneDeNoShow) {
                 if ($estadoHabitacion !== Habitacion::ESTADO_OCUPADA) {
-                    $db->rollBack();
                     throw new Exception(
                         "La habitación debería estar ocupada (retenida por No-Show)."
                     );
                 }
             } else {
                 if ($estadoHabitacion === Habitacion::ESTADO_OCUPADA) {
-                    $db->rollBack();
                     throw new Exception("La habitación ya se encuentra ocupada.");
                 }
                 if ($estadoHabitacion !== Habitacion::ESTADO_DISPONIBLE) {
-                    $db->rollBack();
                     throw new Exception("La habitación no está disponible para check-in.");
                 }
 
@@ -379,7 +509,6 @@ class ReservaService
                     Habitacion::ESTADO_DISPONIBLE
                 );
                 if (!$roomOk) {
-                    $db->rollBack();
                     throw new Exception("Error al ocupar la habitación.");
                 }
             }
@@ -393,14 +522,15 @@ class ReservaService
                 if (!$vieneDeNoShow) {
                     $this->habitacionModel->cambiarEstado($idHabitacion, Habitacion::ESTADO_DISPONIBLE);
                 }
-                $db->rollBack();
                 throw new Exception("Error al actualizar el estado de la reserva.");
             }
 
             $db->commit();
             return ['success' => true, 'message' => 'Check-in realizado exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -521,52 +651,63 @@ class ReservaService
         }
 
         $estadoActual = (int)$reservaData['id_estado_reserva'];
-        if ($estadoActual === Reserva::ESTADO_CANCELADA
-            || $estadoActual === Reserva::ESTADO_FINALIZADA
-            || $estadoActual === Reserva::ESTADO_EN_CASA) {
-            throw new Exception("No se puede cancelar una reserva finalizada, en estadía o ya cancelada.");
+        if ($estadoActual !== Reserva::ESTADO_PENDIENTE && $estadoActual !== Reserva::ESTADO_CONFIRMADA) {
+            throw new Exception("Solo se pueden cancelar reservas pendientes o confirmadas.");
         }
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
 
         try {
-            if ($estadoActual === Reserva::ESTADO_PENDIENTE) {
-                $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CANCELADA, Reserva::ESTADO_PENDIENTE);
-                if (!$ok) {
-                    $db->rollBack();
-                    throw new Exception("No se pudo cancelar la reserva.");
-                }
-            } else {
-                $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CANCELADA, Reserva::ESTADO_CONFIRMADA);
-                if (!$ok) {
-                    $db->rollBack();
-                    throw new Exception("No se pudo cancelar la reserva.");
-                }
-
-                $resumen = $this->resumenModel->getByReserva($idReserva);
-                if ($resumen !== null && $resumen->getMontoPagado() > 0) {
-                    $upd = $db->prepare(
-                        "UPDATE Resumen_Pago SET id_estado_pago = :estado WHERE id = :id"
-                    );
-                    $upd->execute([
-                        ':estado' => \App\Models\EstadoPago::A_REEMBOLSAB,
-                        ':id'     => $resumen->getId()
-                    ]);
-                }
+            $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CANCELADA, $estadoActual);
+            if (!$ok) {
+                throw new Exception("No se pudo cancelar la reserva.");
             }
 
-            $this->habitacionModel->cambiarEstado(
-                (int)$reservaData['id_habitacion'],
-                Habitacion::ESTADO_DISPONIBLE
-            );
+            // Política de cancelación: sin cargo con suficiente anticipación; si no, se retienen
+            // N noches (con tope en lo cobrado). El resto de lo cobrado queda A Reembolsar,
+            // sin importar si la reserva estaba pendiente o confirmada.
+            $horasAnticipacion = (strtotime($reservaData['fecha_entrada'] . ' 00:00:00') - time()) / 3600;
+            $montoRetenido = 0.0;
+            if ($horasAnticipacion < ConfiguracionService::cancelacionGratisHoras()) {
+                $nochesReserva = (new \DateTime($reservaData['fecha_entrada']))
+                    ->diff(new \DateTime($reservaData['fecha_salida']))->days;
+                $nochesPenalidad = min($nochesReserva, ConfiguracionService::cancelacionPenalidadNoches());
+                $montoRetenido = self::precioNocheReserva($reservaData) * $nochesPenalidad;
+            }
+            $estadoPago = (new PagoService())->aplicarRetencion($idReserva, $montoRetenido);
+
+            // No se toca la habitación: una reserva pendiente o confirmada nunca la ocupó,
+            // y su estado actual (Ocupada, Sucia, etc.) puede corresponder a otro huésped.
 
             $db->commit();
-            return ['success' => true, 'message' => 'Reserva cancelada exitosamente.'];
+
+            $mensaje = 'Reserva cancelada exitosamente.';
+            if ($estadoPago !== null) {
+                $resumen = $this->resumenModel->getByReserva($idReserva);
+                $retenido = $resumen !== null ? $resumen->getMontoRetenido() : 0.0;
+                $mensaje .= $retenido > 0
+                    ? ' Por cancelar con menos de ' . ConfiguracionService::cancelacionGratisHoras() .
+                      ' h de anticipación se retienen $' . number_format($retenido, 2, ',', '.') . '.'
+                    : ' Sin cargo por cancelación.';
+                $mensaje .= $estadoPago === \App\Models\EstadoPago::A_REEMBOLSAB
+                    ? ' El resto queda A Reembolsar.'
+                    : '';
+            }
+            return ['success' => true, 'message' => $mensaje];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
+    }
+
+    /** Día en que se libera un No-Show con pago: entrada + noches retenidas, sin pasar la salida. */
+    private static function fechaLiberacionNoShow(array $reserva): string
+    {
+        $liberacion = date('Y-m-d', strtotime($reserva['fecha_entrada'] . ' +' . ConfiguracionService::noShowNochesRetenidas() . ' day'));
+        return min($liberacion, (string)$reserva['fecha_salida']);
     }
 
     public function marcarNoShow(int $idReserva): array
@@ -583,8 +724,8 @@ class ReservaService
         if ((string)$reservaData['fecha_entrada'] > $hoy) {
             throw new Exception("No se puede marcar como No-Show antes de la fecha de entrada.");
         }
-        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < ConfiguracionService::horaCheckout()) {
-            throw new Exception("El No-Show solo puede marcarse después de las " . ConfiguracionService::horaCheckout() . " del día de entrada.");
+        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < ConfiguracionService::horaNoShow()) {
+            throw new Exception("El No-Show solo puede marcarse después de las " . ConfiguracionService::horaNoShow() . " del día de entrada.");
         }
 
         $idHabitacion = (int)$reservaData['id_habitacion'];
@@ -613,9 +754,14 @@ class ReservaService
                 );
 
                 $db->commit();
+                $liberacion = self::fechaLiberacionNoShow($reservaData);
+                $noches = ConfiguracionService::noShowNochesRetenidas();
                 return [
                     'success' => true,
-                    'message' => 'No-Show registrado. El pago NO se reembolsa. La habitación queda retenida hasta el checkout del día siguiente.'
+                    'message' => 'No-Show registrado. La habitación queda retenida hasta el ' .
+                        date('d/m/Y', strtotime($liberacion)) . ' a las ' . ConfiguracionService::horaCheckout() .
+                        '. Si el huésped no llega, se cobra' . ($noches === 1 ? ' 1 noche' : 'n ' . $noches . ' noches') .
+                        ' como penalidad y el resto de lo pagado queda A Reembolsar.'
                 ];
             } else {
                 $ok = $this->reservaModel->cambiarEstado(
@@ -627,13 +773,10 @@ class ReservaService
                     throw new Exception("No se pudo marcar la reserva como No-Show.");
                 }
 
-                $this->habitacionModel->cambiarEstado(
-                    $idHabitacion,
-                    Habitacion::ESTADO_DISPONIBLE
-                );
-
+                // Sin pago no se retiene la habitación. Tampoco se la cambia de estado:
+                // la reserva nunca la ocupó y su estado actual puede ser de otro huésped.
                 $db->commit();
-                return ['success' => true, 'message' => 'No-Show registrado. Habitación liberada (sin pago).'];
+                return ['success' => true, 'message' => 'No-Show registrado. La habitación no queda retenida (sin pago).'];
             }
         } catch (Exception $e) {
             $db->rollBack();
@@ -665,8 +808,21 @@ class ReservaService
             );
             $lockDestino->execute([':id' => $idNuevaHabitacion]);
             if ((int)$lockDestino->fetchColumn() !== Habitacion::ESTADO_DISPONIBLE) {
-                $db->rollBack();
                 throw new Exception("La habitación destino no está disponible.");
+            }
+
+            $capacidadDestino = Habitacion::capacidadParaTipo((int)$nuevaHabitacion['id_tipo_habitacion']);
+            if ((int)$reservaData['cantidad_huespedes'] > $capacidadDestino) {
+                throw new Exception("La habitación destino no tiene capacidad para " . (int)$reservaData['cantidad_huespedes'] . " huéspedes.");
+            }
+
+            if ($this->reservaModel->existeSolapamiento(
+                $idNuevaHabitacion,
+                date('Y-m-d'),
+                (string)$reservaData['fecha_salida'],
+                $idReserva
+            )) {
+                throw new Exception("La habitación destino tiene reservas durante lo que resta de la estadía.");
             }
 
             $idHabOriginal = (int)$reservaData['id_habitacion'];
@@ -677,7 +833,6 @@ class ReservaService
                 Habitacion::ESTADO_DISPONIBLE
             );
             if (!$roomNuevaOk) {
-                $db->rollBack();
                 throw new Exception("Error al ocupar la habitación destino.");
             }
 
@@ -701,7 +856,9 @@ class ReservaService
                 'message' => 'Huésped trasladado a habitación #' . $nuevaHabitacion['numero'] . '. La habitación original pasa a mantenimiento.'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -724,18 +881,11 @@ class ReservaService
         $idHabitacion = (int)$reservaData['id_habitacion'];
 
         if ($this->reservaModel->existeSolapamiento($idHabitacion, $fechaSalidaActual, $nuevaFechaSalida, $idReserva)) {
-            $habitacionesDisponibles = $this->habitacionModel->getAllWithFilters(null, '1', null, null);
-
-            $disponible = null;
-            foreach ($habitacionesDisponibles as $hab) {
-                if ((int)$hab['id'] !== $idHabitacion
-                    && !$this->reservaModel->existeSolapamiento(
-                        (int)$hab['id'], $fechaSalidaActual, $nuevaFechaSalida
-                    )) {
-                    $disponible = $hab;
-                    break;
-                }
-            }
+            $disponible = $this->buscarHabitacionParaExtension(
+                $reservaData,
+                $fechaSalidaActual,
+                $nuevaFechaSalida
+            );
 
             if ($disponible === null) {
                 throw new Exception(
@@ -768,22 +918,72 @@ class ReservaService
         }
     }
 
+    /**
+     * Busca una habitación libre para las noches extra de una estadía.
+     * Prioriza el mismo tipo de habitación; si no hay, cualquier otra con capacidad suficiente.
+     * No mira el estado de hoy (salvo Mantenimiento/Bloqueada): el traslado es al final de la estadía.
+     */
+    private function buscarHabitacionParaExtension(array $reservaData, string $desde, string $hasta): ?array
+    {
+        $idHabitacionActual = (int)$reservaData['id_habitacion'];
+        $huespedes = (int)$reservaData['cantidad_huespedes'];
+        $habitacionActual = $this->habitacionModel->findById($idHabitacionActual);
+        $tipoActual = $habitacionActual !== null ? (int)$habitacionActual['id_tipo_habitacion'] : 0;
+
+        $mismoTipo = null;
+        $otroTipo  = null;
+        foreach ($this->habitacionModel->getAllWithFilters(null, null, null, null) as $hab) {
+            $idHab = (int)$hab['id'];
+            $idTipo = (int)$hab['id_tipo_habitacion'];
+            if ($idHab === $idHabitacionActual
+                || !self::habitacionReservable((int)$hab['id_estado_habitacion'])
+                || Habitacion::capacidadParaTipo($idTipo) < $huespedes
+                || $this->reservaModel->existeSolapamiento($idHab, $desde, $hasta)) {
+                continue;
+            }
+            if ($idTipo === $tipoActual) {
+                $mismoTipo = $hab;
+                break;
+            }
+            $otroTipo ??= $hab;
+        }
+
+        return $mismoTipo ?? $otroTipo;
+    }
+
+    /**
+     * Crea una reserva nueva (pendiente, con su precio pactado y su Resumen_Pago) para las
+     * noches extra en otra habitación. La habitación nueva no se ocupa ahora: el huésped
+     * se traslada al final de la estadía actual, con el check-in de la reserva nueva.
+     */
     private function crearSplitReservation(
         int $idReservaOriginal,
         int $idNuevaHabitacion,
         string $fechaInicioSplit,
         string $nuevaFechaSalida
     ): array {
+        $reservaOriginal = $this->reservaModel->findById($idReservaOriginal);
+        if (!$reservaOriginal) {
+            throw new Exception("La reserva no existe.");
+        }
+
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
 
         try {
-            $update = $db->prepare(
-                "UPDATE Reservas SET fecha_salida = :nueva WHERE id = :id"
+            $lock = $db->prepare(
+                "SELECT id_estado_habitacion FROM Habitaciones WHERE id = :id FOR UPDATE"
             );
-            $update->execute([':nueva' => $fechaInicioSplit, ':id' => $idReservaOriginal]);
+            $lock->execute([':id' => $idNuevaHabitacion]);
+            if (!self::habitacionReservable((int)$lock->fetchColumn())) {
+                throw new Exception("La habitación elegida para la extensión no está disponible.");
+            }
+            if ($this->reservaModel->existeSolapamiento($idNuevaHabitacion, $fechaInicioSplit, $nuevaFechaSalida)) {
+                throw new Exception("La habitación elegida para la extensión ya tiene reservas en esas fechas.");
+            }
 
-            $reservaOriginal = $this->reservaModel->findById($idReservaOriginal);
+            $habitacionRow = $this->habitacionModel->findById($idNuevaHabitacion);
+            $cantHuespedes = (int)$reservaOriginal['cantidad_huespedes'];
 
             $nuevaReserva = new Reserva();
             $nuevaReserva->setIdCliente((int)$reservaOriginal['id_cliente']);
@@ -791,32 +991,30 @@ class ReservaService
             $nuevaReserva->setIdCanalOrigen((int)$reservaOriginal['id_canal_origen']);
             $nuevaReserva->setFechaEntrada($fechaInicioSplit);
             $nuevaReserva->setFechaSalida($nuevaFechaSalida);
-            $nuevaReserva->setCantidadHuespedes((int)$reservaOriginal['cantidad_huespedes']);
+            $nuevaReserva->setCantidadHuespedes($cantHuespedes);
             $nuevaReserva->setObservaciones(
                 "Extensión de reserva #" . $idReservaOriginal . ". Huésped se muda a esta habitación."
             );
-            $nuevaReserva->setCreadoPor((int)$reservaOriginal['creado_por']);
-            $this->reservaModel->save($nuevaReserva);
-
-            $roomOk = $this->habitacionModel->cambiarEstado(
-                $idNuevaHabitacion,
-                Habitacion::ESTADO_OCUPADA,
-                Habitacion::ESTADO_DISPONIBLE
-            );
-            if (!$roomOk) {
-                $db->rollBack();
-                throw new Exception("Error al ocupar la habitación de extensión.");
+            $nuevaReserva->setCreadoPor((int)($_SESSION['user_id'] ?? $reservaOriginal['creado_por']));
+            if (!$this->reservaModel->save($nuevaReserva)) {
+                throw new Exception("No se pudo registrar la reserva de extensión.");
             }
+
+            $nuevoIdReserva = (int)$db->lastInsertId();
+            $this->crearResumenInicial($nuevoIdReserva, $habitacionRow, $fechaInicioSplit, $nuevaFechaSalida, $cantHuespedes);
 
             $db->commit();
             return [
                 'success' => true,
-                'message' => 'Estadía dividida. El huésped debe mudarse a la habitación #' .
-                    $this->habitacionModel->findById($idNuevaHabitacion)['numero'] .
-                    ' a partir del ' . $fechaInicioSplit . '.'
+                'message' => 'Estadía dividida. Se creó la reserva #' . $nuevoIdReserva .
+                    ' en la habitación #' . $habitacionRow['numero'] . ' a partir del ' .
+                    date('d/m/Y', strtotime($fechaInicioSplit)) .
+                    '. Registre el pago y haga el check-in de esa reserva al momento del traslado.'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }

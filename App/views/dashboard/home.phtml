@@ -10,9 +10,9 @@
 </header>
 
 <?php if (!empty($errorMessage)): ?>
-    <div class="error-banner">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p><?= htmlspecialchars($errorMessage) ?></p>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <?= htmlspecialchars($errorMessage) ?>
     </div>
 <?php endif; ?>
 

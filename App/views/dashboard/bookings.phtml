@@ -121,7 +121,7 @@
                                     <a href="<?= url('/dashboard/booking/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
+                                    <?php if (in_array((int)$res['id_estado_reserva'], [\App\Models\Reserva::ESTADO_PENDIENTE, \App\Models\Reserva::ESTADO_CONFIRMADA], true)): ?>
                                         <a href="<?= url('/dashboard/booking/edit?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Reserva">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -305,7 +305,7 @@
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'noshow') {
                     modalTitle.innerText = 'Marcar como No-Show';
-                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>Si tiene pago, el importe NO se reembolsa. La habitación será retenida hasta el día siguiente.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>Si tiene pago, la habitación queda retenida hasta el checkout del día siguiente; si el huésped no llega, se cobra la 1.ª noche y el resto se reembolsa.</small>`;
                     modalIcon.className = 'fas fa-user-slash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');

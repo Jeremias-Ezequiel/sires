@@ -31,7 +31,6 @@ class DashboardController
         $rolNombre = $rolMap[$userRole] ?? 'Sin rol';
 
         $capacidad_filtrada = isset($vars['capacidad']) ? (int)$vars['capacidad'] : 2;
-        $errorMessage = '';
 
         $stats = [
             'disponibles'     => 0,

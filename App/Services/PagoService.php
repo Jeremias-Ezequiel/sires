@@ -88,8 +88,15 @@ class PagoService
         if (!$reserva) {
             throw new Exception("La reserva no existe.");
         }
-        if ((int)$reserva['id_estado_reserva'] === Reserva::ESTADO_CANCELADA) {
-            throw new Exception("No se pueden registrar pagos sobre una reserva cancelada.");
+        // NO_SHOW_CON_PAGO no se bloquea: el check-in desde ese estado exige completar el pago.
+        $estadosSinPagos = [
+            Reserva::ESTADO_CANCELADA  => 'cancelada',
+            Reserva::ESTADO_NO_SHOW    => 'en No-Show',
+            Reserva::ESTADO_FINALIZADA => 'finalizada',
+        ];
+        $estadoReserva = (int)$reserva['id_estado_reserva'];
+        if (isset($estadosSinPagos[$estadoReserva])) {
+            throw new Exception("No se pueden registrar pagos sobre una reserva " . $estadosSinPagos[$estadoReserva] . ".");
         }
 
         $db = $this->resumenModel->getConnection();
@@ -111,17 +118,14 @@ class PagoService
             }
 
             if ($resumen === null) {
-                $db->rollBack();
                 throw new Exception("No se pudo generar el resumen de pago.");
             }
 
             if ($resumen->getSaldoPendiente() <= 0) {
-                $db->rollBack();
                 throw new Exception("La reserva ya se encuentra totalmente pagada.");
             }
 
             if ($montoAbonado > $resumen->getSaldoPendiente()) {
-                $db->rollBack();
                 throw new Exception(
                     "El monto ingresado supera el saldo pendiente de $" .
                     number_format($resumen->getSaldoPendiente(), 2, ',', '.') . "."
@@ -136,7 +140,6 @@ class PagoService
 
             $saved = $this->transaccionModel->save($transaccion);
             if (!$saved) {
-                $db->rollBack();
                 throw new Exception("No se pudo registrar la transacción de pago.");
             }
 
@@ -155,7 +158,6 @@ class PagoService
             $resumen->setSaldoPendiente($nuevoSaldo);
             $this->resumenModel->update($resumen);
 
-            $estadoReserva = (int)$reserva['id_estado_reserva'];
             $mensaje = "Pago registrado exitosamente por $" . number_format($montoAbonado, 2, ',', '.') . ".";
 
             if ($nuevoSaldo <= 0 && $estadoReserva === Reserva::ESTADO_PENDIENTE) {
@@ -171,7 +173,9 @@ class PagoService
             $db->commit();
             return ['success' => true, 'message' => $mensaje];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -180,8 +184,10 @@ class PagoService
      * Recalcula monto total y saldo del resumen de pago de una reserva.
      * Si ya hay una transacción abierta (ej. ReservaService::editar), se suma a ella
      * y deja el commit/rollback a quien la abrió.
+     * Si se pasa $precioNocheFijo (ej. el precio pactado), se usa ese precio por noche
+     * en lugar de recalcularlo con el precio base actual de la habitación.
      */
-    public function recalcularResumen(array $reserva): bool
+    public function recalcularResumen(array $reserva, ?float $precioNocheFijo = null): bool
     {
         $resumen = $this->resumenModel->getByReserva((int)$reserva['id']);
         if ($resumen === null) {
@@ -218,7 +224,8 @@ class PagoService
             $precioBase = (float)$reserva['precio_noche_base'];
             $idTipo     = (int)$reserva['id_tipo_habitacion'];
             $huespedes  = (int)$reserva['cantidad_huespedes'];
-            $precioEfectivo = Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
+            $precioEfectivo = $precioNocheFijo
+                ?? Habitacion::precioEfectivoNoche($precioBase, $idTipo, $huespedes);
             $nuevoTotal = $precioEfectivo * $noches;
 
             if ($nuevoTotal <= 0) {
@@ -242,8 +249,8 @@ class PagoService
                 $nuevoEstado = ResumenPago::ESTADO_PAGO_PARCIAL;
             }
 
-            if ($resumen->getIdEstadoPago() === ResumenPago::ESTADO_REEMBOLSADO) {
-                $nuevoEstado = ResumenPago::ESTADO_REEMBOLSADO;
+            if (in_array($resumen->getIdEstadoPago(), [ResumenPago::ESTADO_REEMBOLSADO, ResumenPago::ESTADO_RETENIDO], true)) {
+                $nuevoEstado = $resumen->getIdEstadoPago();
             }
 
             $update = $db->prepare(
@@ -288,6 +295,43 @@ class PagoService
             }
             throw $e;
         }
+    }
+
+    /**
+     * Deja asentado cuánto de lo cobrado retiene el hotel al cancelar o liberar una reserva.
+     * monto_retenido = lo retenido (tope: lo cobrado); monto_total = lo cobrado y saldo 0,
+     * porque ya no se cobra nada más (chk_resumen_balance: total = cobrado + saldo).
+     * Si se cobró más de lo retenido, el pago queda A Reembolsar por la diferencia; si no, Retenido.
+     * Sin cobros no modifica nada. Debe llamarse dentro de la transacción de quien cancela.
+     * Misma lógica en los EVENTs corte_pagos y liberacion_no_show.
+     *
+     * @return int|null Estado de pago resultante, o null si no había cobros.
+     */
+    public function aplicarRetencion(int $idReserva, float $montoRetenido): ?int
+    {
+        $db = $this->resumenModel->getConnection();
+        $lock = $db->prepare(
+            "SELECT id, monto_cobrado FROM Resumen_Pago WHERE id_reserva = :id FOR UPDATE"
+        );
+        $lock->execute([':id' => $idReserva]);
+        $row = $lock->fetch(PDO::FETCH_ASSOC);
+        if (!$row || (float)$row['monto_cobrado'] <= 0) {
+            return null;
+        }
+
+        $cobrado  = (float)$row['monto_cobrado'];
+        $retenido = round(min(max($montoRetenido, 0.0), $cobrado), 2);
+        $estado   = $cobrado > $retenido ? EstadoPago::A_REEMBOLSAB : EstadoPago::RETENIDO;
+
+        $upd = $db->prepare(
+            "UPDATE Resumen_Pago
+             SET monto_total = monto_cobrado, saldo_pendiente = 0,
+                 monto_retenido = :retenido, id_estado_pago = :estado
+             WHERE id = :id"
+        );
+        $upd->execute([':retenido' => $retenido, ':estado' => $estado, ':id' => (int)$row['id']]);
+
+        return $estado;
     }
 
     /**
@@ -400,19 +444,23 @@ class PagoService
         $db = $this->resumenModel->getConnection();
 
         $stmt = $db->prepare("
-            SELECT r.id, r.id_habitacion, rp.id_estado_pago,
+            SELECT r.id, r.id_habitacion, r.fecha_entrada, rp.id_estado_pago,
                    rp.monto_cobrado, rp.monto_total, rp.id AS id_resumen
             FROM Reservas r
             JOIN Resumen_Pago rp ON rp.id_reserva = r.id
-            WHERE r.fecha_entrada = :fecha
-              AND r.id_estado_reserva IN (:pendiente, :confirmada)
-              AND rp.id_estado_pago <> :pagado_total
+            WHERE rp.id_estado_pago <> :pagado_total
+              AND (
+                    (r.fecha_entrada = :fecha AND r.id_estado_reserva IN (:pendiente, :confirmada))
+                 OR (r.fecha_entrada < :hoy AND r.id_estado_reserva = :pendiente_vencida)
+              )
         ");
         $stmt->execute([
-            ':fecha'         => $fechaLimite,
-            ':pendiente'     => Reserva::ESTADO_PENDIENTE,
-            ':confirmada'    => Reserva::ESTADO_CONFIRMADA,
-            ':pagado_total'  => ResumenPago::ESTADO_PAGADO_TOTAL
+            ':fecha'             => $fechaLimite,
+            ':hoy'               => date('Y-m-d'),
+            ':pendiente'         => Reserva::ESTADO_PENDIENTE,
+            ':confirmada'        => Reserva::ESTADO_CONFIRMADA,
+            ':pendiente_vencida' => Reserva::ESTADO_PENDIENTE,
+            ':pagado_total'      => ResumenPago::ESTADO_PAGADO_TOTAL
         ]);
         $afectadas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -421,19 +469,13 @@ class PagoService
             $db->beginTransaction();
             try {
                 $idReserva  = (int)$row['id'];
-                $idResumen  = (int)$row['id_resumen'];
-                $estadoPago = (int)$row['id_estado_pago'];
 
-                if ($estadoPago === ResumenPago::ESTADO_PAGO_PARCIAL) {
-                    $updateResumen = $db->prepare(
-                        "UPDATE Resumen_Pago SET id_estado_pago = :estado
-                         WHERE id = :id"
-                    );
-                    $updateResumen->execute([
-                        ':estado' => EstadoPago::A_REEMBOLSAB,
-                        ':id'     => $idResumen
-                    ]);
-                }
+                // La seña no se reembolsa: el huésped no completó el pago a tiempo.
+                $this->aplicarRetencion($idReserva, (float)$row['monto_cobrado']);
+
+                $motivo = (string)$row['fecha_entrada'] < date('Y-m-d')
+                    ? ' | Cancelada automática: reserva pendiente con la fecha de entrada vencida.'
+                    : ' | Cancelada automática ' . $horasCorte . 'hs antes del check-in por falta de pago total.';
 
                 $updateReserva = $db->prepare(
                     "UPDATE Reservas SET id_estado_reserva = :cancelada,
@@ -442,7 +484,7 @@ class PagoService
                 );
                 $updateReserva->execute([
                     ':cancelada' => Reserva::ESTADO_CANCELADA,
-                    ':obs'       => ' | Cancelada automática ' . $horasCorte . 'hs antes del check-in por falta de pago total.',
+                    ':obs'       => $motivo . ((float)$row['monto_cobrado'] > 0 ? ' Seña retenida.' : ''),
                     ':id'        => $idReserva
                 ]);
 
@@ -485,7 +527,6 @@ class PagoService
             $row = $lock->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
-                $db->rollBack();
                 throw new Exception("La reserva no tiene un resumen de pago.");
             }
 
@@ -503,12 +544,10 @@ class PagoService
             $nuevoTotal = $precioEfectivo * $noches;
 
             if ($nuevoTotal <= 0) {
-                $db->rollBack();
                 throw new Exception("No se pudo calcular un total válido.");
             }
 
             if ($montoCobrado > 0 && $nuevoTotal < $montoCobrado) {
-                $db->rollBack();
                 throw new Exception(
                     "El nuevo total ($" . number_format($nuevoTotal, 2, ',', '.') .
                     ") es menor a lo ya cobrado ($" . number_format($montoCobrado, 2, ',', '.') .
@@ -563,7 +602,9 @@ class PagoService
                     ' → Nuevo total: $' . number_format($nuevoTotal, 2, ',', '.') . '.'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -578,10 +619,11 @@ class PagoService
             throw new Exception("La reserva no está pendiente de reembolso.");
         }
 
-        $montoReembolso = $resumen->getMontoPagado();
+        $montoReembolso = $resumen->getMontoAReembolsar();
         if ($montoReembolso <= 0) {
             throw new Exception("No hay monto cobrado para reembolsar.");
         }
+        $montoRetenido = $resumen->getMontoRetenido();
 
         $db = $this->resumenModel->getConnection();
         $db->beginTransaction();
@@ -594,7 +636,6 @@ class PagoService
             $row = $lock->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
-                $db->rollBack();
                 throw new Exception("El resumen de pago no existe.");
             }
 
@@ -618,9 +659,9 @@ class PagoService
                  WHERE id = :id"
             );
             $update->execute([
-                ':estado'  => ResumenPago::ESTADO_REEMBOLSADO,
-                ':total'   => 0.0,
-                ':cobrado' => 0.0,
+                ':estado'  => $montoRetenido > 0 ? ResumenPago::ESTADO_RETENIDO : ResumenPago::ESTADO_REEMBOLSADO,
+                ':total'   => $montoRetenido,
+                ':cobrado' => $montoRetenido,
                 ':saldo'   => 0.0,
                 ':id'      => $resumen->getId()
             ]);
@@ -629,10 +670,13 @@ class PagoService
             return [
                 'success' => true,
                 'message' => 'Reembolso procesado exitosamente por $' .
-                    number_format($montoReembolso, 2, ',', '.') . '.'
+                    number_format($montoReembolso, 2, ',', '.') . '.' .
+                    ($montoRetenido > 0 ? ' Retenido por el hotel: $' . number_format($montoRetenido, 2, ',', '.') . '.' : '')
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }

@@ -16,6 +16,8 @@ class ResumenPago extends Model
     private float $total = 0.0;
     private float $monto_pagado = 0.0;
     private float $saldo_pendiente = 0.0;
+    /** Parte de lo cobrado que retiene el hotel (penalidad). Nunca supera monto_cobrado. */
+    private float $monto_retenido = 0.0;
 
     // Alias: los valores se definen en EstadoPago (espejo de la tabla catálogo).
     public const ESTADO_PENDIENTE = EstadoPago::PENDIENTE;
@@ -23,6 +25,7 @@ class ResumenPago extends Model
     public const ESTADO_PAGADO_TOTAL = EstadoPago::PAGADO_TOTAL;
     public const ESTADO_REEMBOLSADO = EstadoPago::REEMBOLSADO;
     public const ESTADO_A_REEMBOLSAR = EstadoPago::A_REEMBOLSAB;
+    public const ESTADO_RETENIDO = EstadoPago::RETENIDO;
 
     public function getByReserva(int $id_reserva): ?ResumenPago
     {
@@ -31,7 +34,7 @@ class ResumenPago extends Model
                 "SELECT id, id_reserva, id_estado_pago,
                         monto_total AS total,
                         monto_cobrado AS monto_pagado,
-                        saldo_pendiente
+                        saldo_pendiente, monto_retenido
                  FROM Resumen_Pago WHERE id_reserva = :id_reserva"
             );
             $stmt->execute([':id_reserva' => $id_reserva]);
@@ -291,7 +294,7 @@ class ResumenPago extends Model
             );
         }
 
-        if ($resumen->getIdEstadoPago() !== self::ESTADO_REEMBOLSADO) {
+        if (!in_array($resumen->getIdEstadoPago(), [self::ESTADO_REEMBOLSADO, self::ESTADO_RETENIDO], true)) {
             if ($nuevoSaldo <= 0 && $montoPagado > 0) {
                 $resumen->setIdEstadoPago(self::ESTADO_PAGADO_TOTAL);
             } elseif ($montoPagado > 0) {
@@ -342,6 +345,17 @@ class ResumenPago extends Model
             throw new Exception("El estado de pago no es válido.");
         }
         $this->id_estado_pago = $id_estado_pago;
+    }
+
+    public function getMontoRetenido(): float
+    {
+        return $this->monto_retenido;
+    }
+
+    /** Monto a devolver de una reserva A Reembolsar: lo cobrado menos lo que retiene el hotel. */
+    public function getMontoAReembolsar(): float
+    {
+        return max(0.0, $this->getMontoPagado() - $this->monto_retenido);
     }
 
     public function getTotal(): float

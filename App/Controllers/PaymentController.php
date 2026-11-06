@@ -214,7 +214,7 @@ class PaymentController
                 throw new Exception("El estado del pago no está pendiente de reembolso.");
             }
 
-            $montoReembolso = $resumen->getMontoPagado();
+            $montoReembolso = $resumen->getMontoAReembolsar();
             if ($montoReembolso <= 0) {
                 throw new Exception("No hay monto cobrado para reembolsar.");
             }

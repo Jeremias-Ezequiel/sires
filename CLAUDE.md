@@ -48,10 +48,11 @@ $r->addRoute('GET', '/dashboard/employees', [
 
 ## Reglas de negocio
 
-- Única fuente: tabla `Configuracion` (versionada por `vigente_desde`), leída con `App\Services\ConfiguracionService` (corte de pago, hora de checkout, factor late checkout, descuentos por ocupación, expiración de token). `App/Config/Politicas.php` = valores por defecto si falta la tabla o la clave, y `ZONA_HORARIA`. Nunca hardcodear estos valores.
+- Única fuente: tabla `Configuracion` (versionada por `vigente_desde`), leída con `App\Services\ConfiguracionService` (corte de pago, hora de checkout, factor late checkout, descuentos por ocupación, expiración de token, hora de No-Show, máximo de noches, seña mínima, política de cancelación, noches retenidas por No-Show). `App/Config/Politicas.php` = valores por defecto si falta la tabla o la clave, y `ZONA_HORARIA`. Nunca hardcodear estos valores.
 - Cambiar una política = INSERT en `Configuracion` con un `vigente_desde` nuevo; nunca UPDATE ni DELETE. El factor de late checkout se toma según `Reservas.fecha_alta`.
 - El JS de las vistas recibe los valores con `json_encode(ConfiguracionService::...)`. Cálculo de precio compartido en `public/js/reserva-precio.js`.
 - `Reservas.precio_noche_pactado` guarda el precio efectivo por noche (al crear/editar/recalcular); `Reservas.late_fee_aplicado` es la marca de idempotencia del late checkout.
+- Lo que el hotel se queda al cancelar, por No-Show o en el corte de pagos va en `Resumen_Pago.monto_retenido` (vía `PagoService::aplicarRetencion()`): queda `A Reembolsar` si se cobró más, o `Retenido` (estado de pago 6) si no. Los reembolsos se registran como transacción negativa.
 - Constantes de estado: los valores viven en las clases catálogo (`EstadoReserva`, `EstadoHabitacion`, `EstadoPago`); `Reserva::ESTADO_*`, `Habitacion::ESTADO_*`, etc. son alias.
 - Lógica de negocio en `Services/`, no en controllers ni crons. Controllers nuevos: `extends Controller` (`redirect()`, `flash()`, `recordarInputs()`). La sesión se inicia en `index.php`.
 

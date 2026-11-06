@@ -154,7 +154,7 @@ class Reserva extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
 
-        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY r.fecha_alta DESC, r.id DESC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);

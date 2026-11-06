@@ -26,6 +26,7 @@
 
 <section class="details-section">
     <form action="<?= url('/dashboard/booking/add/process') ?>" method="POST" class="form" id="form-reserva">
+        <?= csrf_field() ?>
 
         <div class="form__section">
             <h2 class="form__section-title">Información de la Reserva</h2>
@@ -72,7 +73,7 @@
             <div class="form-row">
                 <div class="form__group">
                     <label class="form__label" for="fecha_entrada">Fecha de Entrada *</label>
-                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" value="<?= htmlspecialchars($old['fecha_entrada'] ?? date('Y-m-d')) ?>" required>
+                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" min="<?= date('Y-m-d') ?>" value="<?= htmlspecialchars($old['fecha_entrada'] ?? date('Y-m-d')) ?>" required>
                 </div>
 
                 <div class="form__group">
@@ -374,13 +375,13 @@
             var total = precio * noches;
 
             if (ayuda) {
-                ayuda.textContent = 'Descuento por ocupación: ' + dsc + '% — Precio/noche: $' + precio.toFixed(2);
+                ayuda.textContent = 'Descuento por ocupación: ' + dsc + '% — Precio/noche: ' + SiresPrecio.formatearMoneda(precio);
             }
             if (precioNocheEl) {
-                precioNocheEl.textContent = '$' + precio.toFixed(2) + (dsc > 0 ? ' (-' + dsc + '%)' : '');
+                precioNocheEl.textContent = SiresPrecio.formatearMoneda(precio) + (dsc > 0 ? ' (-' + dsc + '%)' : '');
             }
             if (precioTotalEl) {
-                precioTotalEl.textContent = '$' + total.toFixed(2) + ' (' + noches + (noches === 1 ? ' noche' : ' noches') + ' x $' + precio.toFixed(2) + ')';
+                precioTotalEl.textContent = SiresPrecio.formatearMoneda(total) + ' (' + noches + (noches === 1 ? ' noche' : ' noches') + ' x ' + SiresPrecio.formatearMoneda(precio) + ')';
             }
         }
 
@@ -577,8 +578,8 @@
                     '<div class="confirm-field"><span class="confirm-field-label">Tipo</span><span class="confirm-field-value">' + escHtml(r.tipo) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Capacidad</span><span class="confirm-field-value">' + escHtml(String(r.capacidad)) + ' personas</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value">' + escHtml('Disponible para las fechas ingresadas') + '</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0.00</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Total estimado</span><span class="confirm-field-value" id="room-precio-total">$0.00</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0,00</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Total estimado</span><span class="confirm-field-value" id="room-precio-total">$0,00</span></div>' +
                 '</div>';
             roomConfirmCard.style.display = 'block';
             roomDropdown.classList.remove('open');

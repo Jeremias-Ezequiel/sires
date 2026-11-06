@@ -28,6 +28,12 @@ final class ConfiguracionService
         'factor_late_checkout'       => 'FACTOR_LATE_CHECKOUT',
         'descuento_ocupacion'        => 'DESCUENTO_OCUPACION',
         'minutos_token_recuperacion' => 'MINUTOS_TOKEN_RECUPERACION',
+        'hora_no_show'               => 'HORA_NO_SHOW',
+        'max_noches_reserva'         => 'MAX_NOCHES_RESERVA',
+        'sena_minima_pct'            => 'SENA_MINIMA_PCT',
+        'cancelacion_gratis_horas'   => 'CANCELACION_GRATIS_HORAS',
+        'cancelacion_penalidad_noches' => 'CANCELACION_PENALIDAD_NOCHES',
+        'noshow_noches_retenidas'    => 'NOSHOW_NOCHES_RETENIDAS',
     ];
 
     /** @var array<string, mixed> Caché por petición: "clave@fecha" => valor. */
@@ -82,7 +88,7 @@ final class ConfiguracionService
         return (int)self::get('horas_corte_pago');
     }
 
-    /** Hora de checkout vigente hoy, formato HH:MM. También es la hora mínima de No-Show. */
+    /** Hora de checkout vigente hoy, formato HH:MM. */
     public static function horaCheckout(): string
     {
         return (string)self::get('hora_checkout');
@@ -110,6 +116,42 @@ final class ConfiguracionService
     public static function minutosTokenRecuperacion(): int
     {
         return (int)self::get('minutos_token_recuperacion');
+    }
+
+    /** Hora del día de entrada desde la que se puede marcar No-Show, formato HH:MM. */
+    public static function horaNoShow(): string
+    {
+        return (string)self::get('hora_no_show');
+    }
+
+    /** Máximo de noches por reserva. */
+    public static function maxNochesReserva(): int
+    {
+        return (int)self::get('max_noches_reserva');
+    }
+
+    /** Seña mínima para confirmar, en % del total. */
+    public static function senaMinimaPct(): float
+    {
+        return (float)self::get('sena_minima_pct');
+    }
+
+    /** Horas de anticipación (hasta las 00:00 del día de entrada) para cancelar sin cargo. */
+    public static function cancelacionGratisHoras(): int
+    {
+        return (int)self::get('cancelacion_gratis_horas');
+    }
+
+    /** Noches retenidas al cancelar fuera del plazo sin cargo. */
+    public static function cancelacionPenalidadNoches(): int
+    {
+        return (int)self::get('cancelacion_penalidad_noches');
+    }
+
+    /** Noches que se retiene la habitación (y se cobran) en un No-Show con pago. */
+    public static function noShowNochesRetenidas(): int
+    {
+        return (int)self::get('noshow_noches_retenidas');
     }
 
     // ------------------------------------------------------------------

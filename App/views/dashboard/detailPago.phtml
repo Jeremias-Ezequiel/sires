@@ -7,7 +7,8 @@
         <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a Pagos
         </a>
-<?php if ($resumen !== null && $resumen->getMontoPagado() <= 0): ?>
+<?php if ($resumen !== null && $resumen->getMontoPagado() <= 0
+                    && \App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])): ?>
                     <button type="button"
                         class="btn btn--warning open-sires-modal"
                         data-action="recalculate"
@@ -16,7 +17,8 @@
                         <i class="fas fa-calculator"></i> Recalcular Precio
                     </button>
                 <?php endif; ?>
-                <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB): ?>
+                <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB
+                    && \App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR])): ?>
                     <button type="button"
                         class="btn btn--danger open-sires-modal"
                         data-action="refund"
@@ -123,6 +125,7 @@ endif;
                             if (strpos($estadoPagoLower, 'pendient') !== false) $pagoStatusClass = 'badge--pendiente';
                             elseif (strpos($estadoPagoLower, 'parcial') !== false) $pagoStatusClass = 'badge--reservada';
                             elseif (strpos($estadoPagoLower, 'pagad') !== false) $pagoStatusClass = 'badge--disponible';
+                            elseif (strpos($estadoPagoLower, 'retenid') !== false) $pagoStatusClass = 'badge--warning';
                             elseif (strpos($estadoPagoLower, 'reembols') !== false) $pagoStatusClass = 'badge--ocupada';
                             elseif (strpos($estadoPagoLower, 'a reembolsar') !== false) $pagoStatusClass = 'badge--warning';
                             ?>
@@ -196,7 +199,10 @@ endif;
         <div class="alert alert--warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             Esta reserva tiene un pago pendiente de reembolso por
-            <strong>$<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?></strong>.
+            <strong>$<?= number_format($resumen->getMontoAReembolsar(), 2, ',', '.') ?></strong>.
+            <?php if ($resumen->getMontoAReembolsar() < $resumen->getMontoPagado()): ?>
+                El hotel retiene $<?= number_format($resumen->getMontoPagado() - $resumen->getMontoAReembolsar(), 2, ',', '.') ?> por la política de cancelación.
+            <?php endif; ?>
         </div>
         <div class="form__actions">
             <form id="refund-form" action="<?= url('/dashboard/payments/refund/process') ?>" method="POST">
@@ -206,7 +212,7 @@ endif;
                     data-action="refund"
                     data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
                     data-reserva-id="<?= (int)$reserva['id'] ?>"
-                    data-monto="<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?>">
+                    data-monto="<?= number_format($resumen->getMontoAReembolsar(), 2, ',', '.') ?>">
                     <i class="fas fa-undo-alt"></i> Procesar Reembolso
                 </button>
             </form>

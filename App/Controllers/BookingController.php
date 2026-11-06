@@ -81,13 +81,7 @@ class BookingController extends Controller
         $clientes     = (new Clientes())->getAll();
         $habitaciones = array_filter(
             (new Habitacion())->getAllWithFilters(null, null, null, null),
-            function (array $h): bool {
-                return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_SUCIA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_LIMPIANDO;
-            }
+            fn (array $h): bool => ReservaService::habitacionReservable((int)$h['id_estado_habitacion'])
         );
         $reservasActivas = (new Reserva())->getReservasActivas();
         $canales      = (new CanalOrigen())->getAll();
@@ -153,26 +147,20 @@ class BookingController extends Controller
                 throw new Exception("La reserva no existe.");
             }
 
-            if ((int)$reserva['id_estado_reserva'] === Reserva::ESTADO_CANCELADA ||
-                (int)$reserva['id_estado_reserva'] === Reserva::ESTADO_FINALIZADA) {
-                throw new Exception("No se puede editar una reserva cancelada o finalizada.");
-            }
-
-            $habitacionActual = (new Habitacion())->findById((int)$reserva['id_habitacion']);
-            if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+            $estadoReserva = (int)$reserva['id_estado_reserva'];
+            if ($estadoReserva === Reserva::ESTADO_EN_CASA) {
                 throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
+            }
+            if ($estadoReserva !== Reserva::ESTADO_PENDIENTE && $estadoReserva !== Reserva::ESTADO_CONFIRMADA) {
+                throw new Exception("Solo se pueden editar reservas pendientes o confirmadas.");
             }
 
             $clientes     = (new Clientes())->getAll();
             $habitaciones = array_filter(
                 (new Habitacion())->getAllWithFilters(null, null, null, null),
-                function (array $h): bool {
-                    return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_SUCIA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_LIMPIANDO;
-                }
+                // La habitación actual de la reserva se muestra siempre, aunque hoy no sea reservable.
+                fn (array $h): bool => (int)$h['id'] === (int)$reserva['id_habitacion']
+                    || ReservaService::habitacionReservable((int)$h['id_estado_habitacion'])
             );
             $reservasActivas = (new Reserva())->getReservasActivas();
             $canales      = (new CanalOrigen())->getAll();
@@ -218,6 +206,12 @@ class BookingController extends Controller
     {
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
+
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        unset($_SESSION['flash_message']);
+
+        $flashStatus = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_status']);
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;

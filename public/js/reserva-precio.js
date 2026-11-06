@@ -27,8 +27,17 @@ var SiresPrecio = (function () {
         return Math.max(1, Math.round(diff));
     }
 
+    /** Formatea un importe como en el resto de la app: $10.000,00 */
+    function formatearMoneda(monto) {
+        return '$' + Number(monto).toLocaleString('es-AR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
     return {
         descuentoOcupacion: descuentoOcupacion,
+        formatearMoneda: formatearMoneda,
         precioNoche: precioNoche,
         calcularNoches: calcularNoches
     };

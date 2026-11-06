@@ -299,7 +299,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/booking/add/process', [
         'action' => [BookingController::class, 'addBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
@@ -311,7 +311,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/booking/edit/process', [
         'action' => [BookingController::class, 'editBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
