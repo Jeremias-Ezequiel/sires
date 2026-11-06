@@ -10,6 +10,7 @@ use App\Models\ResumenPago;
 use App\Models\EstadoPago;
 use App\Models\TransaccionPago;
 use App\Models\Habitacion;
+use App\Config\Politicas;
 use PDO;
 use PDOException;
 
@@ -174,6 +175,11 @@ class PagoService
         }
     }
 
+    /**
+     * Recalcula monto total y saldo del resumen de pago de una reserva.
+     * Si ya hay una transacción abierta (ej. ReservaService::editar), se suma a ella
+     * y deja el commit/rollback a quien la abrió.
+     */
     public function recalcularResumen(array $reserva): bool
     {
         $resumen = $this->resumenModel->getByReserva((int)$reserva['id']);
@@ -182,7 +188,10 @@ class PagoService
         }
 
         $db = $this->resumenModel->getConnection();
-        $db->beginTransaction();
+        $transaccionPropia = !$db->inTransaction();
+        if ($transaccionPropia) {
+            $db->beginTransaction();
+        }
 
         try {
             $lock = $db->prepare(
@@ -193,7 +202,9 @@ class PagoService
             $row = $lock->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
-                $db->rollBack();
+                if ($transaccionPropia) {
+                    $db->rollBack();
+                }
                 return false;
             }
 
@@ -210,14 +221,12 @@ class PagoService
             $nuevoTotal = $precioEfectivo * $noches;
 
             if ($nuevoTotal <= 0) {
-                $db->rollBack();
                 throw new Exception("No se pudo calcular un total válido para la reserva.");
             }
 
             $nuevoSaldo = $nuevoTotal - $montoCobrado;
 
             if ($nuevoSaldo < 0) {
-                $db->rollBack();
                 throw new Exception(
                     "El nuevo total ($" . number_format($nuevoTotal, 2, ',', '.') .
                     ") es menor a lo ya cobrado ($" . number_format($montoCobrado, 2, ',', '.') .
@@ -266,17 +275,111 @@ class PagoService
                 ]);
             }
 
-            $db->commit();
+            if ($transaccionPropia) {
+                $db->commit();
+            }
             return true;
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($transaccionPropia && $db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
 
+    /**
+     * Aplica el cargo por late checkout a las reservas EN_CASA cuya salida es hoy
+     * y que siguen sin checkout después de Politicas::HORA_CHECKOUT.
+     * El cargo es Politicas::FACTOR_LATE_CHECKOUT × precio base de la noche.
+     * Lo ejecuta cron/late-checkout-fee.php.
+     *
+     * Idempotencia: se marca en observaciones con el texto "Late Checkout Fee Aplicado".
+     * No modificar ese texto sin migrar a la columna dedicada (ver REFACTOR-BD.md).
+     */
+    public function aplicarLateCheckout(): array
+    {
+        $db = $this->resumenModel->getConnection();
+
+        $stmt = $db->prepare("
+            SELECT r.id, r.id_habitacion, r.fecha_salida, rp.id AS id_resumen,
+                   rp.monto_cobrado, rp.saldo_pendiente, rp.monto_total,
+                   h.precio_noche_base
+            FROM Reservas r
+            JOIN Resumen_Pago rp ON rp.id_reserva = r.id
+            JOIN Habitaciones h ON h.id = r.id_habitacion
+            WHERE r.id_estado_reserva = :encasa
+              AND r.fecha_salida = :fecha_hoy
+              AND :hora_actual >= :hora_checkout
+              AND (r.observaciones IS NULL OR r.observaciones NOT LIKE '%Late Checkout Fee Aplicado%')
+        ");
+        $stmt->execute([
+            ':encasa'        => Reserva::ESTADO_EN_CASA,
+            ':fecha_hoy'     => date('Y-m-d'),
+            ':hora_actual'   => date('H:i:s'),
+            ':hora_checkout' => Politicas::horaCheckoutSql(),
+        ]);
+
+        $conLateCheckout = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $contador = 0;
+        foreach ($conLateCheckout as $row) {
+            $db->beginTransaction();
+            try {
+                $idReserva   = (int)$row['id'];
+                $idResumen   = (int)$row['id_resumen'];
+                $precioNoche = (float)$row['precio_noche_base'];
+                $feeLateCheckout = round($precioNoche * Politicas::FACTOR_LATE_CHECKOUT, 2);
+
+                $nuevoTotal = (float)$row['monto_total'] + $feeLateCheckout;
+                $nuevoSaldo = (float)$row['saldo_pendiente'] + $feeLateCheckout;
+
+                $updResumen = $db->prepare(
+                    "UPDATE Resumen_Pago
+                     SET monto_total = :total, saldo_pendiente = :saldo
+                     WHERE id = :id"
+                );
+                $updResumen->execute([
+                    ':total' => $nuevoTotal,
+                    ':saldo' => $nuevoSaldo,
+                    ':id'    => $idResumen
+                ]);
+
+                $updReserva = $db->prepare(
+                    "UPDATE Reservas
+                     SET observaciones = CONCAT(
+                         COALESCE(observaciones, ''),
+                         ' | Late Checkout Fee Aplicado: $', :fee, :detalle
+                     )
+                     WHERE id = :id"
+                );
+                $updReserva->execute([
+                    ':fee'     => number_format($feeLateCheckout, 2, ',', '.'),
+                    ':detalle' => ' por salida despues de las ' . Politicas::HORA_CHECKOUT . ' hs.',
+                    ':id'      => $idReserva
+                ]);
+
+                $db->commit();
+                $contador++;
+                error_log("[SIRES CRON] Reserva #" . $idReserva .
+                    ": Late Checkout fee de $" . number_format($feeLateCheckout, 2, ',', '.') . " aplicado.");
+            } catch (Exception $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                error_log("[SIRES CRON ERROR] " . $e->getMessage());
+            }
+        }
+
+        return [
+            'success'    => true,
+            'procesadas' => $contador,
+            'message'    => 'Verificacion de Late Checkout completada. ' . $contador . ' cargo(s) aplicado(s).',
+        ];
+    }
+
     public function ejecutarCortePagos(): array
     {
-        $fechaLimite = date('Y-m-d', time() + 48 * 3600);
+        $fechaLimite = date('Y-m-d', time() + Politicas::HORAS_CORTE_PAGO * 3600);
         $db = $this->resumenModel->getConnection();
 
         $stmt = $db->prepare("
@@ -317,11 +420,12 @@ class PagoService
 
                 $updateReserva = $db->prepare(
                     "UPDATE Reservas SET id_estado_reserva = :cancelada,
-                         observaciones = CONCAT(COALESCE(observaciones, ''), ' | Cancelada automática 48hs antes del check-in por falta de pago total.')
+                         observaciones = CONCAT(COALESCE(observaciones, ''), :obs)
                      WHERE id = :id"
                 );
                 $updateReserva->execute([
                     ':cancelada' => Reserva::ESTADO_CANCELADA,
+                    ':obs'       => ' | Cancelada automática ' . Politicas::HORAS_CORTE_PAGO . 'hs antes del check-in por falta de pago total.',
                     ':id'        => $idReserva
                 ]);
 
