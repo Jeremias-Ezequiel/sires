@@ -60,13 +60,13 @@
 
 .modal__title {
   color: var(--color-text-strong);
-  font-size: 1.3rem;
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
 }
 
 .modal__desc {
   color: var(--color-text-soft);
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
   line-height: 1.5;
   margin-bottom: 25px;
 }

@@ -1,10 +1,10 @@
 .form__label {
   display: block;
   color: var(--color-accent);
-  font-size: 12px;
-  font-weight: bold;
+  font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
   margin-top: 18px;
 }
@@ -18,7 +18,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;
 }
@@ -71,7 +71,7 @@
 }
 
 .form__section-title {
-  font-size: 1.1rem;
+  font-size: var(--fs-lg);
   color: var(--color-accent);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -134,7 +134,7 @@
   border: 1px solid var(--color-border);
   border-radius: 30px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;
 }
@@ -154,7 +154,7 @@
   border: 1px solid var(--color-border);
   border-radius: 30px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;

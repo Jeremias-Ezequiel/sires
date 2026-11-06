@@ -7,7 +7,7 @@
   cursor: pointer;
   border: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   white-space: nowrap;
@@ -38,7 +38,7 @@
   color: var(--color-text);
   border-radius: 30px;
   padding: 10px 20px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -53,7 +53,7 @@
   background-color: var(--color-primary);
   color: var(--color-on-solid);
   border-radius: 8px;
-  font-size: 15px;
+  font-size: var(--fs-base);
   padding: 0 24px;
   height: 48px;
   margin-top: 10px;
@@ -111,7 +111,7 @@
   border: 2px solid var(--color-accent);
   padding: 12px 28px;
   border-radius: 4px;
-  font-size: 10pt;
+  font-size: var(--fs-base);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -134,7 +134,7 @@
   border-radius: 6px;
   background: var(--color-tint-1);
   border: 1px solid var(--color-border);
-  font-size: 13px;
+  font-size: var(--fs-sm); /* ícono */
   transition: all 0.2s ease-in-out;
 }
 

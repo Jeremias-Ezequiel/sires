@@ -16,16 +16,20 @@
 }
 
 .main-header {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .main-header h1 {
-  font-size: 2rem;
+  margin: 0 0 4px;
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  line-height: 1.25;
   color: var(--color-text);
-  margin-bottom: 5px;
 }
 
 .main-header p {
+  margin: 0;
+  font-size: var(--fs-base);
   color: var(--color-text-muted);
 }
 
@@ -101,7 +105,8 @@
 }
 
 .details-header h2 {
-  font-size: 1.5rem;
+  font-size: var(--fs-lg);
+  font-weight: 600;
   color: var(--color-text);
 }
 
@@ -128,9 +133,10 @@
 .details-table th {
   background-color: var(--color-tint-1);
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .details-table tbody tr {
@@ -143,14 +149,14 @@
 
 .details-table tbody tr td {
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   vertical-align: middle;
 }
 
 .details-table tbody tr td strong {
   color: var(--color-accent);
   font-family: monospace;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   background: var(--color-accent-soft);
   padding: 4px 8px;
   border-radius: 4px;
@@ -180,13 +186,13 @@
   padding: 12px 20px;
   border-bottom: 1px solid var(--color-tint-2);
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .detail-section-header td {
   background: var(--color-surface-alt);
   font-weight: 700;
-  font-size: 1.1em;
+  font-size: var(--fs-md);
   padding: 12px 16px;
   color: var(--color-text);
 }
@@ -196,7 +202,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .filter-section {
@@ -256,14 +262,14 @@
 
 .no-results-content h3 {
   margin: 0 0 10px 0;
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .no-results-content p {
   margin: 0 0 24px 0;
-  font-size: 14px;
+  font-size: var(--fs-base);
   color: var(--color-text-muted);
   line-height: 1.6;
 }
@@ -371,7 +377,7 @@
   padding: 10px 14px;
   cursor: pointer;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   border-bottom: 1px solid var(--color-tint-2);
   transition: background-color 0.15s ease;
 }
@@ -397,7 +403,7 @@
 .autocomplete-no-results {
   padding: 14px;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   text-align: center;
 }
 
@@ -426,7 +432,7 @@
 
 .confirm-label {
   color: var(--color-success);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -449,14 +455,14 @@
 
 .confirm-field-label {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .confirm-field-value {
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -534,13 +540,13 @@
 
 .sires-modal-box h3 {
   color: var(--color-text-strong);
-  font-size: 1.3rem;
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
 }
 
 .sires-modal-box p {
   color: var(--color-text-soft);
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
   line-height: 1.5;
   margin-bottom: 25px;
 }
@@ -554,7 +560,7 @@
 .sires-modal-btn {
   padding: 10px 20px;
   border-radius: 6px;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -611,7 +617,7 @@
   cursor: pointer;
   border: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   white-space: nowrap;
   background-color: var(--color-accent);
@@ -638,7 +644,7 @@
   cursor: pointer;
   border: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   white-space: nowrap;
   background-color: var(--color-accent);
@@ -664,7 +670,7 @@
   cursor: pointer;
   border: 1px solid var(--color-border);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
   color: var(--color-text);
   background-color: var(--color-tint-2);
@@ -705,7 +711,7 @@
 .label-input {
   font-weight: 600;
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
 }
 
 .input-form-field {
@@ -716,7 +722,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-family: inherit;
   box-sizing: border-box;
   transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
@@ -738,7 +744,7 @@
   height: 34px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   cursor: pointer;
   background-color: var(--color-tint-2);
   border: 1px solid var(--color-border);
@@ -795,7 +801,7 @@
 }
 
 .cal-resumen__rango {
-  font-size: 15px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
@@ -803,7 +809,7 @@
 
 .cal-resumen__noches {
   padding: 2px 10px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
@@ -814,7 +820,7 @@
   align-items: center;
   gap: 6px;
   padding: 3px 10px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
@@ -863,7 +869,7 @@
 .cal-mes__titulo {
   margin-bottom: 8px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--color-text);
   text-transform: capitalize;
@@ -878,7 +884,7 @@
 .cal-semana-dia {
   padding-bottom: 4px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -891,7 +897,7 @@
   border: 0;
   border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   position: relative;
@@ -979,7 +985,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -996,7 +1002,7 @@
 .cal-muestra--hoy     { box-shadow: inset 0 0 0 1px var(--color-accent); }
 
 .cal-ayuda {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -1004,7 +1010,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--color-danger);
 }
 
@@ -1023,12 +1029,6 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 24px;
-}
-
-.inicio-header h1 {
-  font-size: 24px;
-  font-weight: 600;
 }
 
 .inicio-header__acciones {
@@ -1042,7 +1042,7 @@
   align-items: center;
   gap: 8px;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .inicio-fecha i {
@@ -1059,7 +1059,7 @@
   margin-left: 4px;
   padding: 0 6px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 18px;
   border-radius: var(--radius-xs);
   border: 1px solid color-mix(in srgb, var(--color-on-accent) 45%, transparent);
@@ -1089,7 +1089,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--color-text-muted);
 }
@@ -1101,7 +1101,7 @@
 }
 
 .kpi-value {
-  font-size: 28px;
+  font-size: var(--fs-kpi);
   font-weight: 700;
   line-height: 1.15;
   color: var(--color-text);
@@ -1111,7 +1111,7 @@
 }
 
 .kpi__detalle {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -1154,7 +1154,7 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--color-text);
 }
@@ -1167,7 +1167,7 @@
 .panel__contador {
   min-width: 24px;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 22px;
   text-align: center;
@@ -1178,7 +1178,7 @@
 
 .panel__nota {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -1261,7 +1261,7 @@
 }
 
 .mov__sub {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1273,7 +1273,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -1300,7 +1300,7 @@
   height: 36px;
   padding: 0 14px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--color-text);
   background: transparent;
@@ -1330,7 +1330,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--color-success-text);
 }
@@ -1367,7 +1367,7 @@
   height: 32px;
   padding: 0 12px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--color-text-muted);
   background: transparent;
   border: 1px solid var(--color-border);
@@ -1444,7 +1444,7 @@ a.hab:hover {
 }
 
 .hab__tipo {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -1455,7 +1455,7 @@ a.hab:hover {
   gap: 6px;
   margin-top: 6px;
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--hab-text);
   background-color: var(--hab-bg);
@@ -1463,7 +1463,7 @@ a.hab:hover {
 }
 
 .hab__detalle {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1487,7 +1487,7 @@ a.hab:hover {
   gap: 10px;
   min-height: 40px;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--color-text);
   text-decoration: none;
   border: 1px solid var(--color-border);
@@ -1542,7 +1542,7 @@ a.hab:hover {
 }
 
 .proy__valor {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
@@ -1575,7 +1575,7 @@ a.hab:hover {
 }
 
 .proy__dia {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -1585,7 +1585,7 @@ a.hab:hover {
 }
 
 .proy__fecha {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
   margin-top: -4px;
   padding-bottom: 4px;
@@ -1599,7 +1599,7 @@ a.hab:hover {
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   white-space: nowrap;
   color: var(--color-text);
   background-color: var(--color-surface-modal);
@@ -1633,7 +1633,7 @@ a.hab:hover {
 
 .confirmar__texto {
   margin: 0 0 16px;
-  font-size: 15px;
+  font-size: var(--fs-base);
   line-height: 1.45;
 }
 

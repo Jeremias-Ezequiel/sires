@@ -13,7 +13,7 @@ body {
 .system-footer {
     text-align: center;
     padding: 8px 0;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--color-text-muted);
     border-top: 1px solid var(--color-border);
     margin-top: 20px;

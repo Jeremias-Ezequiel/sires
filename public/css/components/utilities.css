@@ -11,9 +11,9 @@
 .text-success { color: var(--color-success); }
 .text-accent  { color: var(--color-accent); }
 
-.text-lg  { font-size: 1.1em; }
-.text-sm  { font-size: 0.85em; }
-.text-xs  { font-size: 12px; }
+.text-lg  { font-size: var(--fs-md); }
+.text-sm  { font-size: var(--fs-sm); }
+.text-xs  { font-size: var(--fs-xs); }
 .text-bold { font-weight: 600; }
 .text-nowrap { white-space: nowrap; }
 
@@ -21,6 +21,7 @@
 .field-hint {
   display: block;
   margin-top: 6px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -44,7 +45,7 @@
 .row-inactive { opacity: 0.6; }
 
 /* Dato secundario al lado de un valor (capacidad, motivo, etc.) */
-.room-meta { margin-left: 8px; font-size: 0.9em; }
+.room-meta { margin-left: 8px; font-size: var(--fs-sm); }
 
 /* Etiqueta de un campo dentro de un modal */
 .modal-field-label {
@@ -77,8 +78,8 @@
 .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
 
-.badge--lg   { padding: 6px 14px; font-size: 0.95em; }
-.badge--sm   { font-size: 12px; padding: 1px 8px; }
+.badge--lg   { padding: 6px 14px; font-size: var(--fs-sm); }
+.badge--sm   { font-size: var(--fs-xs); padding: 1px 8px; }
 .badge--chip { margin: 2px; padding: 4px 10px; }
 
 /* Pantallas de autenticación centradas (recuperar/restablecer clave) */
@@ -119,14 +120,14 @@
 
 .pagination__nav {
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .pagination__page {
   padding: 6px 12px;
   border-radius: var(--radius-xs);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: bold;
   background-color: var(--color-tint-2);
   color: var(--color-text);
@@ -205,7 +206,7 @@
 
 .theme-switcher label {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -222,7 +223,7 @@
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   appearance: none;
   cursor: pointer;
 }

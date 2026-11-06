@@ -203,6 +203,15 @@
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-size-base: 14px;
 
+  /* Escala tipográfica única (DESIGN.md §5). Todo el dashboard usa estos tamaños. */
+  --fs-xs: 12px;    /* secundario mínimo, encabezados de tabla, badges */
+  --fs-sm: 13px;    /* labels, ayudas, detalles */
+  --fs-base: 14px;  /* texto base, tablas, botones, inputs */
+  --fs-md: 15px;    /* texto destacado */
+  --fs-lg: 18px;    /* títulos de sección / panel / modal */
+  --fs-xl: 24px;    /* título de página */
+  --fs-kpi: 28px;   /* cifras de KPI */
+
   /* Flecha de los <select> (sigue el color del tema) */
   --select-arrow:
     linear-gradient(45deg, transparent 50%, var(--color-text-soft) 50%) right 18px center / 5px 5px no-repeat,
@@ -293,7 +302,7 @@ body {
 .system-footer {
     text-align: center;
     padding: 8px 0;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--color-text-muted);
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
@@ -322,7 +331,7 @@ table,
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 500;
   box-sizing: border-box;
   box-shadow: var(--shadow-sm);
@@ -368,7 +377,7 @@ table,
   cursor: pointer;
   border: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   white-space: nowrap;
@@ -399,7 +408,7 @@ table,
   color: var(--color-text);
   border-radius: 30px;
   padding: 10px 20px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -414,7 +423,7 @@ table,
   background-color: var(--color-primary);
   color: var(--color-on-solid);
   border-radius: 8px;
-  font-size: 15px;
+  font-size: var(--fs-base);
   padding: 0 24px;
   height: 48px;
   margin-top: 10px;
@@ -472,7 +481,7 @@ table,
   border: 2px solid var(--color-accent);
   padding: 12px 28px;
   border-radius: 4px;
-  font-size: 10pt;
+  font-size: var(--fs-base);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -495,7 +504,7 @@ table,
   border-radius: 6px;
   background: var(--color-tint-1);
   border: 1px solid var(--color-border);
-  font-size: 13px;
+  font-size: var(--fs-sm); /* ícono */
   transition: all 0.2s ease-in-out;
 }
 
@@ -563,10 +572,10 @@ table,
 .form__label {
   display: block;
   color: var(--color-accent);
-  font-size: 12px;
-  font-weight: bold;
+  font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
   margin-top: 18px;
 }
@@ -580,7 +589,7 @@ table,
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;
 }
@@ -633,7 +642,7 @@ table,
 }
 
 .form__section-title {
-  font-size: 1.1rem;
+  font-size: var(--fs-lg);
   color: var(--color-accent);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -696,7 +705,7 @@ table,
   border: 1px solid var(--color-border);
   border-radius: 30px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;
 }
@@ -716,7 +725,7 @@ table,
   border: 1px solid var(--color-border);
   border-radius: 30px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: var(--fs-base);
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;
@@ -745,7 +754,7 @@ table,
 .badge {
   padding: 3px 10px;
   border-radius: var(--radius-xs);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.5;
   display: inline-flex;
@@ -839,7 +848,7 @@ table,
   color: var(--color-accent);
   padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   border: 1px solid var(--color-accent-border);
 }
@@ -905,13 +914,13 @@ table,
 
 .modal__title {
   color: var(--color-text-strong);
-  font-size: 1.3rem;
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
 }
 
 .modal__desc {
   color: var(--color-text-soft);
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
   line-height: 1.5;
   margin-bottom: 25px;
 }
@@ -934,9 +943,9 @@ table,
 .text-success { color: var(--color-success); }
 .text-accent  { color: var(--color-accent); }
 
-.text-lg  { font-size: 1.1em; }
-.text-sm  { font-size: 0.85em; }
-.text-xs  { font-size: 12px; }
+.text-lg  { font-size: var(--fs-md); }
+.text-sm  { font-size: var(--fs-sm); }
+.text-xs  { font-size: var(--fs-xs); }
 .text-bold { font-weight: 600; }
 .text-nowrap { white-space: nowrap; }
 
@@ -944,6 +953,7 @@ table,
 .field-hint {
   display: block;
   margin-top: 6px;
+  font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
 
@@ -967,7 +977,7 @@ table,
 .row-inactive { opacity: 0.6; }
 
 /* Dato secundario al lado de un valor (capacidad, motivo, etc.) */
-.room-meta { margin-left: 8px; font-size: 0.9em; }
+.room-meta { margin-left: 8px; font-size: var(--fs-sm); }
 
 /* Etiqueta de un campo dentro de un modal */
 .modal-field-label {
@@ -1000,8 +1010,8 @@ table,
 .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
 
-.badge--lg   { padding: 6px 14px; font-size: 0.95em; }
-.badge--sm   { font-size: 12px; padding: 1px 8px; }
+.badge--lg   { padding: 6px 14px; font-size: var(--fs-sm); }
+.badge--sm   { font-size: var(--fs-xs); padding: 1px 8px; }
 .badge--chip { margin: 2px; padding: 4px 10px; }
 
 /* Pantallas de autenticación centradas (recuperar/restablecer clave) */
@@ -1042,14 +1052,14 @@ table,
 
 .pagination__nav {
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .pagination__page {
   padding: 6px 12px;
   border-radius: var(--radius-xs);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: bold;
   background-color: var(--color-tint-2);
   color: var(--color-text);
@@ -1128,7 +1138,7 @@ table,
 
 .theme-switcher label {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1145,7 +1155,7 @@ table,
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   appearance: none;
   cursor: pointer;
 }

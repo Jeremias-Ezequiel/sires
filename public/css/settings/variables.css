@@ -203,6 +203,15 @@
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-size-base: 14px;
 
+  /* Escala tipográfica única (DESIGN.md §5). Todo el dashboard usa estos tamaños. */
+  --fs-xs: 12px;    /* secundario mínimo, encabezados de tabla, badges */
+  --fs-sm: 13px;    /* labels, ayudas, detalles */
+  --fs-base: 14px;  /* texto base, tablas, botones, inputs */
+  --fs-md: 15px;    /* texto destacado */
+  --fs-lg: 18px;    /* títulos de sección / panel / modal */
+  --fs-xl: 24px;    /* título de página */
+  --fs-kpi: 28px;   /* cifras de KPI */
+
   /* Flecha de los <select> (sigue el color del tema) */
   --select-arrow:
     linear-gradient(45deg, transparent 50%, var(--color-text-soft) 50%) right 18px center / 5px 5px no-repeat,
