@@ -46,11 +46,24 @@ $r->addRoute('GET', '/dashboard/employees', [
 - Base: `/sires/index.php?route=...`. Usar siempre `url()` / `asset()` / `openForm()` de `App\Helpers\UrlHelper`; nunca hardcodear rutas.
 - Parámetros extra se pasan como query string (`url('/x', ...)` → `?route=...&id=...`).
 
-## Cron
+## Reglas de negocio
 
-- `cron/*.php` = scripts CLI autónomos con bootstrap propio (`autoload.php` + dotenv). Loguean en `logs/` (gitignored).
-- `cron/payment-cutoff.php` está **deprecado**: reemplazado por el MySQL EVENT `corte_pagos_48hs`. Lógica principal en `PagoService::ejecutarCortePagos()`.
-- Cuidado al tocar flujos automáticos: muchos estados se mueven vía cron (no-show release, late checkout fee).
+- Única fuente: tabla `Configuracion` (versionada por `vigente_desde`), leída con `App\Services\ConfiguracionService` (corte de pago, hora de checkout, factor late checkout, descuentos por ocupación, expiración de token). `App/Config/Politicas.php` = valores por defecto si falta la tabla o la clave, y `ZONA_HORARIA`. Nunca hardcodear estos valores.
+- Cambiar una política = INSERT en `Configuracion` con un `vigente_desde` nuevo; nunca UPDATE ni DELETE. El factor de late checkout se toma según `Reservas.fecha_alta`.
+- El JS de las vistas recibe los valores con `json_encode(ConfiguracionService::...)`. Cálculo de precio compartido en `public/js/reserva-precio.js`.
+- `Reservas.precio_noche_pactado` guarda el precio efectivo por noche (al crear/editar/recalcular); `Reservas.late_fee_aplicado` es la marca de idempotencia del late checkout.
+- Constantes de estado: los valores viven en las clases catálogo (`EstadoReserva`, `EstadoHabitacion`, `EstadoPago`); `Reserva::ESTADO_*`, `Habitacion::ESTADO_*`, etc. son alias.
+- Lógica de negocio en `Services/`, no en controllers ni crons. Controllers nuevos: `extends Controller` (`redirect()`, `flash()`, `recordarInputs()`). La sesión se inicia en `index.php`.
+
+## Base de datos
+
+- Los scripts SQL (migraciones y EVENTs) no se versionan en este repo. Las migraciones aplicadas quedan registradas en la tabla `migraciones`.
+
+## Automatismos (EVENTs y cron)
+
+- Los flujos automáticos son MySQL EVENTs (requieren `event_scheduler = ON`): `corte_pagos` (diario 08:00), `cargo_late_checkout` (15 min), `liberacion_no_show` (30 min). Leen `Configuracion` y replican la lógica de los Services.
+- `cron/*.php` quedan como **respaldo**: cargan `cron/bootstrap.php` (autoload, dotenv, zona horaria, solo CLI) y delegan en `PagoService::ejecutarCortePagos()`, `PagoService::aplicarLateCheckout()` y `ReservaService::liberarNoShowConPago()`. Loguean en `logs/` (gitignored).
+- Si se cambia la lógica de uno de esos métodos, actualizar también el EVENT equivalente en la BD (y viceversa).
 
 ## Idioma
 
