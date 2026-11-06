@@ -300,13 +300,13 @@
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Dar de Baja Empleado';
-                    modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${employeeName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea dar de baja al empleado <br><strong>${escHtml(employeeName)}</strong>?`;
                     modalIcon.className = 'fas fa-user-minus';
                     modalIconFrame.classList.add('icon-deactivate');
                     btnConfirm.classList.add('btn-proceed-deactivate');
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Empleado';
-                    modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${employeeName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar al empleado <br><strong>${escHtml(employeeName)}</strong>?`;
                     modalIcon.className = 'fas fa-user-plus';
                     modalIconFrame.classList.add('icon-activate');
                     btnConfirm.classList.add('btn-proceed-activate');

@@ -82,7 +82,7 @@
                 <option value="">Todos los Pisos</option>
                 <?php if (!empty($pisos)): ?>
                     <?php foreach ($pisos as $piso): ?>
-                        <option value="<?= $piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= $piso ?></option>
+                        <option value="<?= (int)$piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= (int)$piso ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -298,42 +298,42 @@
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Bloquear Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea bloquear la <br><strong>${roomName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea bloquear la <br><strong>${escHtml(roomName)}</strong>?`;
                     modalIcon.className = 'fas fa-bed';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                     motivoWrapper.style.display = 'block';
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${escHtml(roomName)}</strong>?`;
                     modalIcon.className = 'fas fa-bed';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'delete') {
                     modalTitle.innerText = 'Dar de Baja';
-                    modalText.innerHTML = `¿Dar de baja la <br><strong>${roomName}</strong>? Se liberará su número para ser reutilizado.`;
+                    modalText.innerHTML = `¿Dar de baja la <br><strong>${escHtml(roomName)}</strong>? Se liberará su número para ser reutilizado.`;
                     modalIcon.className = 'fas fa-trash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'reactivate') {
                     modalTitle.innerText = 'Reactivar Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
                     modalIcon.className = 'fas fa-undo';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'cleaning') {
                     modalTitle.innerText = 'Iniciar Limpieza';
-                    modalText.innerHTML = `¿Está seguro de que desea iniciar la limpieza de la <br><strong>${roomName}</strong>?<br><small>La habitación pasará a estado "Limpiando".</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea iniciar la limpieza de la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación pasará a estado "Limpiando".</small>`;
                     modalIcon.className = 'fas fa-broom';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--warning');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'complete-cleaning') {
                     modalTitle.innerText = 'Completar Limpieza';
-                    modalText.innerHTML = `¿Está seguro de que desea marcar como limpia la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea marcar como limpia la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
                     modalIcon.className = 'fas fa-check-circle';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');

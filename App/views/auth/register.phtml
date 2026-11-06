@@ -74,7 +74,7 @@ include __DIR__ . '/../partials/head.phtml';
                     <option value="" disabled selected>Seleccione un rol...</option>
                     <?php if (isset($roles) && is_array($roles)): ?>
                         <?php foreach ($roles as $rol): ?>
-                            <option value="<?= $rol['id'] ?>"><?= $rol['descripcion'] ?></option>
+                            <option value="<?= (int)$rol['id'] ?>"><?= htmlspecialchars($rol['descripcion']) ?></option>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </select>

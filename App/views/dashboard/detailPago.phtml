@@ -349,7 +349,7 @@ endif;
 
             if (actionType === 'recalculate') {
                 modalTitle.innerText = 'Recalcular Precio';
-                modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${reservaName}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
+                modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${escHtml(reservaName)}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
                 modalIcon.className = 'fas fa-calculator';
                 modalIconFrame.classList.add('modal__icon--warning');
                 btnConfirm.classList.add('btn--warning');
@@ -361,7 +361,7 @@ endif;
             } else if (actionType === 'refund') {
                 const monto = this.getAttribute('data-monto') ?? '0,00';
                 modalTitle.innerText = 'Procesar Reembolso';
-                modalText.innerHTML = `¿Está seguro de que desea reembolsar <strong>$${monto}</strong> a<br><strong>${reservaName}</strong>?<br><small>Se registrará una transacción de egreso y el resumen se dará de baja.</small>`;
+                modalText.innerHTML = `¿Está seguro de que desea reembolsar <strong>$${escHtml(monto)}</strong> a<br><strong>${escHtml(reservaName)}</strong>?<br><small>Se registrará una transacción de egreso y el resumen se dará de baja.</small>`;
                 modalIcon.className = 'fas fa-undo-alt';
                 modalIconFrame.classList.add('modal__icon--danger');
                 btnConfirm.classList.add('btn--danger');

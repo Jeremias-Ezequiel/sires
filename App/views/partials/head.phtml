@@ -38,6 +38,15 @@ $isLogin      = ($pageTitle === 'Iniciar Sesión | SIRES');
     <?php endif; ?>
 
     <?= $pageExtraHead ?>
+
+    <script>
+        // Escapa texto antes de insertarlo con innerHTML (nombres que vienen de la BD vía data-*).
+        function escHtml(valor) {
+            return String(valor ?? '').replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+    </script>
 </head>
 
 <body>
