@@ -87,7 +87,7 @@ class ApiController
 
             $response = file_get_contents($endpoint, false, $opts);
 
-            if ($response === false || $response === null || $response === '') {
+            if ($response === false || $response === '') {
                 echo $this->renderError('No se recibió respuesta de la API.');
                 return;
             }

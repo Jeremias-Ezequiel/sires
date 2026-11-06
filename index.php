@@ -54,7 +54,7 @@ try {
         $route = str_replace(['/index.php', '/sires'], '', $route);
     }
 
-    if(empty($route) || $route === ''){
+    if(empty($route)){
         $route = '/';
     }
 
