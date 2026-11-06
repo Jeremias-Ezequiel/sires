@@ -429,14 +429,9 @@ class PagoService
                     ':id'        => $idReserva
                 ]);
 
-                $updateHabitacion = $db->prepare(
-                    "UPDATE Habitaciones SET id_estado_habitacion = :disponible
-                     WHERE id = :id"
-                );
-                $updateHabitacion->execute([
-                    ':disponible' => Habitacion::ESTADO_DISPONIBLE,
-                    ':id'         => (int)$row['id_habitacion']
-                ]);
+                // No se modifica el estado de la habitación: la reserva cancelada es futura
+                // (check-in en N horas) y la habitación puede estar ocupada hoy por otro huésped.
+                // La disponibilidad para esas fechas se libera sola al quedar la reserva Cancelada.
 
                 $db->commit();
                 $contador++;
