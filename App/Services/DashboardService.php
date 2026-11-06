@@ -30,7 +30,10 @@ class DashboardService
         $this->transaccionModel = new TransaccionPago();
     }
 
-    public function obtenerTablero(): array
+    /**
+     * @param bool $conMonitoreo Suma arriba las alertas de los procesos automáticos (solo administrador).
+     */
+    public function obtenerTablero(bool $conMonitoreo = false): array
     {
         $hoy = date('Y-m-d');
 
@@ -90,7 +93,10 @@ class DashboardService
             'salidas'      => $salidas,
             'habitaciones' => $habitaciones,
             'conteo'       => $conteo,
-            'alertas'      => $this->armarAlertas($contadores, $sucias, $enMantenimiento, $bloqueadas, $suciasConLlegada),
+            'alertas'      => array_merge(
+                $conMonitoreo ? $this->alertasMonitoreo() : [],
+                $this->armarAlertas($contadores, $sucias, $enMantenimiento, $bloqueadas, $suciasConLlegada)
+            ),
             'proyeccion'   => $this->proyeccionOcupacion($hoy, $operativas),
         ];
     }
@@ -184,6 +190,20 @@ class DashboardService
             '/dashboard/rooms?status_filter=' . Habitacion::ESTADO_BLOQUEADA);
 
         return $alertas;
+    }
+
+    /** Alertas de los procesos automáticos. Si el monitoreo falla, el tablero se muestra igual. */
+    private function alertasMonitoreo(): array
+    {
+        try {
+            return (new MonitoreoService())->alertas();
+        } catch (\Throwable $e) {
+            error_log("[SIRES MONITOREO] No se pudo verificar los procesos automáticos: " . $e->getMessage());
+            return [[
+                'nivel' => 'danger', 'icono' => 'fa-gears', 'ruta' => MonitoreoService::RUTA_DETALLE,
+                'texto' => 'No se pudo verificar los procesos automáticos (¿faltan las migraciones 012 y 013?).',
+            ]];
+        }
     }
 
     /** Ocupación (%) de cada noche desde hoy, sobre las habitaciones operativas. */

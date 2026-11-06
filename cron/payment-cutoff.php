@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+use App\Services\MonitoreoService;
 use App\Services\PagoService;
 
 function main(): void
@@ -18,8 +19,8 @@ function main(): void
     error_log("[SIRES CRON] Iniciando corte de pagos " . App\Services\ConfiguracionService::horasCortePago() . "hs...");
 
     try {
-        $pagoService = new PagoService();
-        $resultado = $pagoService->ejecutarCortePagos();
+        $resultado = (new MonitoreoService())->ejecutarConRegistro('corte_pagos',
+            fn() => (new PagoService())->ejecutarCortePagos());
         error_log("[SIRES CRON] " . $resultado['message']);
     } catch (Exception $e) {
         error_log("[SIRES CRON ERROR] " . $e->getMessage());

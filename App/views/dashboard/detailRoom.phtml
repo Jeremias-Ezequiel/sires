@@ -92,4 +92,21 @@
     </div>
 </section>
 
+<?php if (isset($historial) && $historial !== null): ?>
+    <section class="details-section aud-historial" aria-labelledby="aud-historial-titulo">
+        <h2 id="aud-historial-titulo" class="aud-historial__titulo">
+            <i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Historial
+        </h2>
+        <?php if (empty($historial)): ?>
+            <p class="text-muted">Sin acciones registradas todavía.</p>
+        <?php else: ?>
+            <?php
+            $historialFilas = $historial;
+            $historialConEntidad = false;
+            include __DIR__ . '/../partials/historial-auditoria.phtml';
+            ?>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
+
 <script src="<?= asset_v('js/confirmar.js') ?>"></script>

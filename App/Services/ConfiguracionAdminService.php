@@ -151,7 +151,23 @@ class ConfiguracionAdminService
             }
         }
 
-        $this->modelo->insertar($clave, $valor, $def['tipo'], $def['titulo'], $vigenteDesde, $usuarioId);
+        $db = $this->modelo->getConnection();
+        $db->beginTransaction();
+        try {
+            $this->modelo->insertar($clave, $valor, $def['tipo'], $def['titulo'], $vigenteDesde, $usuarioId);
+            (new AuditoriaService())->registrar('configuracion.cambio', 'configuracion', null,
+                ($cuando === 'programar' ? 'Cambio programado: ' : 'Cambio: ') . $def['titulo'], null, [
+                    'clave'         => $clave,
+                    'valor'         => $valor,
+                    'vigente_desde' => $vigenteDesde,
+                ]);
+            $db->commit();
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
 
         return $cuando === 'programar'
             ? "\"{$def['titulo']}\" cambiará el " . date('d/m/Y \a \l\a\s H:i', strtotime($vigenteDesde)) . "."

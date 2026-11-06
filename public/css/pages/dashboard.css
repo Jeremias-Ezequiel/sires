@@ -2121,3 +2121,133 @@ a.hab:hover {
     padding: 16px;
   }
 }
+
+/* --- [16. AUDITORÍA Y PROCESOS AUTOMÁTICOS] --- */
+/* Vistas: App/views/dashboard/auditoria.phtml y partials/historial-auditoria.phtml
+   (también en el Historial del detalle de reserva y de habitación). */
+.aud-vistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.aud-vista {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.aud-vista:hover {
+  color: var(--color-text);
+  background-color: var(--color-tint-2);
+}
+
+.aud-vista--activa {
+  color: var(--color-on-accent);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.aud-vista--activa:hover {
+  color: var(--color-on-accent);
+  background-color: var(--color-accent-hover);
+}
+
+.aud-filtro-fecha {
+  width: 170px;
+}
+
+.details-table.aud-tabla td {
+  vertical-align: top;
+}
+
+.aud-tabla a {
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.aud-tabla a:hover {
+  text-decoration: underline;
+}
+
+.aud-fecha {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.aud-sistema {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+}
+
+.aud-cambios {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+
+.aud-campo {
+  color: var(--color-text-muted);
+}
+
+.aud-antes {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.aud-flecha {
+  margin: 0 4px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.aud-despues {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.aud-scheduler {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.aud-scheduler--ok i { color: var(--color-success); }
+.aud-scheduler--error i,
+.aud-problema i { color: var(--color-danger); }
+
+.aud-problema {
+  color: var(--color-danger-text);
+}
+
+.aud-historial {
+  margin-top: 24px;
+}
+
+.aud-historial__titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}

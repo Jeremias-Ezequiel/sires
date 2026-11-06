@@ -15,12 +15,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+use App\Services\MonitoreoService;
 use App\Services\PagoService;
 
 error_log("[SIRES CRON] Iniciando verificación de Late Checkout...");
 
 try {
-    $resultado = (new PagoService())->aplicarLateCheckout();
+    $resultado = (new MonitoreoService())->ejecutarConRegistro('cargo_late_checkout',
+        fn() => (new PagoService())->aplicarLateCheckout());
     error_log("[SIRES CRON] " . $resultado['message']);
 } catch (Throwable $e) {
     error_log("[SIRES CRON ERROR] " . $e->getMessage());

@@ -40,7 +40,7 @@ class DashboardController extends Controller
 
         $tablero = null;
         try {
-            $tablero = (new DashboardService())->obtenerTablero();
+            $tablero = (new DashboardService())->obtenerTablero((int)($_SESSION['user_role'] ?? 0) === Rol::ADMINISTRADOR);
         } catch (Exception $e) {
             error_log("Error en Dashboard: " . $e->getMessage());
             $errorMessage = "No se pudieron cargar los datos del tablero.";

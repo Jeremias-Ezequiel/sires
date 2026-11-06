@@ -19,8 +19,11 @@ class ReservaService
     private Habitacion $habitacionModel;
     private ResumenPago $resumenModel;
 
+    private AuditoriaService $auditoria;
+
     public function __construct()
     {
+        $this->auditoria = new AuditoriaService();
         $this->reservaModel   = new Reserva();
         $this->habitacionModel = new Habitacion();
         $this->resumenModel   = new ResumenPago();
@@ -191,6 +194,7 @@ class ReservaService
             $nuevoIdReserva = (int)$db->lastInsertId();
             $this->crearResumenInicial($nuevoIdReserva, $habitacionRow, $fechaEntrada, $fechaSalida, $cantHuespedes);
 
+            $this->auditoria->registrar('reserva.crear', 'reserva', $nuevoIdReserva, 'Alta de reserva');
             $db->commit();
             return ['success' => true, 'message' => 'Reserva registrada exitosamente.'];
         } catch (Exception $e) {
@@ -248,6 +252,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lock = $db->prepare(
@@ -303,6 +308,7 @@ class ReservaService
                 }
             }
 
+            $this->auditoria->registrar('reserva.editar', 'reserva', $idReserva, 'Edición de reserva', $antes);
             $db->commit();
             return ['success' => true, 'message' => $mensaje];
         } catch (Exception $e) {
@@ -438,10 +444,12 @@ class ReservaService
             );
         }
 
+        $antes = $this->auditoria->foto('reserva', $idReserva);
         $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CONFIRMADA, Reserva::ESTADO_PENDIENTE);
         if (!$ok) {
             throw new Exception("No se pudo confirmar la reserva.");
         }
+        $this->auditoria->registrar('reserva.confirmar', 'reserva', $idReserva, 'Confirmación', $antes);
 
         return ['success' => true, 'message' => 'Reserva confirmada exitosamente.'];
     }
@@ -481,6 +489,7 @@ class ReservaService
         $idHabitacion = (int)$reservaData['id_habitacion'];
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lock = $db->prepare(
@@ -525,6 +534,7 @@ class ReservaService
                 throw new Exception("Error al actualizar el estado de la reserva.");
             }
 
+            $this->auditoria->registrar('reserva.checkin', 'reserva', $idReserva, 'Check-in', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Check-in realizado exitosamente.'];
         } catch (Exception $e) {
@@ -559,6 +569,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $reservaOk = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_FINALIZADA, $estadoActual);
@@ -583,6 +594,7 @@ class ReservaService
                 throw new Exception("Error al marcar la habitación como sucia.");
             }
 
+            $this->auditoria->registrar('reserva.checkout', 'reserva', $idReserva, 'Check-out', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Checkout realizado. La habitación pasa a limpieza.'];
         } catch (Exception $e) {
@@ -610,6 +622,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $reservaOk = $this->reservaModel->cambiarEstado(
@@ -637,6 +650,7 @@ class ReservaService
                 throw new Exception("Error al liberar la habitación.");
             }
 
+            $this->auditoria->registrar('reserva.checkout_anticipado', 'reserva', $idReserva, 'Check-out anticipado', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Checkout anticipado realizado. Sin reembolso por días no usados.'];
         } catch (Exception $e) {
@@ -661,6 +675,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $ok = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_CANCELADA, $estadoActual);
@@ -686,6 +701,7 @@ class ReservaService
             // No se toca la habitación: una reserva pendiente o confirmada nunca la ocupó,
             // y su estado actual (Ocupada, Sucia, etc.) puede corresponder a otro huésped.
 
+            $this->auditoria->registrar('reserva.cancelar', 'reserva', $idReserva, 'Cancelación', $antes);
             $db->commit();
 
             $mensaje = 'Reserva cancelada exitosamente.';
@@ -738,6 +754,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $resumen = $this->resumenModel->getByReserva($idReserva);
@@ -760,6 +777,7 @@ class ReservaService
                     Habitacion::ESTADO_DISPONIBLE
                 );
 
+                $this->auditoria->registrar('reserva.no_show', 'reserva', $idReserva, 'No-Show', $antes);
                 $db->commit();
                 $liberacion = self::fechaLiberacionNoShow($reservaData);
                 $noches = ConfiguracionService::noShowNochesRetenidas($reservaData['fecha_alta']);
@@ -782,6 +800,7 @@ class ReservaService
 
                 // Sin pago no se retiene la habitación. Tampoco se la cambia de estado:
                 // la reserva nunca la ocupó y su estado actual puede ser de otro huésped.
+                $this->auditoria->registrar('reserva.no_show', 'reserva', $idReserva, 'No-Show', $antes);
                 $db->commit();
                 return ['success' => true, 'message' => 'No-Show registrado. La habitación no queda retenida (sin pago).'];
             }
@@ -810,6 +829,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lockDestino = $db->prepare(
@@ -859,6 +879,7 @@ class ReservaService
                 Habitacion::ESTADO_OCUPADA
             );
 
+            $this->auditoria->registrar('reserva.mover', 'reserva', $idReserva, 'Traslado de habitación', $antes);
             $db->commit();
             return [
                 'success' => true,
@@ -907,6 +928,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $update = $db->prepare(
@@ -919,6 +941,7 @@ class ReservaService
                 $this->resumenModel->recalcular($reservaActualizada);
             }
 
+            $this->auditoria->registrar('reserva.extender', 'reserva', $idReserva, 'Extensión de estadía', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Estadía extendida exitosamente.'];
         } catch (Exception $e) {
@@ -1014,6 +1037,7 @@ class ReservaService
             $nuevoIdReserva = (int)$db->lastInsertId();
             $this->crearResumenInicial($nuevoIdReserva, $habitacionRow, $fechaInicioSplit, $nuevaFechaSalida, $cantHuespedes);
 
+            $this->auditoria->registrar('reserva.crear', 'reserva', $nuevoIdReserva, 'Alta por extensión de la reserva #' . $idReservaOriginal);
             $db->commit();
             return [
                 'success' => true,
@@ -1128,6 +1152,7 @@ class ReservaService
 
         $db = $this->reservaModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $idHabOriginal = (int)$reservaData['id_habitacion'];
@@ -1167,6 +1192,7 @@ class ReservaService
             $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
             $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
 
+            $this->auditoria->registrar('reserva.upgrade', 'reserva', $idReserva, 'Upgrade de habitación', $antes);
             $db->commit();
             return [
                 'success' => true,

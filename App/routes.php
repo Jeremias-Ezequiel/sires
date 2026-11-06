@@ -10,6 +10,7 @@ use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Controllers\HousekeepingController;
+use App\Controllers\AuditoriaController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\ApiController;
@@ -396,6 +397,13 @@ return function (RouteCollector $r) {
 
     // Pagos
     // Configuración de políticas (tabla Configuracion, versionada)
+    // Auditoría y procesos automáticos
+    $r->addRoute('GET', '/dashboard/audit', [
+        'action' => [AuditoriaController::class, 'mostrar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
     $r->addRoute('GET', '/dashboard/settings', [
         'action' => [ConfiguracionController::class, 'mostrar'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],

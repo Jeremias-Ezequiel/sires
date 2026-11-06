@@ -55,6 +55,7 @@ $r->addRoute('GET', '/dashboard/employees', [
 - `Reservas.precio_noche_pactado` guarda el precio efectivo por noche (al crear/editar/recalcular); `Reservas.late_fee_aplicado` es la marca de idempotencia del late checkout.
 - Lo que el hotel se queda al cancelar, por No-Show o en el corte de pagos va en `Resumen_Pago.monto_retenido` (vía `PagoService::aplicarRetencion()`): queda `A Reembolsar` si se cobró más, o `Retenido` (estado de pago 6) si no. Los reembolsos se registran como transacción negativa.
 - Constantes de estado: los valores viven en las clases catálogo (`EstadoReserva`, `EstadoHabitacion`, `EstadoPago`); `Reserva::ESTADO_*`, `Habitacion::ESTADO_*`, etc. son alias.
+- Auditoría (tabla `Auditoria`): toda acción nueva que cambie datos se registra con `AuditoriaService` dentro de la misma transacción: `$antes = $this->auditoria->foto('reserva', $id)` antes de modificar y `$this->auditoria->registrar('reserva.accion', 'reserva', $id, 'Descripción', $antes)` antes del `commit()`. Nunca guardar contraseñas ni tokens.
 - Lógica de negocio en `Services/`, no en controllers ni crons. Controllers nuevos: `extends Controller` (`redirect()`, `flash()`, `recordarInputs()`). La sesión se inicia en `index.php`.
 
 ## Estilos (CSS)
@@ -75,6 +76,7 @@ $r->addRoute('GET', '/dashboard/employees', [
 - Los flujos automáticos son MySQL EVENTs (requieren `event_scheduler = ON`): `corte_pagos` (diario 08:00), `cargo_late_checkout` (15 min), `liberacion_no_show` (30 min). Leen `Configuracion` y replican la lógica de los Services.
 - `cron/*.php` quedan como **respaldo**: cargan `cron/bootstrap.php` (autoload, dotenv, zona horaria, solo CLI) y delegan en `PagoService::ejecutarCortePagos()`, `PagoService::aplicarLateCheckout()` y `ReservaService::liberarNoShowConPago()`. Loguean en `logs/` (gitignored).
 - Si se cambia la lógica de uno de esos métodos, actualizar también el EVENT equivalente en la BD (y viceversa).
+- Monitoreo: cada EVENT registra su corrida en `Ejecuciones_Automaticas` (INSERT al empezar, UPDATE al terminar o en el EXIT HANDLER); los cron lo hacen con `MonitoreoService::ejecutarConRegistro()`. Un proceso automático nuevo debe sumarse a `MonitoreoService::PROCESOS`. El dump no trae EVENTs: viven en los scripts 01 y 02.
 
 ## Idioma
 

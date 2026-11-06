@@ -243,6 +243,16 @@ class BookingController extends Controller
                 }
             }
 
+            // Historial de auditoría: solo administrador y gerente
+            $historial = null;
+            if (\App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])) {
+                try {
+                    $historial = (new \App\Services\AuditoriaService())->historial('reserva', (int)$id);
+                } catch (Exception $e) {
+                    error_log("[SIRES AUDITORIA] " . $e->getMessage());
+                }
+            }
+
             $contentView = __DIR__ . '/../views/dashboard/detailBooking.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 

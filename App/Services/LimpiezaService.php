@@ -21,8 +21,11 @@ class LimpiezaService
     private Habitacion $habitacionModel;
     private Reserva $reservaModel;
 
+    private AuditoriaService $auditoria;
+
     public function __construct()
     {
+        $this->auditoria = new AuditoriaService();
         $this->habitacionModel = new Habitacion();
         $this->reservaModel    = new Reserva();
     }
@@ -86,6 +89,7 @@ class LimpiezaService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $idHabitacion);
 
         try {
             $lock = $db->prepare(
@@ -106,6 +110,7 @@ class LimpiezaService
             $stmt = $db->prepare("UPDATE Habitaciones SET limpieza_urgente = :urgente WHERE id = :id");
             $stmt->execute([':urgente' => $urgente ? 1 : 0, ':id' => $idHabitacion]);
 
+            $this->auditoria->registrar('habitacion.urgente', 'habitacion', $idHabitacion, $urgente ? 'Marcada como limpieza urgente' : 'Se quita la limpieza urgente', $antes);
             $db->commit();
             $numero = (string)$hab['numero'];
             return [
@@ -144,6 +149,7 @@ class LimpiezaService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $idHabitacion);
 
         try {
             $lock = $db->prepare(
@@ -175,6 +181,7 @@ class LimpiezaService
                 throw new Exception("No se pudo iniciar la limpieza. La habitación ya no está sucia.");
             }
 
+            $this->auditoria->registrar('habitacion.limpieza_inicio', 'habitacion', $idHabitacion, 'Inicio de limpieza', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Limpieza iniciada para la habitación.'];
         } catch (Exception $e) {
@@ -189,6 +196,7 @@ class LimpiezaService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $idHabitacion);
 
         try {
             $lock = $db->prepare(
@@ -220,6 +228,7 @@ class LimpiezaService
                 throw new Exception("No se pudo completar la limpieza.");
             }
 
+            $this->auditoria->registrar('habitacion.limpieza_fin', 'habitacion', $idHabitacion, 'Limpieza terminada', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Limpieza completada. Habitación disponible para venta.'];
         } catch (Exception $e) {

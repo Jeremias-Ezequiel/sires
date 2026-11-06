@@ -14,12 +14,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+use App\Services\MonitoreoService;
 use App\Services\ReservaService;
 
 error_log("[SIRES CRON] Iniciando liberación de No-Show con pago...");
 
 try {
-    $resultado = (new ReservaService())->liberarNoShowConPago();
+    $resultado = (new MonitoreoService())->ejecutarConRegistro('liberacion_no_show',
+        fn() => (new ReservaService())->liberarNoShowConPago());
     error_log("[SIRES CRON] " . $resultado['message']);
 } catch (Throwable $e) {
     error_log("[SIRES CRON ERROR] " . $e->getMessage());

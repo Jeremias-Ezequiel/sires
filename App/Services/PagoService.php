@@ -19,8 +19,11 @@ class PagoService
     private TransaccionPago $transaccionModel;
     private Reserva $reservaModel;
 
+    private AuditoriaService $auditoria;
+
     public function __construct()
     {
+        $this->auditoria = new AuditoriaService();
         $this->resumenModel     = new ResumenPago();
         $this->transaccionModel = new TransaccionPago();
         $this->reservaModel     = new Reserva();
@@ -101,6 +104,7 @@ class PagoService
 
         $db = $this->resumenModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lockResumen = $db->prepare(
@@ -170,6 +174,7 @@ class PagoService
                     number_format($montoAbonado, 2, ',', '.') . ".";
             }
 
+            $this->auditoria->registrar('pago.registrar', 'reserva', $idReserva, 'Pago registrado por $' . number_format($montoAbonado, 2, ',', '.'), $antes);
             $db->commit();
             return ['success' => true, 'message' => $mensaje];
         } catch (Exception $e) {
@@ -502,7 +507,11 @@ class PagoService
             }
         }
 
-        return ['success' => true, 'message' => 'Corte de pagos ejecutado. ' . $contador . ' reserva(s) afectada(s).'];
+        return [
+            'success'    => true,
+            'procesadas' => $contador,
+            'message'    => 'Corte de pagos ejecutado. ' . $contador . ' reserva(s) afectada(s).',
+        ];
     }
 
     public function recalcularManual(int $idReserva): array
@@ -514,6 +523,7 @@ class PagoService
 
         $db = $this->resumenModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lock = $db->prepare(
@@ -596,6 +606,7 @@ class PagoService
                 ':id'       => $idReserva
             ]);
 
+            $this->auditoria->registrar('pago.recalcular', 'reserva', $idReserva, 'Recálculo del precio', $antes);
             $db->commit();
             return [
                 'success' => true,
@@ -629,6 +640,7 @@ class PagoService
 
         $db = $this->resumenModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('reserva', $idReserva);
 
         try {
             $lock = $db->prepare(
@@ -668,6 +680,7 @@ class PagoService
                 ':id'      => $resumen->getId()
             ]);
 
+            $this->auditoria->registrar('pago.reembolso', 'reserva', $idReserva, 'Reembolso', $antes);
             $db->commit();
             return [
                 'success' => true,

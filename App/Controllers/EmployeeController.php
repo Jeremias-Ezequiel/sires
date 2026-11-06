@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use Exception;
 use App\Models\Usuario;
+use App\Services\AuditoriaService;
 use App\Models\Rol;
 use App\Models\Nacionalidad;
 use App\Models\Provincia;
@@ -125,6 +126,8 @@ class EmployeeController
             if (!$success) {
                 throw new Exception("No se pudo guardar el registro en el sistema. Por favor, revise la información ingresada o comuníquese con un administrador.");
             }
+            $idNuevo = (int)$usuario->getConnection()->lastInsertId();
+            (new AuditoriaService())->registrar('empleado.alta', 'empleado', $idNuevo, 'Alta de empleado');
 
             $_SESSION['flash_message'] = "Empleado registrado exitosamente.";
             $_SESSION['flash_status']  = "success";
@@ -218,11 +221,14 @@ class EmployeeController
             $usuario->setDireccion($data['direccion']);
             $usuario->setFechaNacimiento($data['fecha_nacimiento']);
 
+            $auditoria = new AuditoriaService();
+            $antes = $auditoria->foto('empleado', (int)$id);
             $success = $usuario->update($usuario);
 
             if (!$success) {
                 throw new Exception("No se pudo actualizar el empleado. Verifique los datos ingresados.");
             }
+            $auditoria->registrar('empleado.editar', 'empleado', (int)$id, 'Edición de empleado', $antes);
 
             $_SESSION['flash_message'] = "Empleado actualizado exitosamente.";
             $_SESSION['flash_status']  = "success";
@@ -381,9 +387,12 @@ class EmployeeController
             }
             $userModel = new Usuario();            
             // Si ya estaba inactivo o no existe, el modelo devuelve false usando rowCount()
+            $auditoria = new AuditoriaService();
+            $antes = $auditoria->foto('empleado', (int)$idToDeactivate);
             if (!$userModel->deactivate((int)$idToDeactivate)) {
                 throw new Exception("El empleado no existe o ya se encuentra inactivo en el sistema.");
             }
+            $auditoria->registrar('empleado.desactivar', 'empleado', (int)$idToDeactivate, 'Baja de acceso', $antes);
 
             $_SESSION['flash_message'] = "Empleado desactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
@@ -422,9 +431,12 @@ class EmployeeController
             
             $userModel = new Usuario();            
             // Si ya estaba activo o no existe, el modelo devuelve false usando rowCount()
+            $auditoria = new AuditoriaService();
+            $antes = $auditoria->foto('empleado', (int)$idToActivate);
             if (!$userModel->activate((int)$idToActivate)) {
                 throw new Exception("El empleado no existe o ya se encuentra activo en el sistema.");
             }
+            $auditoria->registrar('empleado.activar', 'empleado', (int)$idToActivate, 'Reactivación de acceso', $antes);
 
             $_SESSION['flash_message'] = "Empleado reactivado exitosamente.";
             $_SESSION['flash_status']  = "success";
@@ -523,6 +535,9 @@ class EmployeeController
             if (!$success) {
                 throw new Exception("No se pudo actualizar la contraseña. Intente nuevamente.");
             }
+            // Sin detalle: nunca se guarda la contraseña, solo que se cambió
+            (new AuditoriaService())->registrar('empleado.cambio_password', 'empleado', (int)$id,
+                'Cambio de contraseña por un administrador', null, []);
 
             $_SESSION['flash_message'] = "Contraseña de " . $employee->getNombre() . " actualizada con éxito.";
             $_SESSION['flash_status']  = "success";

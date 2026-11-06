@@ -1,0 +1,205 @@
+<?php
+/**
+ * Auditoría: acciones de los usuarios (filtros + paginación) y procesos automáticos.
+ * Datos: App\Controllers\AuditoriaController::mostrar().
+ */
+
+use App\Services\AuditoriaService;
+use App\Services\MonitoreoService;
+
+$fechaHora = fn(?string $f): string => $f !== null ? date('d/m/Y H:i', strtotime($f)) : '—';
+?>
+<header class="main-header">
+    <div>
+        <h1>Auditoría</h1>
+        <p>Quién hizo qué en el sistema y cómo vienen los procesos automáticos.</p>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<nav class="aud-vistas" aria-label="Vistas de auditoría">
+    <a href="<?= url('/dashboard/audit') ?>" class="aud-vista<?= $vista === 'acciones' ? ' aud-vista--activa' : '' ?>"
+       <?= $vista === 'acciones' ? 'aria-current="page"' : '' ?>>
+        <i class="fas fa-user-pen" aria-hidden="true"></i> Acciones
+    </a>
+    <a href="<?= url(MonitoreoService::RUTA_DETALLE) ?>" class="aud-vista<?= $vista === 'procesos' ? ' aud-vista--activa' : '' ?>"
+       <?= $vista === 'procesos' ? 'aria-current="page"' : '' ?>>
+        <i class="fas fa-gears" aria-hidden="true"></i> Procesos automáticos
+    </a>
+</nav>
+
+<?php if ($vista === 'acciones'): ?>
+
+    <section class="details-section filter-section">
+        <?= \App\Helpers\UrlHelper::openForm('/dashboard/audit', 'GET', 'filter-form') ?>
+            <div class="form-group-role">
+                <label class="form__label" for="aud-usuario">Usuario</label>
+                <select name="usuario" id="aud-usuario" class="form__select-filter">
+                    <option value="">Todos</option>
+                    <?php foreach ($usuarios as $u): ?>
+                        <option value="<?= (int)$u['id'] ?>" <?= (int)($filtros['id_usuario'] ?? 0) === (int)$u['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($u['apellido'] . ', ' . $u['nombre']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group-role">
+                <label class="form__label" for="aud-entidad">Sobre</label>
+                <select name="entidad" id="aud-entidad" class="form__select-filter">
+                    <option value="">Todo</option>
+                    <?php foreach (AuditoriaService::ENTIDADES as $clave => $nombre): ?>
+                        <option value="<?= $clave ?>" <?= ($filtros['entidad'] ?? '') === $clave ? 'selected' : '' ?>><?= htmlspecialchars($nombre) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="aud-filtro-fecha">
+                <label class="form__label" for="aud-desde">Desde</label>
+                <input type="date" name="desde" id="aud-desde" class="form__input" value="<?= htmlspecialchars($filtros['desde'] ?? '') ?>">
+            </div>
+            <div class="aud-filtro-fecha">
+                <label class="form__label" for="aud-hasta">Hasta</label>
+                <input type="date" name="hasta" id="aud-hasta" class="form__input" value="<?= htmlspecialchars($filtros['hasta'] ?? '') ?>">
+            </div>
+
+            <?php if (!empty($filtros['id_entidad'])): ?>
+                <input type="hidden" name="id_entidad" value="<?= (int)$filtros['id_entidad'] ?>">
+            <?php endif; ?>
+
+            <button type="submit" class="btn btn--primary">
+                <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
+            </button>
+            <?php if ($hayFiltros): ?>
+                <a href="<?= url('/dashboard/audit') ?>" class="btn btn--ghost">
+                    <i class="fas fa-undo" aria-hidden="true"></i> Limpiar filtros
+                </a>
+            <?php endif; ?>
+        </form>
+    </section>
+
+    <?php if (!empty($registros)): ?>
+        <section class="details-section">
+            <?php
+            $historialFilas = $registros;
+            $historialConEntidad = true;
+            include __DIR__ . '/../partials/historial-auditoria.phtml';
+
+            $paginacionRuta = '/dashboard/audit';
+            include __DIR__ . '/../partials/pagination.phtml';
+            ?>
+        </section>
+    <?php else: ?>
+        <section class="details-section no-results-container">
+            <div class="no-results-content">
+                <div class="no-results-icon-frame"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
+                <h3>Sin registros</h3>
+                <p><?= $hayFiltros ? 'No hay acciones que coincidan con los filtros.' : 'Todavía no hay acciones registradas.' ?></p>
+            </div>
+        </section>
+    <?php endif; ?>
+
+<?php elseif ($monitoreo !== null): ?>
+
+    <section class="panel">
+        <header class="panel__header">
+            <h2><i class="fas fa-clock" aria-hidden="true"></i>Estado</h2>
+        </header>
+        <p class="aud-scheduler aud-scheduler--<?= $monitoreo['scheduler_ok'] ? 'ok' : 'error' ?>">
+            <i class="fas <?= $monitoreo['scheduler_ok'] ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
+            Programador de tareas de la base (event_scheduler):
+            <strong><?= htmlspecialchars($monitoreo['scheduler']) ?></strong>
+            <?php if (!$monitoreo['scheduler_ok']): ?>
+                · Los procesos no corren solos. Correr el script 03 o pedir <code>event_scheduler = ON</code> al administrador del servidor.
+            <?php endif; ?>
+        </p>
+
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Proceso</th>
+                        <th>Frecuencia</th>
+                        <th>Última corrida correcta</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($monitoreo['procesos'] as $clave => $p): ?>
+                        <tr>
+                            <td>
+                                <a href="<?= url(MonitoreoService::RUTA_DETALLE . '&proceso=' . $clave) ?>"><?= htmlspecialchars($p['nombre']) ?></a>
+                            </td>
+                            <td><?= htmlspecialchars($p['frecuencia']) ?></td>
+                            <td>
+                                <?= $fechaHora($p['ultima_ok']['inicio'] ?? null) ?>
+                                <?php if ($p['minutos_desde_ok'] !== null): ?>
+                                    <span class="text-muted">(hace <?= htmlspecialchars(MonitoreoService::duracion($p['minutos_desde_ok'])) ?>)</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($p['problema'] === null): ?>
+                                    <span class="badge badge--disponible">Al día</span>
+                                <?php else: ?>
+                                    <span class="aud-problema"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> <?= htmlspecialchars($p['problema']) ?></span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <header class="panel__header">
+            <h2><i class="fas fa-list" aria-hidden="true"></i>Últimas corridas<?= $procesoFiltro !== null ? ': ' . htmlspecialchars(MonitoreoService::PROCESOS[$procesoFiltro]['nombre']) : '' ?></h2>
+            <?php if ($procesoFiltro !== null): ?>
+                <a class="panel__nota" href="<?= url(MonitoreoService::RUTA_DETALLE) ?>">Ver todos</a>
+            <?php endif; ?>
+        </header>
+        <?php if (empty($corridas)): ?>
+            <p class="panel__vacio"><i class="fas fa-circle-info" aria-hidden="true"></i>Todavía no hay corridas registradas.</p>
+        <?php else: ?>
+            <div class="details-table-wrapper">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Inicio</th>
+                            <th>Proceso</th>
+                            <th>Origen</th>
+                            <th class="cfg-num">Filas</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($corridas as $c): ?>
+                            <tr>
+                                <td class="aud-fecha"><?= htmlspecialchars(date('d/m/Y H:i:s', strtotime((string)$c['inicio']))) ?></td>
+                                <td><?= htmlspecialchars(MonitoreoService::PROCESOS[$c['proceso']]['nombre'] ?? $c['proceso']) ?></td>
+                                <td><?= $c['origen'] === 'cron' ? 'Cron (respaldo)' : 'EVENT' ?></td>
+                                <td class="cfg-num"><?= $c['filas_afectadas'] !== null ? (int)$c['filas_afectadas'] : '—' ?></td>
+                                <td>
+                                    <?php if ($c['ok'] === null): ?>
+                                        <span class="text-muted">Sin terminar</span>
+                                    <?php elseif ((int)$c['ok'] === 1): ?>
+                                        <span class="badge badge--disponible">OK</span>
+                                    <?php else: ?>
+                                        <span class="aud-problema"><i class="fas fa-xmark" aria-hidden="true"></i> <?= htmlspecialchars(mb_substr((string)$c['error'], 0, 200)) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+
+<?php endif; ?>
