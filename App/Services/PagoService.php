@@ -495,7 +495,9 @@ class PagoService
                 $db->commit();
                 $contador++;
             } catch (Exception $e) {
-                $db->rollBack();
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
                 error_log("Error en corte de pagos para reserva #" . $row['id'] . ": " . $e->getMessage());
             }
         }

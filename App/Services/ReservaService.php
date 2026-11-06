@@ -194,7 +194,9 @@ class ReservaService
             $db->commit();
             return ['success' => true, 'message' => 'Reserva registrada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -584,7 +586,9 @@ class ReservaService
             $db->commit();
             return ['success' => true, 'message' => 'Checkout realizado. La habitación pasa a limpieza.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -636,7 +640,9 @@ class ReservaService
             $db->commit();
             return ['success' => true, 'message' => 'Checkout anticipado realizado. Sin reembolso por días no usados.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -780,7 +786,9 @@ class ReservaService
                 return ['success' => true, 'message' => 'No-Show registrado. La habitación no queda retenida (sin pago).'];
             }
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -914,7 +922,9 @@ class ReservaService
             $db->commit();
             return ['success' => true, 'message' => 'Estadía extendida exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -1163,7 +1173,9 @@ class ReservaService
                 'message' => 'Upgrade realizado. Huésped movido a #' . $nuevoNum . ' (' . $nuevoTipo . ') sin costo adicional.'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
