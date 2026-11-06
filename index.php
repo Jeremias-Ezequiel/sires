@@ -11,9 +11,16 @@ use App\Core\ErrorHandler;
 
 ErrorHandler::register();
 
+date_default_timezone_set(App\Config\Politicas::ZONA_HORARIA);
+
 try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
+
+    // Sesión única para toda la petición (controllers y middlewares la asumen iniciada).
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
     if (isset($_GET['route'])){
         $route = $_GET['route'];

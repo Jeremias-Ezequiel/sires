@@ -7,6 +7,7 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
+use App\Config\Politicas;
 
 class Habitacion extends Model
 {
@@ -21,12 +22,13 @@ class Habitacion extends Model
     private ?string $fecha_baja = null;
 
     // Estados de habitación según Estados_Habitacion
-    public const ESTADO_DISPONIBLE = 1;
-    public const ESTADO_OCUPADA = 2;
-    public const ESTADO_MANTENIMIENTO = 3;
-    public const ESTADO_BLOQUEADA = 4;
-    public const ESTADO_SUCIA = 5;
-    public const ESTADO_LIMPIANDO = 6;
+    // Alias: los valores se definen en EstadoHabitacion (espejo de la tabla catálogo).
+    public const ESTADO_DISPONIBLE = EstadoHabitacion::DISPONIBLE;
+    public const ESTADO_OCUPADA = EstadoHabitacion::OCUPADA;
+    public const ESTADO_MANTENIMIENTO = EstadoHabitacion::MANTENIMIENTO;
+    public const ESTADO_BLOQUEADA = EstadoHabitacion::BLOQUEADA;
+    public const ESTADO_SUCIA = EstadoHabitacion::SUCIA;
+    public const ESTADO_LIMPIANDO = EstadoHabitacion::LIMPIANDO;
 
     // Capacidad de personas según tipo de habitación
     public const TIPOS_POR_CAPACIDAD = [
@@ -44,10 +46,8 @@ class Habitacion extends Model
     public const PRICE_HIERARCHY_ORDER = [1, 4, 2, 3];
 
     // Descuento por ocupación: [capacidad => [huespedes => descuento%]]
-    public const DESCUENTO_OCUPACION = [
-        3 => [1 => 25, 2 => 10, 3 => 0],
-        2 => [1 => 15, 2 => 0],
-    ];
+    // Alias: la fuente es App\Config\Politicas::DESCUENTO_OCUPACION
+    public const DESCUENTO_OCUPACION = Politicas::DESCUENTO_OCUPACION;
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): array
     {

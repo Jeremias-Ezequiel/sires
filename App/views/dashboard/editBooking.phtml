@@ -132,6 +132,7 @@ if (!empty($habitaciones)) {
     </form>
 </section>
 
+<script src="<?= asset('js/reserva-precio.js') ?>"></script>
 <script>
     var CLIENTES = <?= json_encode(array_map(function ($c) {
         return [
@@ -376,12 +377,11 @@ if (!empty($habitaciones)) {
             return false;
         }
 
-        var DESCUENTOS_TABLA = { 4: {1: 30, 2: 20, 3: 10, 4: 0}, 3: {1: 25, 2: 10, 3: 0}, 2: {1: 15, 2: 0} };
+        // Fuente única: App\Config\Politicas::DESCUENTO_OCUPACION
+        var DESCUENTOS_TABLA = <?= json_encode(\App\Config\Politicas::DESCUENTO_OCUPACION) ?>;
 
         function descuentoOcupacion(capacidad, huespedes) {
-            var cap = DESCUENTOS_TABLA[capacidad];
-            if (!cap) return 0;
-            return (huespedes in cap) ? cap[huespedes] : 0;
+            return SiresPrecio.descuentoOcupacion(DESCUENTOS_TABLA, capacidad, huespedes);
         }
 
         function actualizarPrecioOcupacion() {
@@ -393,15 +393,9 @@ if (!empty($habitaciones)) {
             if (!r) return;
             var huespedes = parseInt(guestInput.value, 10) || 1;
             var dsc = descuentoOcupacion(r.capacidad, huespedes);
-            var precio = r.precio * (1 - dsc / 100);
+            var precio = SiresPrecio.precioNoche(r.precio, dsc);
 
-            var e = entrada && entrada.value;
-            var s = salida && salida.value;
-            var noches = 0;
-            if (e && s && s > e) {
-                var diff = (new Date(s) - new Date(e)) / (1000 * 60 * 60 * 24);
-                noches = Math.max(1, Math.round(diff));
-            }
+            var noches = SiresPrecio.calcularNoches(entrada && entrada.value, salida && salida.value);
             var total = precio * noches;
 
             if (ayuda) {
