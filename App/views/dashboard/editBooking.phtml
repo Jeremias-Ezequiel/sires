@@ -385,6 +385,13 @@ if (!empty($habitaciones)) {
             return SiresPrecio.descuentoOcupacion(DESCUENTOS_TABLA, capacidad, huespedes);
         }
 
+        // Precio pactado de la reserva: el servidor lo mantiene si no cambian habitación ni huéspedes
+        var PACTADO = <?= json_encode([
+            'habitacion' => (int)$reserva['id_habitacion'],
+            'huespedes'  => (int)$reserva['cantidad_huespedes'],
+            'precio'     => isset($reserva['precio_noche_pactado']) ? (float)$reserva['precio_noche_pactado'] : null,
+        ]) ?>;
+
         function actualizarPrecioOcupacion() {
             if (!guestInput || !roomConfirmedId) return;
             var r = ROOMS.find(function(x) { return x.id === roomConfirmedId; });
@@ -393,17 +400,20 @@ if (!empty($habitaciones)) {
             var precioTotalEl = document.getElementById('room-precio-total');
             if (!r) return;
             var huespedes = parseInt(guestInput.value, 10) || 1;
-            var dsc = descuentoOcupacion(r.capacidad, huespedes);
-            var precio = SiresPrecio.precioNoche(r.precio, dsc);
+            var pactado = PACTADO.precio !== null && r.id === PACTADO.habitacion && huespedes === PACTADO.huespedes;
+            var dsc = pactado ? 0 : descuentoOcupacion(r.capacidad, huespedes);
+            var precio = pactado ? PACTADO.precio : SiresPrecio.precioNoche(r.precio, dsc);
 
             var noches = SiresPrecio.calcularNoches(entrada && entrada.value, salida && salida.value);
             var total = precio * noches;
 
             if (ayuda) {
-                ayuda.textContent = 'Descuento por ocupación: ' + dsc + '% — Precio/noche: ' + SiresPrecio.formatearMoneda(precio);
+                ayuda.textContent = pactado
+                    ? 'Se mantiene el precio pactado por noche: ' + SiresPrecio.formatearMoneda(precio) + '. Si cambia la habitación o los huéspedes, se usa el precio actual.'
+                    : 'Descuento por ocupación: ' + dsc + '% — Precio/noche: ' + SiresPrecio.formatearMoneda(precio);
             }
             if (precioNocheEl) {
-                precioNocheEl.textContent = SiresPrecio.formatearMoneda(precio) + (dsc > 0 ? ' (-' + dsc + '%)' : '');
+                precioNocheEl.textContent = SiresPrecio.formatearMoneda(precio) + (pactado ? ' (pactado)' : (dsc > 0 ? ' (-' + dsc + '%)' : ''));
             }
             if (precioTotalEl) {
                 precioTotalEl.textContent = SiresPrecio.formatearMoneda(total) + ' (' + noches + (noches === 1 ? ' noche' : ' noches') + ' x ' + SiresPrecio.formatearMoneda(precio) + ')';
