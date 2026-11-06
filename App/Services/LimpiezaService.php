@@ -32,7 +32,9 @@ class LimpiezaService
 
             if ($estado !== Habitacion::ESTADO_SUCIA) {
                 $db->rollBack();
-                throw new Exception("La habitación no está marcada como sucia. Estado actual: " . $estado);
+                throw new Exception($estado === Habitacion::ESTADO_LIMPIANDO
+                    ? "Esta habitación ya se está limpiando."
+                    : "La habitación no está marcada como sucia.");
             }
 
             $stmt = $db->prepare(
@@ -54,7 +56,9 @@ class LimpiezaService
             $db->commit();
             return ['success' => true, 'message' => 'Limpieza iniciada para la habitación.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -73,7 +77,9 @@ class LimpiezaService
 
             if ($estado !== Habitacion::ESTADO_LIMPIANDO) {
                 $db->rollBack();
-                throw new Exception("La habitación no está en limpieza.");
+                throw new Exception($estado === Habitacion::ESTADO_DISPONIBLE
+                    ? "Esta habitación ya figura como limpia."
+                    : "La habitación no está en limpieza.");
             }
 
             $stmt = $db->prepare(
@@ -95,7 +101,9 @@ class LimpiezaService
             $db->commit();
             return ['success' => true, 'message' => 'Limpieza completada. Habitación disponible para venta.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }

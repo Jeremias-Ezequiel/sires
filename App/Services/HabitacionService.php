@@ -72,7 +72,9 @@ class HabitacionService
             $db->commit();
             return ['success' => true, 'message' => 'Habitación N° ' . $numero . ' registrada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -141,7 +143,9 @@ class HabitacionService
                 'message' => $total . ' habitaciones generadas exitosamente (N° ' . $numerosGenerar[0] . ' al ' . $numerosGenerar[count($numerosGenerar) - 1] . ').'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -185,7 +189,9 @@ class HabitacionService
             $msg = $idMotivoBloqueo !== null ? 'bloqueada por motivo de mantenimiento' : 'bloqueada';
             return ['success' => true, 'message' => 'Habitación ' . $msg . ' exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -226,7 +232,9 @@ class HabitacionService
             $db->commit();
             return ['success' => true, 'message' => 'Habitación desbloqueada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -266,7 +274,9 @@ class HabitacionService
             $db->commit();
             return ['success' => true, 'message' => 'Habitación puesta en mantenimiento.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -295,7 +305,9 @@ class HabitacionService
             $db->commit();
             return ['success' => true, 'message' => 'Habitación disponible nuevamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -362,7 +374,9 @@ class HabitacionService
             $db->commit();
             return ['success' => true, 'message' => 'Habitación actualizada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
