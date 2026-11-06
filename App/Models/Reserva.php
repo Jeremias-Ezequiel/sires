@@ -368,6 +368,117 @@ class Reserva extends Model
         }
     }
 
+    // =====================================================================
+    // TABLERO DE INICIO
+    // =====================================================================
+
+    /** Llegadas de una fecha: reservas vigentes que entran ese día, con huésped, habitación y pago. */
+    public function getLlegadasDelDia(string $fecha): array
+    {
+        return $this->movimientosDelDia('r.fecha_entrada', $fecha, [
+            self::ESTADO_PENDIENTE,
+            self::ESTADO_CONFIRMADA,
+            self::ESTADO_EN_CASA,
+            self::ESTADO_NO_SHOW_CON_PAGO,
+        ]);
+    }
+
+    /** Salidas de una fecha: huéspedes en casa que se van ese día y los que ya hicieron check-out. */
+    public function getSalidasDelDia(string $fecha): array
+    {
+        return $this->movimientosDelDia('r.fecha_salida', $fecha, [
+            self::ESTADO_EN_CASA,
+            self::ESTADO_FINALIZADA,
+        ]);
+    }
+
+    /** @param string $columna 'r.fecha_entrada' o 'r.fecha_salida' (valor fijo, nunca del usuario). */
+    private function movimientosDelDia(string $columna, string $fecha, array $estados): array
+    {
+        $placeholders = implode(',', array_fill(0, count($estados), '?'));
+        $sql = "SELECT r.id, r.id_estado_reserva, r.fecha_entrada, r.fecha_salida, r.cantidad_huespedes,
+                       c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
+                       h.id AS id_habitacion, h.numero AS habitacion_numero,
+                       th.descripcion AS tipo_habitacion,
+                       rp.id_estado_pago, rp.saldo_pendiente
+                FROM Reservas r
+                JOIN Clientes c ON r.id_cliente = c.id
+                JOIN Habitaciones h ON r.id_habitacion = h.id
+                LEFT JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
+                WHERE $columna = ? AND r.id_estado_reserva IN ($placeholders)
+                ORDER BY h.numero ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_merge([$fecha], $estados));
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::movimientosDelDia: " . $e->getMessage());
+            throw new Exception("Error al consultar las llegadas y salidas del día.");
+        }
+    }
+
+    /**
+     * Estadías que ocupan al menos una noche en [desde, hasta): pendientes, confirmadas y en casa.
+     * @return array<int, array{fecha_entrada: string, fecha_salida: string}>
+     */
+    public function getEstadiasEnRango(string $desde, string $hasta): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT fecha_entrada, fecha_salida FROM Reservas
+                 WHERE fecha_entrada < :hasta AND fecha_salida > :desde
+                   AND id_estado_reserva IN (:pendiente, :confirmada, :en_casa)"
+            );
+            $stmt->execute([
+                ':desde'      => $desde,
+                ':hasta'      => $hasta,
+                ':pendiente'  => self::ESTADO_PENDIENTE,
+                ':confirmada' => self::ESTADO_CONFIRMADA,
+                ':en_casa'    => self::ESTADO_EN_CASA,
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::getEstadiasEnRango: " . $e->getMessage());
+            throw new Exception("Error al consultar la ocupación de los próximos días.");
+        }
+    }
+
+    /**
+     * Contadores de situaciones que requieren atención.
+     * @return array{sin_pago_proximas: int, llegadas_atrasadas: int, salidas_vencidas: int, a_reembolsar: int}
+     */
+    public function getContadoresAlerta(string $hoy, string $limiteSinPago): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT
+                    COALESCE(SUM(r.id_estado_reserva = :pendiente AND r.fecha_entrada BETWEEN :hoy1 AND :limite), 0) AS sin_pago_proximas,
+                    COALESCE(SUM(r.id_estado_reserva = :confirmada AND r.fecha_entrada < :hoy2 AND r.fecha_salida > :hoy3), 0) AS llegadas_atrasadas,
+                    COALESCE(SUM(r.id_estado_reserva = :en_casa AND r.fecha_salida < :hoy4), 0) AS salidas_vencidas,
+                    COALESCE(SUM(rp.id_estado_pago = :a_reembolsar), 0) AS a_reembolsar
+                 FROM Reservas r
+                 LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id"
+            );
+            $stmt->execute([
+                ':pendiente'    => self::ESTADO_PENDIENTE,
+                ':confirmada'   => self::ESTADO_CONFIRMADA,
+                ':en_casa'      => self::ESTADO_EN_CASA,
+                ':a_reembolsar' => ResumenPago::ESTADO_A_REEMBOLSAR,
+                ':hoy1' => $hoy, ':hoy2' => $hoy, ':hoy3' => $hoy, ':hoy4' => $hoy,
+                ':limite' => $limiteSinPago,
+            ]);
+            $fila = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            return array_map('intval', $fila + [
+                'sin_pago_proximas' => 0, 'llegadas_atrasadas' => 0, 'salidas_vencidas' => 0, 'a_reembolsar' => 0,
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::getContadoresAlerta: " . $e->getMessage());
+            throw new Exception("Error al consultar las alertas.");
+        }
+    }
+
     public function getId(): int
     {
         return $this->id;

@@ -1,26 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
-use App\Models\Habitacion;
-use App\Models\Reserva;
 use App\Models\Rol;
-use App\Models\TransaccionPago;
+use App\Services\DashboardService;
 
-class DashboardController
+class DashboardController extends Controller
 {
     public function showHome(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $userName = $_SESSION['user_name'] ?? 'Usuario';
-        $userRole = $_SESSION['user_role'] ?? 0;
-
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $userRole = (int)($_SESSION['user_role'] ?? 0);
 
         $rolMap = [
             Rol::ADMINISTRADOR => 'Administrador',
@@ -30,45 +23,23 @@ class DashboardController
         ];
         $rolNombre = $rolMap[$userRole] ?? 'Sin rol';
 
-        $capacidad_filtrada = isset($vars['capacidad']) ? (int)$vars['capacidad'] : 2;
+        // Limpieza solo ve el estado de las habitaciones (no tiene acceso a reservas ni pagos)
+        $verOperacion = in_array($userRole, [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA], true);
 
-        $stats = [
-            'disponibles'     => 0,
-            'ocupadas'        => 0,
-            'sucias'          => 0,
-            'limpiando'       => 0,
-            'reservadas'      => 0,
-            'ingresos_hoy'    => 0.0,
-            'disp_2_personas' => 0,
-            'disp_3_personas' => 0,
-            'disp_4_personas' => 0,
-            'habitaciones'    => [],
-        ];
+        $errorMessage = $_SESSION['auth_error'] ?? '';
+        unset($_SESSION['auth_error']);
 
+        $flashMessage = $_SESSION['flash_message'] ?? '';
+        $flashStatus  = $_SESSION['flash_status'] ?? '';
+        unset($_SESSION['flash_message'], $_SESSION['flash_status']);
+
+        $tablero = null;
         try {
-            $habitacion  = new Habitacion();
-            $reserva     = new Reserva();
-            $transaccion = new TransaccionPago();
-
-            $stats['disponibles']     = $habitacion->countByEstado(Habitacion::ESTADO_DISPONIBLE);
-            $stats['ocupadas']        = $habitacion->countByEstado(Habitacion::ESTADO_OCUPADA);
-            $stats['en_mantenimiento'] = $habitacion->countByEstado(Habitacion::ESTADO_MANTENIMIENTO);
-            $stats['sucias']          = $habitacion->countByEstado(Habitacion::ESTADO_SUCIA);
-            $stats['limpiando']       = $habitacion->countByEstado(Habitacion::ESTADO_LIMPIANDO);
-            $stats['reservadas']      = $reserva->countReservasHoy();
-            $stats['ingresos_hoy']    = $transaccion->sumIngresosDelDia();
-            $stats['disp_2_personas'] = $habitacion->countDisponiblesPorCapacidad(2);
-            $stats['disp_3_personas'] = $habitacion->countDisponiblesPorCapacidad(3);
-            $stats['disp_4_personas'] = $habitacion->countDisponiblesPorCapacidad(4);
-            $stats['habitaciones']    = $habitacion->getHabitacionesPorCapacidad($capacidad_filtrada);
+            $tablero = (new DashboardService())->obtenerTablero();
         } catch (Exception $e) {
             error_log("Error en Dashboard: " . $e->getMessage());
-            $errorMessage = "Error de datos.";
+            $errorMessage = "No se pudieron cargar los datos del tablero.";
         }
-
-        extract($stats, EXTR_SKIP);
-
-        $fecha_formateada = date('d/m/Y');
 
         $contentView = __DIR__ . '/../views/dashboard/home.phtml';
         require_once __DIR__ . '/../views/dashboard/layout.phtml';

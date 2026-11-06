@@ -299,11 +299,11 @@ class BookingController extends Controller
 
             $this->flash($resultado['message']);
 
-            $this->redirect('/dashboard/booking');
+            $this->redirect($this->destinoTrasAccion());
         } catch (Exception $e) {
             $this->flash($e->getMessage(), 'error');
 
-            $this->redirect('/dashboard/booking');
+            $this->redirect($this->destinoTrasAccion());
         }
     }
 
@@ -339,11 +339,11 @@ class BookingController extends Controller
 
             $this->flash($resultado['message']);
 
-            $this->redirect('/dashboard/booking');
+            $this->redirect($this->destinoTrasAccion());
         } catch (Exception $e) {
             $this->flash($e->getMessage(), 'error');
 
-            $this->redirect('/dashboard/booking');
+            $this->redirect($this->destinoTrasAccion());
         }
     }
 
@@ -436,5 +436,11 @@ class BookingController extends Controller
                 $this->redirect('/dashboard/booking');
             }
         }
+    }
+
+    /** Check-in y check-out se pueden hacer desde el inicio: volver ahí si el formulario lo pide. */
+    private function destinoTrasAccion(): string
+    {
+        return ($_POST['volver'] ?? '') === 'inicio' ? '/dashboard' : '/dashboard/booking';
     }
 }

@@ -1,207 +1,350 @@
-<header class="main-header header-flex">
+<?php
+/**
+ * Inicio: tablero operativo del día (DESIGN.md §7). Lo urgente arriba:
+ * KPIs, llegadas y salidas con acción directa, estado de habitaciones y alertas.
+ * Datos: App\Services\DashboardService::obtenerTablero().
+ */
+
+$dias   = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+$meses  = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+$ahora  = time();
+$fechaLarga = ucfirst($dias[(int)date('w', $ahora)]) . ' ' . date('j', $ahora) . ' de ' . $meses[(int)date('n', $ahora) - 1];
+$hora   = (int)date('G', $ahora);
+$saludo = $hora < 12 ? 'Buenos días' : ($hora < 20 ? 'Buenas tardes' : 'Buenas noches');
+
+$dinero = fn(float $m): string => '$' . number_format($m, 0, ',', '.');
+// Montos grandes abreviados para que entren en la tarjeta (el completo va en el title)
+$dineroCorto = fn(float $m): string => abs($m) >= 1000000
+    ? '$' . number_format($m / 1000000, 1, ',', '.') . ' M'
+    : '$' . number_format($m, 0, ',', '.');
+$nombre = fn(array $r): string => trim($r['cliente_nombre'] . ' ' . $r['cliente_apellido']);
+$fechaCorta = fn(string $f): string => date('j', strtotime($f)) . ' ' . mb_substr($meses[(int)date('n', strtotime($f)) - 1], 0, 3);
+
+// Estados de habitación para mostrar: etiqueta de la leyenda + ícono (nunca solo color)
+$visuales = [
+    'disponible'    => ['Disponibles', 'fa-check'],
+    'reservada'     => ['Llegan hoy', 'fa-calendar-day'],
+    'ocupada'       => ['Ocupadas', 'fa-user'],
+    'checkout'      => ['Salen hoy', 'fa-arrow-right-from-bracket'],
+    'limpieza'      => ['Por limpiar', 'fa-broom'],
+    'mantenimiento' => ['Fuera de servicio', 'fa-wrench'],
+];
+
+$k = $tablero['kpis'] ?? null;
+?>
+<header class="main-header inicio-header">
     <div>
         <h1>Inicio</h1>
-        <p>Bienvenido, <?= htmlspecialchars($userName) ?> — <?= htmlspecialchars($rolNombre) ?></p>
+        <p><?= $saludo ?>, <?= htmlspecialchars($userName) ?> · <?= htmlspecialchars($rolNombre) ?></p>
     </div>
-    <div class="dashboard-date-container">
-        <i class="fas fa-calendar-alt date-icon"></i>
-        <span id="fecha-actual" class="date-text"><?= isset($fecha_formateada) ? $fecha_formateada : date('d/m/Y') ?></span>
+    <div class="inicio-header__acciones">
+        <span class="inicio-fecha"><i class="fas fa-calendar-alt" aria-hidden="true"></i><?= htmlspecialchars($fechaLarga) ?></span>
+        <?php if ($verOperacion): ?>
+            <a href="<?= url('/dashboard/booking/add') ?>" class="btn btn--primary inicio-nueva" title="Nueva reserva (atajo: N)">
+                <i class="fas fa-plus" aria-hidden="true"></i> Nueva reserva <kbd>N</kbd>
+            </a>
+        <?php endif; ?>
     </div>
 </header>
 
 <?php if (!empty($errorMessage)): ?>
     <div class="alert alert--error">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
         <?= htmlspecialchars($errorMessage) ?>
     </div>
 <?php endif; ?>
 
-<section class="summary-grid">
-    <article class="summary-card">
-        <i class="fas fa-bed card-icon"></i>
-        <div class="card-info">
-            <p><?= $disponibles ?></p>
-            <h3>Habitaciones Disponibles</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-user-friends card-icon"></i>
-        <div class="card-info">
-            <p><?= $ocupadas ?></p>
-            <h3>Habitaciones Ocupadas</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-tools card-icon"></i>
-        <div class="card-info">
-            <p><?= $en_mantenimiento ?></p>
-            <h3>En Mantenimiento</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-broom card-icon"></i>
-        <div class="card-info">
-            <p><?= $sucias ?></p>
-            <h3>Sucias (x limpiar)</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-soap card-icon"></i>
-        <div class="card-info">
-            <p><?= $limpiando ?></p>
-            <h3>En Limpieza</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-calendar-day card-icon"></i>
-        <div class="card-info">
-            <p><?= $reservadas ?></p>
-            <h3>Reservas hoy</h3>
-        </div>
-    </article>
-    <article class="summary-card">
-        <i class="fas fa-dollar-sign card-icon"></i>
-        <div class="card-info">
-            <p>$<?= number_format($ingresos_hoy, 0, ',', '.') ?></p>
-            <h3>Ingresos hoy</h3>
-        </div>
-    </article>
-</section>
-
-<section class="capacity-filter-grid">
-    <a href="<?= url('/dashboard?capacidad=2') ?>" id="btn-cap-2" class="capacity-card <?= $capacidad_filtrada === 2 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>2 personas</h4>
-            </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_2_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
-
-    <a href="<?= url('/dashboard?capacidad=3') ?>" id="btn-cap-3" class="capacity-card <?= $capacidad_filtrada === 3 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users-cog"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>3 personas</h4>
-            </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_3_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
-
-    <a href="<?= url('/dashboard?capacidad=4') ?>" id="btn-cap-4" class="capacity-card <?= $capacidad_filtrada === 4 ? 'active' : '' ?>">
-        <div class="capacity-card-header">
-            <i class="fas fa-users"></i>
-            <div>
-                <span>Habitaciones</span>
-                <h4>4 personas</h4>
-            </div>
-        </div>
-        <div class="capacity-card-body">
-            <strong><?= $disp_4_personas ?></strong>
-            <p>Disponibles</p>
-        </div>
-    </a>
-</section>
-
-<section class="details-section">
-    <div class="details-header">
-        <h2>Habitaciones - <span id="tabla-titulo-capacidad" class="room-type-highlight"><?= $capacidad_filtrada === 3 ? '3 personas' : ($capacidad_filtrada === 4 ? '4 personas' : '2 personas') ?></span></h2>
+<?php if (!empty($flashMessage) && in_array($flashStatus, ['success', 'error'], true)): ?>
+    <div class="alert alert--<?= $flashStatus ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
+        <?= htmlspecialchars($flashMessage) ?>
     </div>
+<?php endif; ?>
 
-    <div class="details-table-wrapper">
-        <table class="details-table">
-            <thead>
-                <tr>
-                    <th>N° Habitaciones</th>
-                    <th>Piso</th>
-                    <th>Estado</th>
-                    <th>Detalle</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-habitaciones-body">
-                <?php if (count($habitaciones) > 0): ?>
-                    <?php foreach ($habitaciones as $room):
-                        $statusLower = mb_strtolower($room['estado'] ?? '', 'UTF-8');
-                        $statusClass = (strpos($statusLower, 'ocupad') !== false) ? 'badge--ocupada'
-                            : ((strpos($statusLower, 'retenid') !== false) ? 'badge--reservada'
-                            : ((strpos($statusLower, 'sucia') !== false || strpos($statusLower, 'sucio') !== false) ? 'badge--sucia'
-                            : ((strpos($statusLower, 'limpiando') !== false || strpos($statusLower, 'limpi') !== false) ? 'badge--limpiando'
-                            : ((strpos($statusLower, 'mantenimient') !== false || strpos($statusLower, 'bloquead') !== false) ? 'badge--mantenimiento'
-                            : 'badge--disponible'))));
-                    ?>
-                        <tr>
-                            <td><?= htmlspecialchars((string)$room['numero']) ?></td>
-                            <td><?= htmlspecialchars((string)$room['piso']) ?></td>
-                            <td><span class="<?= $statusClass ?>"><?= htmlspecialchars($room['estado']) ?></span></td>
-                            <td><?= htmlspecialchars($room['tipo']) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="4" class="table-empty-message">No se encontraron habitaciones.</td>
-                    </tr>
+<?php if ($tablero !== null): ?>
+
+<!-- 1. Resumen del día -->
+<section class="inicio-kpis" aria-label="Resumen del día">
+    <?php if ($verOperacion): ?>
+        <article class="kpi">
+            <span class="kpi__titulo"><i class="fas fa-plane-arrival" aria-hidden="true"></i>Llegadas hoy</span>
+            <span class="kpi-value"><?= $k['llegadas'] ?></span>
+            <span class="kpi__detalle">
+                <?= $k['llegadas_pendientes'] > 0 ? $k['llegadas_pendientes'] . ' pendiente' . ($k['llegadas_pendientes'] > 1 ? 's' : '') . ' de check-in' : ($k['llegadas'] > 0 ? 'Todas registradas' : 'Sin llegadas') ?>
+            </span>
+        </article>
+        <article class="kpi">
+            <span class="kpi__titulo"><i class="fas fa-plane-departure" aria-hidden="true"></i>Salidas hoy</span>
+            <span class="kpi-value"><?= $k['salidas'] ?></span>
+            <span class="kpi__detalle">
+                <?= $k['salidas_pendientes'] > 0 ? $k['salidas_pendientes'] . ' pendiente' . ($k['salidas_pendientes'] > 1 ? 's' : '') . ' · hasta las ' . htmlspecialchars($tablero['horaCheckout']) : ($k['salidas'] > 0 ? 'Todas registradas' : 'Sin salidas') ?>
+            </span>
+        </article>
+    <?php endif; ?>
+    <article class="kpi">
+        <span class="kpi__titulo"><i class="fas fa-chart-pie" aria-hidden="true"></i>Ocupación</span>
+        <span class="kpi-value"><?= $k['ocupacion_pct'] ?>%</span>
+        <span class="kpi__medidor" role="img" aria-label="<?= $k['ocupacion_pct'] ?>% de ocupación"><span style="--pct: <?= $k['ocupacion_pct'] ?>%"></span></span>
+        <span class="kpi__detalle"><?= $k['ocupadas'] ?> de <?= $k['operativas'] ?> habitaciones en servicio</span>
+    </article>
+    <article class="kpi">
+        <span class="kpi__titulo"><i class="fas fa-bed" aria-hidden="true"></i>Disponibles</span>
+        <span class="kpi-value"><?= $k['disponibles'] ?></span>
+        <span class="kpi__detalle">Listas para asignar<?= $k['reservadas_hoy'] > 0 ? ' · ' . $k['reservadas_hoy'] . ' reservada' . ($k['reservadas_hoy'] > 1 ? 's' : '') . ' para hoy' : '' ?></span>
+    </article>
+    <article class="kpi">
+        <span class="kpi__titulo"><i class="fas fa-broom" aria-hidden="true"></i>Por limpiar</span>
+        <span class="kpi-value"><?= $k['por_limpiar'] ?></span>
+        <span class="kpi__detalle"><?= $k['por_limpiar'] > 0 ? 'Sucias o en limpieza' : 'Todo limpio' ?></span>
+    </article>
+    <?php if ($verOperacion): ?>
+        <article class="kpi">
+            <span class="kpi__titulo"><i class="fas fa-cash-register" aria-hidden="true"></i>Cobrado hoy</span>
+            <span class="kpi-value" title="<?= $dinero((float)$k['cobrado_hoy']) ?>"><?= $dineroCorto((float)$k['cobrado_hoy']) ?></span>
+            <span class="kpi__detalle">Pagos registrados en el día</span>
+        </article>
+    <?php endif; ?>
+</section>
+
+<?php if ($verOperacion): ?>
+<!-- 2 y 3. Llegadas y salidas con acción directa -->
+<div class="inicio-movimientos">
+    <?php foreach ([
+        ['Llegadas de hoy', 'fa-plane-arrival', $tablero['llegadas'], 'llegada', 'No hay llegadas para hoy.'],
+        ['Salidas de hoy', 'fa-plane-departure', $tablero['salidas'], 'salida', 'No hay salidas para hoy.'],
+    ] as [$titulo, $icono, $filas, $tipo, $vacio]): ?>
+        <section class="panel" aria-labelledby="panel-<?= $tipo ?>">
+            <header class="panel__header">
+                <h2 id="panel-<?= $tipo ?>"><i class="fas <?= $icono ?>" aria-hidden="true"></i><?= $titulo ?></h2>
+                <span class="panel__contador"><?= count($filas) ?></span>
+                <?php if ($tipo === 'salida'): ?>
+                    <span class="panel__nota">Check-out hasta las <?= htmlspecialchars($tablero['horaCheckout']) ?></span>
                 <?php endif; ?>
-            </tbody>
-        </table>
+            </header>
+
+            <?php if (empty($filas)): ?>
+                <p class="panel__vacio"><i class="fas fa-mug-hot" aria-hidden="true"></i><?= $vacio ?></p>
+            <?php else: ?>
+                <ul class="movs">
+                    <?php foreach ($filas as $r):
+                        $saldo = (float)($r['saldo_pendiente'] ?? 0);
+                        $hab   = (int)$r['habitacion_numero'];
+                    ?>
+                        <li class="mov<?= $r['accion'] === 'hecho' ? ' mov--hecho' : '' ?>">
+                            <span class="mov__hab">#<?= $hab ?></span>
+                            <div class="mov__info">
+                                <a class="mov__nombre" href="<?= url('/dashboard/booking/detail?id=' . (int)$r['id']) ?>"><?= htmlspecialchars($nombre($r)) ?></a>
+                                <span class="mov__sub">
+                                    <?= htmlspecialchars((string)($r['tipo_habitacion'] ?? '')) ?>
+                                    · <?= (int)$r['cantidad_huespedes'] ?> huésp.
+                                    · <?= $tipo === 'llegada' ? 'hasta ' . $fechaCorta($r['fecha_salida']) : 'desde ' . $fechaCorta($r['fecha_entrada']) ?>
+                                </span>
+                            </div>
+                            <?php if ($r['accion'] !== 'hecho'): ?>
+                                <span class="mov__pago <?= $saldo > 0 ? 'mov__pago--debe' : 'mov__pago--ok' ?>">
+                                    <?= $saldo > 0 ? 'Saldo ' . $dinero($saldo) : '<i class="fas fa-check" aria-hidden="true"></i>Pagado' ?>
+                                </span>
+                            <?php endif; ?>
+                            <div class="mov__accion">
+                                <?php if ($r['accion'] === 'checkin' || $r['accion'] === 'checkout'):
+                                    $esIn = $r['accion'] === 'checkin'; ?>
+                                    <form method="POST" action="<?= url($esIn ? '/dashboard/booking/checkin' : '/dashboard/booking/finalize') ?>"
+                                          data-confirmar="<?= htmlspecialchars(($esIn ? '¿Hacer el check-in de ' : '¿Hacer el check-out de ') . $nombre($r) . ' en la habitación #' . $hab . '?') ?>"
+                                          data-confirmar-boton="<?= $esIn ? 'Hacer check-in' : 'Hacer check-out' ?>">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                                        <input type="hidden" name="volver" value="inicio">
+                                        <button type="submit" class="btn-mov btn-mov--primario">
+                                            <i class="fas <?= $esIn ? 'fa-door-open' : 'fa-flag-checkered' ?>" aria-hidden="true"></i><?= $esIn ? 'Check-in' : 'Check-out' ?>
+                                        </button>
+                                    </form>
+                                <?php elseif ($r['accion'] === 'cobrar'): ?>
+                                    <a class="btn-mov" href="<?= url('/dashboard/payments/detail?id=' . (int)$r['id']) ?>">
+                                        <i class="fas fa-credit-card" aria-hidden="true"></i>Cobrar
+                                    </a>
+                                <?php elseif ($r['accion'] === 'hecho'): ?>
+                                    <span class="mov__hecho"><i class="fas fa-circle-check" aria-hidden="true"></i><?= $tipo === 'llegada' ? 'En casa' : 'Salió' ?></span>
+                                <?php else: ?>
+                                    <a class="btn-mov" href="<?= url('/dashboard/booking/detail?id=' . (int)$r['id']) ?>">Ver</a>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<div class="inicio-inferior<?= $verOperacion ? '' : ' inicio-inferior--simple' ?>">
+    <!-- 4. Estado de habitaciones -->
+    <section class="panel" aria-labelledby="panel-habitaciones">
+        <header class="panel__header">
+            <h2 id="panel-habitaciones"><i class="fas fa-door-closed" aria-hidden="true"></i>Habitaciones</h2>
+            <span class="panel__contador"><?= count($tablero['habitaciones']) ?></span>
+        </header>
+
+        <div class="hab-filtros" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="hab-filtro is-activo" data-filtro="" aria-pressed="true">Todas</button>
+            <?php foreach ($visuales as $clave => [$etiqueta, $icono]):
+                $n = (int)($tablero['conteo'][$clave] ?? 0);
+                if ($n === 0) continue; ?>
+                <button type="button" class="hab-filtro hab-filtro--<?= $clave ?>" data-filtro="<?= $clave ?>" aria-pressed="false">
+                    <i class="fas <?= $icono ?>" aria-hidden="true"></i><?= $etiqueta ?> <strong><?= $n ?></strong>
+                </button>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="hab-grilla">
+            <?php foreach ($tablero['habitaciones'] as $h):
+                [, $icono] = $visuales[$h['visual']];
+                $tag = $verOperacion ? 'a' : 'div';
+                $href = $verOperacion ? ' href="' . url('/dashboard/rooms/detail?id=' . (int)$h['id']) . '"' : '';
+            ?>
+                <<?= $tag ?> class="hab hab--<?= $h['visual'] ?>" data-visual="<?= $h['visual'] ?>"<?= $href ?>>
+                    <span class="hab__numero"><?= (int)$h['numero'] ?></span>
+                    <span class="hab__tipo"><?= htmlspecialchars($h['tipo']) ?> · Piso <?= (int)$h['piso'] ?></span>
+                    <span class="hab__estado"><i class="fas <?= $icono ?>" aria-hidden="true"></i><?= htmlspecialchars($h['etiqueta']) ?></span>
+                    <?php if (!empty($h['detalle'])): ?>
+                        <span class="hab__detalle" title="<?= htmlspecialchars($h['detalle']) ?>"><?= htmlspecialchars($h['detalle']) ?></span>
+                    <?php endif; ?>
+                </<?= $tag ?>>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <?php if ($verOperacion): ?>
+    <div class="inicio-lateral">
+        <!-- 6. Alertas -->
+        <section class="panel" aria-labelledby="panel-alertas">
+            <header class="panel__header">
+                <h2 id="panel-alertas"><i class="fas fa-bell" aria-hidden="true"></i>Atención</h2>
+                <?php if (!empty($tablero['alertas'])): ?>
+                    <span class="panel__contador"><?= count($tablero['alertas']) ?></span>
+                <?php endif; ?>
+            </header>
+            <?php if (empty($tablero['alertas'])): ?>
+                <p class="panel__vacio panel__vacio--ok"><i class="fas fa-circle-check" aria-hidden="true"></i>Nada pendiente. Todo en orden.</p>
+            <?php else: ?>
+                <ul class="alertas">
+                    <?php foreach ($tablero['alertas'] as $a): ?>
+                        <li>
+                            <a class="alerta alerta--<?= $a['nivel'] ?>" href="<?= url($a['ruta']) ?>">
+                                <i class="fas <?= $a['icono'] ?> alerta__icono" aria-hidden="true"></i>
+                                <span><?= htmlspecialchars($a['texto']) ?></span>
+                                <i class="fas fa-chevron-right alerta__ir" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </section>
+
+        <!-- 7. Ocupación de los próximos días (secundario) -->
+        <section class="panel" aria-labelledby="panel-proyeccion">
+            <header class="panel__header">
+                <h2 id="panel-proyeccion"><i class="fas fa-chart-column" aria-hidden="true"></i>Ocupación próximos 7 días</h2>
+            </header>
+            <?php
+            $proy = $tablero['proyeccion'];
+            $maxPct = max(array_column($proy, 'pct') ?: [0]);
+            $diasCortos = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            ?>
+            <div class="proy" aria-hidden="true">
+                <?php
+                $idxMax = $maxPct > 0 ? array_search($maxPct, array_column($proy, 'pct'), true) : false;
+                foreach ($proy as $i => $d):
+                    $ts = strtotime($d['fecha']);
+                    $mostrarValor = $i === 0 || $i === $idxMax; // solo hoy y el pico; el resto en el tooltip
+                    $tip = $diasCortos[(int)date('w', $ts)] . ' ' . date('j', $ts) . ': ' . $d['pct'] . '% (' . $d['reservadas'] . ' de ' . $k['operativas'] . ')';
+                ?>
+                    <div class="proy__col" data-tip="<?= htmlspecialchars($tip) ?>">
+                        <span class="proy__valor<?= $mostrarValor ? '' : ' proy__valor--oculto' ?>"><?= $d['pct'] ?>%</span>
+                        <span class="proy__pista"><span class="proy__barra" style="--pct: <?= max(2, $d['pct']) ?>%"></span></span>
+                        <span class="proy__dia<?= $i === 0 ? ' proy__dia--hoy' : '' ?>"><?= $i === 0 ? 'Hoy' : $diasCortos[(int)date('w', $ts)] ?></span>
+                        <span class="proy__fecha"><?= date('j', $ts) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <table class="sr-only">
+                <caption>Ocupación prevista por noche</caption>
+                <thead><tr><th>Fecha</th><th>Ocupación</th><th>Habitaciones reservadas</th></tr></thead>
+                <tbody>
+                    <?php foreach ($proy as $d): ?>
+                        <tr><td><?= date('d/m', strtotime($d['fecha'])) ?></td><td><?= $d['pct'] ?>%</td><td><?= $d['reservadas'] ?></td></tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </section>
     </div>
-</section>
+    <?php endif; ?>
+</div>
+
+<?php endif; ?>
+
+<!-- Confirmación de check-in / check-out (sin alertas del navegador) -->
+<dialog class="confirmar" id="dialogo-confirmar" aria-labelledby="confirmar-texto">
+    <p id="confirmar-texto" class="confirmar__texto"></p>
+    <div class="confirmar__acciones">
+        <button type="button" class="btn btn--ghost" data-cerrar>Cancelar</button>
+        <button type="button" class="btn btn--primary" id="confirmar-aceptar">Confirmar</button>
+    </div>
+</dialog>
 
 <script>
-    function filtrarHabitaciones(capacidad) {
-        document.querySelectorAll('.capacity-card').forEach(card => card.classList.remove('active'));
-        document.getElementById('btn-cap-' + capacidad).classList.add('active');
-        document.getElementById('tabla-titulo-capacidad').innerText = capacidad + ' personas';
+    (function () {
+        // Confirmación antes de enviar check-in / check-out
+        var dialogo = document.getElementById('dialogo-confirmar');
+        var texto = document.getElementById('confirmar-texto');
+        var aceptar = document.getElementById('confirmar-aceptar');
+        var formPendiente = null;
 
-        fetch('?capacidad=' + capacidad, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('tabla-habitaciones-body');
-                tbody.innerHTML = '';
+        document.querySelectorAll('form[data-confirmar]').forEach(function (form) {
+            form.addEventListener('submit', function (ev) {
+                if (form.dataset.confirmado === '1') return;
+                ev.preventDefault();
+                formPendiente = form;
+                texto.textContent = form.dataset.confirmar;
+                aceptar.textContent = form.dataset.confirmarBoton || 'Confirmar';
+                dialogo.showModal();
+                aceptar.focus();
+            });
+        });
+        aceptar.addEventListener('click', function () {
+            if (!formPendiente) return;
+            formPendiente.dataset.confirmado = '1';
+            aceptar.disabled = true;
+            formPendiente.submit();
+        });
+        dialogo.querySelector('[data-cerrar]').addEventListener('click', function () { dialogo.close(); });
 
-                if (data.fecha) {
-                    document.getElementById('fecha-actual').innerText = data.fecha;
-                }
+        // Filtro de habitaciones por estado
+        var filtros = document.querySelectorAll('.hab-filtro');
+        filtros.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var f = btn.dataset.filtro;
+                filtros.forEach(function (b) {
+                    var activo = b === btn;
+                    b.classList.toggle('is-activo', activo);
+                    b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+                });
+                document.querySelectorAll('.hab').forEach(function (h) {
+                    h.hidden = f !== '' && h.dataset.visual !== f;
+                });
+            });
+        });
 
-                if (data.success && data.habitaciones.length > 0) {
-                    let filas = '';
-                    data.habitaciones.forEach(room => {
-                        const statusLower = room.estado.toLowerCase();
-                        let statusClass = 'status-disponible';
-
-                        if (statusLower.includes('ocupad')) {
-                            statusClass = 'status-ocupada';
-                        } else if (statusLower.includes('retenid') || statusLower.includes('mantenimient') || statusLower.includes('bloquead')) {
-                            statusClass = 'status-reservada';
-                        }
-
-                        filas += `
-                    <tr>
-                        <td>${room.numero}</td>
-                        <td>${room.piso}</td>
-                        <td><span class="${statusClass}">${room.estado}</span></td>
-                        <td>${room.tipo}</td>
-                    </tr>
-                `;
-                    });
-                    tbody.innerHTML = filas;
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="table-empty-message">No se encontraron habitaciones registradas para esta capacidad.</td></tr>`;
-                }
-            })
-            .catch(error => console.error('Error AJAX:', error));
-    }
+        // Atajo: N = nueva reserva (salvo escribiendo en un campo)
+        var nueva = document.querySelector('.inicio-nueva');
+        if (nueva) {
+            document.addEventListener('keydown', function (ev) {
+                if (ev.key !== 'n' && ev.key !== 'N') return;
+                if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+                var t = ev.target;
+                if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || dialogo.open) return;
+                window.location.href = nueva.href;
+            });
+        }
+    })();
 </script>

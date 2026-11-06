@@ -498,6 +498,35 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         }
     }
 
+    /**
+     * Todas las habitaciones activas con su estado y, si está ocupada, el huésped en casa.
+     * Para el tablero de inicio.
+     */
+    public function getTablero(): array
+    {
+        $sql = "SELECT h.id, h.numero, h.piso, h.id_estado_habitacion,
+                       th.descripcion AS tipo, eh.descripcion AS estado, mb.descripcion AS motivo,
+                       r.fecha_salida AS huesped_salida,
+                       c.nombre AS huesped_nombre, c.apellido AS huesped_apellido
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
+                LEFT JOIN Reservas r ON r.id_habitacion = h.id AND r.id_estado_reserva = :en_casa
+                LEFT JOIN Clientes c ON r.id_cliente = c.id
+                WHERE h.is_active = :activa
+                ORDER BY h.piso ASC, h.numero ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':en_casa' => EstadoReserva::EN_CASA, ':activa' => self::ACTIVE]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getTablero: " . $e->getMessage());
+            throw new Exception("Error al obtener el estado de las habitaciones.");
+        }
+    }
+
     private function tiposPorCapacidad(int $capacidad): array
     {
         return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];
