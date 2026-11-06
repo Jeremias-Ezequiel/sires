@@ -135,6 +135,10 @@
   --color-warning-bg: color-mix(in srgb, var(--color-warning) 10%, transparent);
   --color-warning-border: color-mix(in srgb, var(--color-warning) 22%, transparent);
   --color-warning-text: color-mix(in srgb, var(--color-warning) 80%, var(--color-text));
+  /* Texto de chips sobre su fondo suave (AA en claro y oscuro) */
+  --color-success-text: color-mix(in srgb, var(--color-success) 80%, var(--color-text));
+  --color-danger-text: color-mix(in srgb, var(--color-danger) 85%, var(--color-text));
+  --color-accent-text: color-mix(in srgb, var(--color-accent) 80%, var(--color-text));
 
   --color-purple-bg: color-mix(in srgb, var(--color-purple) 10%, transparent);
   --color-purple-border: color-mix(in srgb, var(--color-purple) 25%, transparent);
@@ -170,7 +174,6 @@
   --estado-mantenimiento: var(--room-maintenance);
   --estado-bloqueada: var(--room-maintenance);
   --estado-pendiente: var(--color-warning);
-  --estado-seleccion: var(--color-highlight);
 
   /* ======================================================================
      RADIOS

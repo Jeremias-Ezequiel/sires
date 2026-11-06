@@ -147,11 +147,6 @@
   pointer-events: none;
 }
 
-/* --- Leyenda del timeline de ocupación ----------------------------------- */
-.timeline-legend-dot--libre   { background-color: var(--estado-disponible); }
-.timeline-legend-dot--ocupada { background-color: var(--estado-ocupada); }
-.timeline-legend-dot--seleccion { background-color: var(--estado-seleccion); }
-
 /* Tarjeta de confirmación de la habitación seleccionada (variante info) */
 .room-confirm-card {
   margin-top: 8px;
