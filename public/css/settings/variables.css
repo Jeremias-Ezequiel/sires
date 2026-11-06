@@ -1,80 +1,156 @@
 /* ==========================================================================
-   🎨 SIRES DESIGN TOKENS
-   Fuente única de verdad para colores, radios, sombras y espaciados.
+   SIRES - DESIGN TOKENS
+   Fuente única de verdad para colores, radios y sombras.
+
+   Capas:
+   1. PALETA: los únicos valores de color "crudos". Un tema (themes.css)
+      solo redefine estas variables.
+   2. DERIVADOS: fondos y bordes translúcidos calculados con color-mix() a
+      partir de la paleta. Se recalculan solos al cambiar de tema.
+   3. ESTADOS: color de cada estado de habitación/reserva/pago. Apuntan a la
+      paleta; se pueden sobreescribir por tema si hace falta.
+
+   Regla: ningún otro archivo CSS ni vista usa colores literales (hex/rgba);
+   siempre var(--...).
    ========================================================================== */
 
 :root {
   /* ======================================================================
-     PALETA BASE
+     1. PALETA
      ====================================================================== */
-  --color-bg-primary: #0a192f;
-  --color-bg-panel: #112240;
-  --color-bg-input: #151f32;
-  --color-bg-input-focus: #1a263d;
-  --color-bg-modal: #0d1527;
-  --color-bg-date: #1e293b;
 
+  /* Fondos */
+  --color-bg: #0a192f;              /* fondo de la página */
+  --color-bg-deep: #000000;         /* detrás del carrusel del login */
+  --color-surface: #112240;         /* paneles, sidebar, tarjetas */
+  --color-surface-alt: #1e293b;     /* fecha del dashboard, encabezados de sección */
+  --color-surface-modal: #0d1527;   /* caja de los modales */
+  --color-input: #151f32;
+  --color-input-focus: #1a263d;
+
+  /* Bordes */
+  --color-border: #233554;
+  --color-border-strong: #334155;
+
+  /* Texto */
+  --color-text: #e6f1ff;            /* texto principal */
+  --color-text-strong: #ffffff;     /* títulos de modal, fecha */
+  --color-text-muted: #8892b0;      /* etiquetas, texto secundario */
+  --color-text-soft: #94a3b8;       /* descripciones de modal, íconos de select */
+
+  /* Acento de marca (botones principales, links, activo del menú) */
   --color-accent: #fbbf24;
   --color-accent-hover: #e5b83b;
+  --color-on-accent: #0a192f;       /* texto sobre el acento */
 
-  --color-text-primary: #e6f1ff;
-  --color-text-muted: #8892b0;
-  --color-text-inverse: #0a192f;
+  /* Acción secundaria (botón azul de login/recuperación) */
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #2563eb;
 
-  --color-border: #233554;
-  --color-border-light: #334155;
-
-  --color-success: #22c55e;
-  --color-success-bg: rgba(34, 197, 94, 0.1);
-  --color-success-border: rgba(34, 197, 94, 0.2);
-
-  --color-danger: #ef4444;
-  --color-danger-bg: rgba(239, 68, 68, 0.1);
-  --color-danger-border: rgba(239, 68, 68, 0.2);
-
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-warning-border: rgba(245, 158, 11, 0.2);
-
+  /* Semánticos */
   --color-info: #38bdf8;
+  --color-info-hover: #7dd3fc;
+  --color-success: #22c55e;
+  --color-success-strong: #10b981;
+  --color-success-strong-hover: #059669;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-orange: #f97316;
+  --color-highlight: #eab308;
   --color-purple: #c084fc;
-  --color-green: #10b981;
-  --color-green-hover: #059669;
-  --color-white: #ffffff;
+  --color-neutral: #6b7280;
+
+  /* Texto sobre colores sólidos (badges, botones de estado) */
+  --color-on-solid: #ffffff;
+  --color-on-highlight: #000000;
+
+  /* Base de los "tintes": superposiciones sutiles sobre el fondo.
+     Blanco en temas oscuros, negro en temas claros. */
+  --color-tint-base: #ffffff;
+
+  /* Base de sombras y overlay de modales */
+  --color-shadow: #000000;
+  --color-overlay-base: #090f1d;
+
+  /* ======================================================================
+     2. DERIVADOS (no hace falta tocarlos en los temas)
+     ====================================================================== */
+
+  --color-tint-1: color-mix(in srgb, var(--color-tint-base) 2%, transparent);
+  --color-tint-2: color-mix(in srgb, var(--color-tint-base) 4%, transparent);
+  --color-tint-3: color-mix(in srgb, var(--color-tint-base) 9%, transparent);
+  --color-tint-4: color-mix(in srgb, var(--color-tint-base) 15%, transparent);
+  --color-tint-strong: color-mix(in srgb, var(--color-tint-base) 60%, transparent);
+
+  --color-overlay: color-mix(in srgb, var(--color-overlay-base) 85%, transparent);
+
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 4%, transparent);
+  --color-accent-bg: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --color-accent-border: color-mix(in srgb, var(--color-accent) 22%, transparent);
+
+  --color-info-bg: color-mix(in srgb, var(--color-info) 9%, transparent);
+  --color-info-border: color-mix(in srgb, var(--color-info) 20%, transparent);
+
+  --color-success-soft: color-mix(in srgb, var(--color-success) 5%, transparent);
+  --color-success-bg: color-mix(in srgb, var(--color-success) 10%, transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) 22%, transparent);
+
+  --color-danger-bg: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  --color-danger-border: color-mix(in srgb, var(--color-danger) 20%, transparent);
+
+  --color-warning-bg: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  --color-warning-border: color-mix(in srgb, var(--color-warning) 22%, transparent);
+
+  --color-purple-bg: color-mix(in srgb, var(--color-purple) 10%, transparent);
+  --color-purple-border: color-mix(in srgb, var(--color-purple) 25%, transparent);
+
+  --color-neutral-bg: color-mix(in srgb, var(--color-text-soft) 10%, transparent);
+  --color-neutral-border: color-mix(in srgb, var(--color-text-soft) 20%, transparent);
+
+  /* ======================================================================
+     3. ESTADOS (habitaciones, reservas, timeline)
+     ====================================================================== */
+
+  --estado-disponible: var(--color-success);
+  --estado-ocupada: var(--color-danger);
+  --estado-reservada: var(--color-accent);
+  --estado-sucia: var(--color-warning);
+  --estado-limpiando: var(--color-info);
+  --estado-mantenimiento: var(--color-orange);
+  --estado-bloqueada: var(--color-neutral);
+  --estado-pendiente: var(--color-warning);
+  --estado-seleccion: var(--color-highlight);
 
   /* ======================================================================
      RADIOS
      ====================================================================== */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 30px;
 
   /* ======================================================================
      SOMBRAS
      ====================================================================== */
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 4px 6px -1px color-mix(in srgb, var(--color-shadow) 10%, transparent);
+  --shadow-md: 0 8px 24px color-mix(in srgb, var(--color-shadow) 25%, transparent);
+  --shadow-lg: 0 10px 30px color-mix(in srgb, var(--color-shadow) 50%, transparent);
+  --shadow-xl: 0 20px 50px color-mix(in srgb, var(--color-shadow) 60%, transparent);
+  --shadow-accent: 0 4px 12px var(--color-accent-border);
+  --shadow-primary: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --focus-ring: 0 0 0 3px var(--color-accent-bg);
+
+  /* Flecha de los <select> (sigue el color del tema) */
+  --select-arrow:
+    linear-gradient(45deg, transparent 50%, var(--color-text-soft) 50%) right 18px center / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--color-text-soft) 50%, transparent 50%) right 13px center / 5px 5px no-repeat;
 
   /* ======================================================================
      LAYOUT
      ====================================================================== */
   --sidebar-width: 250px;
-
-  /* ======================================================================
-     ⚠️ ALIAS RETROCOMPATIBLES (para no romper el CSS existente)
-     Se eliminarán cuando todos los componentes estén migrados a los nuevos nombres.
-     ====================================================================== */
-  --fondo-oscuro: var(--color-bg-primary);
-  --fondo-principal: var(--color-bg-primary);
-  --tarjeta-azul: var(--color-bg-panel);
-  --fondo-panel: var(--color-bg-panel);
-  --dorado-sires: var(--color-accent);
-  --dorado-sires-hover: var(--color-accent-hover);
-  --texto-gris: var(--color-text-muted);
-  --texto-blanco: var(--color-text-primary);
-  --borde-input: var(--color-border);
-  --estado-disponible: var(--color-success);
-  --estado-ocupada: var(--color-danger);
-  --estado-reservada: var(--color-accent);
 }

@@ -1,6 +1,6 @@
 .form__label {
   display: block;
-  color: var(--dorado-sires);
+  color: var(--color-accent);
   font-size: 11px;
   font-weight: bold;
   text-transform: uppercase;
@@ -14,10 +14,10 @@
   width: 100%;
   height: 46px;
   padding: 0 16px;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--borde-input);
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--texto-blanco);
+  color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
   transition: all 0.25s ease-in-out;
@@ -26,24 +26,21 @@
 .form__input:focus,
 .form__select:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .form__select {
   padding: 0 36px 0 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
+  background: var(--select-arrow), var(--color-input);
   appearance: none;
   cursor: pointer;
 }
 
 .form__select option {
-  background-color: var(--color-bg-input);
-  color: var(--texto-blanco);
+  background-color: var(--color-input);
+  color: var(--color-text);
 }
 
 .form__group {
@@ -75,10 +72,10 @@
 
 .form__section-title {
   font-size: 1.1rem;
-  color: var(--dorado-sires);
+  color: var(--color-accent);
   font-weight: 600;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--color-tint-2);
   padding-bottom: 10px;
   display: flex;
   align-items: center;
@@ -96,24 +93,28 @@
   padding-right: 40px;
 }
 
-.form__password i {
+.form__password i,
+.form__password svg {
   position: absolute;
   right: 16px;
-  color: var(--texto-gris);
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 14px;
+  width: 14px;
+  height: 14px;
   transition: color 0.2s ease-in-out;
   user-select: none;
 }
 
-.form__password i:hover {
-  color: var(--dorado-sires);
+.form__password i:hover,
+.form__password svg:hover {
+  color: var(--color-accent);
 }
 
 .form__actions {
   display: flex;
   justify-content: flex-end;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--color-tint-2);
   padding-top: 20px;
   margin-top: 10px;
 }
@@ -129,10 +130,10 @@
   width: 100%;
   height: 46px;
   padding: 0 16px 0 44px;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--borde-input);
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 30px;
-  color: var(--texto-blanco);
+  color: var(--color-text);
   font-size: 14px;
   box-sizing: border-box;
   transition: all 0.25s ease-in-out;
@@ -140,23 +141,19 @@
 
 .form__search-input:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .form__select-filter {
   width: 100%;
   height: 46px;
   padding: 0 36px 0 16px;
-  background-color: var(--color-bg-input);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
-  border: 1px solid var(--borde-input);
+  background: var(--select-arrow), var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 30px;
-  color: var(--texto-blanco);
+  color: var(--color-text);
   font-size: 14px;
   cursor: pointer;
   box-sizing: border-box;
@@ -166,9 +163,9 @@
 
 .form__select-filter:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 @media (max-width: 768px) {

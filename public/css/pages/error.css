@@ -19,7 +19,7 @@
 .error-code {
     font-size: 120pt;
     font-weight: 600;
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     margin: 0;
     line-height: 1;
     letter-spacing: -2px;
@@ -27,26 +27,32 @@
 
 /* Tarjeta contenedora del mensaje */
 .error-card {
-    background-color: var(--tarjeta-azul);
-    border: 1px solid var(--borde-input);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 40px 30px;
     margin-top: -10px; /* Acercamiento estético al número */
-    box-shadow: 0 10px 30px rgba(2, 12, 27, 0.7);
+    box-shadow: var(--shadow-lg);
 }
 
 .error-card h2 {
-    color: var(--texto-blanco);
+    color: var(--color-text);
     font-size: 18pt;
     margin-top: 0;
     margin-bottom: 15px;
 }
 
 .error-card p {
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     font-size: 11pt;
     line-height: 1.6;
     margin-bottom: 30px;
 }
 
-
+/* Detalle técnico debajo del mensaje (página 500) */
+.error-detail {
+    color: var(--color-text-muted);
+    font-size: 9.5pt;
+    margin-top: -15px;
+    margin-bottom: 25px;
+}

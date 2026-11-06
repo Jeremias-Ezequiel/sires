@@ -4,27 +4,27 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: var(--fondo-principal);
+    background-color: var(--color-bg);
     text-align: center;
 }
 
 .spinner {
     font-size: 3rem;
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     margin-bottom: 20px;
     animation: spin 1s linear infinite;
     /* Animación de rotación */
 }
 
 .logout-screen h2 {
-    color: var(--texto-blanco);
+    color: var(--color-text);
     font-family: 'Montserrat', sans-serif;
     font-size: 18pt;
     margin-bottom: 8px;
 }
 
 .logout-screen p {
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     font-size: 10.5pt;
 }
 

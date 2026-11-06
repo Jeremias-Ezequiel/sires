@@ -7,12 +7,12 @@
 .auth-card {
   width: 100%;
   max-width: 500px;
-  background-color: var(--tarjeta-azul, #112240);
-  border: 1px solid var(--borde-input, #233554);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 40px;
   box-sizing: border-box;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* Encabezado interno */
@@ -23,13 +23,13 @@
 
 .auth-header h2 {
   font-size: 1.6rem;
-  color: var(--texto-blanco, #e6f1ff);
+  color: var(--color-text);
   margin: 0 0 15px 0;
   font-weight: 600;
 }
 
 .auth-header p {
-  color: var(--texto-gris, #8892b0);
+  color: var(--color-text-muted);
   font-size: 0.95rem;
   margin: 15px 0 0 0;
   line-height: 1.4;
@@ -40,8 +40,8 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: rgba(56, 189, 248, 0.06);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background-color: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,7 +49,7 @@
 }
 
 .auth-icon-circle i {
-  color: #38bdf8;
+  color: var(--color-info);
   font-size: 1.5rem;
 }
 
@@ -60,14 +60,14 @@
 }
 
 .auth-footer-link a {
-  color: #38bdf8;
+  color: var(--color-info);
   font-size: 0.9rem;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .auth-footer-link a:hover {
-  color: #7dd3fc;
+  color: var(--color-info-hover);
   text-decoration: underline;
 }
 

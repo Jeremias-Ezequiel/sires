@@ -1,58 +1,59 @@
 .badge {
   padding: 5px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.8rem;
   font-weight: bold;
   display: inline-block;
-  color: #fff;
+  color: var(--color-on-solid);
 }
 
 .badge--disponible { background-color: var(--estado-disponible); }
 .badge--ocupada { background-color: var(--estado-ocupada); }
-.badge--reservada { background-color: var(--estado-reservada); color: #000; }
-.badge--sucia { background-color: var(--color-warning); }
-.badge--limpiando { background-color: var(--color-info); }
-.badge--mantenimiento { background-color: #f97316; }
-.badge--bloqueada { background-color: #6b7280; }
-.badge--pendiente { background-color: var(--color-warning); }
+.badge--reservada { background-color: var(--estado-reservada); color: var(--color-on-accent); }
+.badge--sucia { background-color: var(--estado-sucia); }
+.badge--limpiando { background-color: var(--estado-limpiando); }
+.badge--mantenimiento { background-color: var(--estado-mantenimiento); }
+.badge--bloqueada { background-color: var(--estado-bloqueada); }
+.badge--pendiente { background-color: var(--estado-pendiente); }
+.badge--warning { background-color: var(--color-warning); }
 
 .badge--recepcionista {
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
 }
 
 .badge--gerente {
-  background: rgba(168, 85, 247, 0.1);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: var(--color-purple-bg);
+  color: var(--color-purple);
+  border: 1px solid var(--color-purple-border);
 }
 
 .badge--auditor {
-  background: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: var(--color-warning-bg);
+  color: var(--color-accent);
+  border: 1px solid var(--color-warning-border);
 }
 
 .badge--desconocido {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-soft);
+  border: 1px solid var(--color-neutral-border);
 }
 
 .badge--administrador {
-  background: rgba(205, 164, 52, 0.1);
-  color: var(--dorado-sires);
-  border: 1px solid rgba(205, 164, 52, 0.25);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
 }
 
 .badge--503 {
   display: inline-block;
-  background-color: rgba(205, 164, 52, 0.1);
-  color: var(--dorado-sires);
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  border: 1px solid rgba(205, 164, 52, 0.2);
+  border: 1px solid var(--color-accent-border);
 }

@@ -11,8 +11,12 @@
   box-shadow: var(--shadow-sm);
 }
 
-.alert i {
+.alert i,
+.alert svg {
   font-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .alert--success {
@@ -31,4 +35,10 @@
   background-color: var(--color-warning-bg);
   color: var(--color-warning);
   border: 1px solid var(--color-warning-border);
+}
+
+.alert--info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
 }

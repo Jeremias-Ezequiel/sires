@@ -4,21 +4,21 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: var(--fondo-principal);
+    background-color: var(--color-bg);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 20px;
     box-sizing: border-box;
 }
 
 .maintenance-card {
-    background-color: var(--fondo-panel);
-    border: 1px solid var(--borde-input);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 40px 30px;
     max-width: 550px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-lg);
 }
 
 /* Icono principal de engranajes con animación sutil */
@@ -30,13 +30,13 @@
 
 .icon-main {
     font-size: 4.5rem;
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     animation: spin-slow 8s linear infinite;
 }
 
 .icon-sub {
     font-size: 2.2rem;
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     position: absolute;
     bottom: -5px;
     right: -10px;
@@ -47,13 +47,13 @@
     font-family: 'Montserrat', sans-serif;
     font-size: 22pt;
     font-weight: 700;
-    color: var(--texto-blanco);
+    color: var(--color-text);
     margin-bottom: 15px;
     letter-spacing: 0.5px;
 }
 
 .maintenance-card p {
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     font-size: 11pt;
     line-height: 1.6;
     margin-bottom: 25px;
@@ -61,7 +61,7 @@
 
 /* Barra de progreso decorativa */
 .progress-bar-container {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--color-tint-2);
     border-radius: 20px;
     height: 6px;
     width: 80%;
@@ -71,7 +71,7 @@
 }
 
 .progress-bar-fill {
-    background-color: var(--dorado-sires);
+    background-color: var(--color-accent);
     height: 100%;
     width: 35%;
     /* Simula un avance del trabajo */

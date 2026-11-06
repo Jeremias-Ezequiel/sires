@@ -1,0 +1,116 @@
+/* ==========================================================================
+   SIRES - TEMAS DE COLOR
+   Cada tema redefine solo la PALETA de variables.css; los fondos/bordes
+   translúcidos y los colores de estado se recalculan solos.
+
+   Se activa con <html data-theme="nombre">. El selector "Tema" del menú
+   lateral lo guarda por navegador (localStorage 'sires-tema').
+   Sin data-theme se usa la paleta por defecto (azul noche + dorado).
+
+   Para probar un tema nuevo: copiar un bloque, cambiar el nombre y los
+   valores, y agregarlo a la lista TEMAS de App/views/partials/theme-switcher.phtml.
+   ========================================================================== */
+
+/* --- Esmeralda: verde profundo + dorado --------------------------------- */
+:root[data-theme="esmeralda"] {
+  --color-bg: #0b1f1a;
+  --color-surface: #12302a;
+  --color-surface-alt: #1a3b33;
+  --color-surface-modal: #0d2520;
+  --color-input: #143029;
+  --color-input-focus: #1a3a32;
+  --color-border: #24493f;
+  --color-border-strong: #2f5a4e;
+  --color-text: #e8f5f0;
+  --color-text-muted: #8fb3a6;
+  --color-text-soft: #9cbcb1;
+  --color-accent: #e0b84c;
+  --color-accent-hover: #cfa63a;
+  --color-on-accent: #0b1f1a;
+  --color-overlay-base: #06130f;
+}
+
+/* --- Grafito: gris neutro + azul ---------------------------------------- */
+:root[data-theme="grafito"] {
+  --color-bg: #121417;
+  --color-surface: #1b1e23;
+  --color-surface-alt: #24282e;
+  --color-surface-modal: #16181c;
+  --color-input: #1f2329;
+  --color-input-focus: #262b32;
+  --color-border: #2e333b;
+  --color-border-strong: #3a404a;
+  --color-text: #eceff3;
+  --color-text-muted: #9aa3ad;
+  --color-text-soft: #a3abb5;
+  --color-accent: #4f8cff;
+  --color-accent-hover: #3b7af0;
+  --color-on-accent: #ffffff;
+  --color-overlay-base: #08090b;
+}
+
+/* --- Vino: bordó + champagne -------------------------------------------- */
+:root[data-theme="vino"] {
+  --color-bg: #1c0f14;
+  --color-surface: #2a161e;
+  --color-surface-alt: #351d27;
+  --color-surface-modal: #22121a;
+  --color-input: #2e1922;
+  --color-input-focus: #38202b;
+  --color-border: #4a2a37;
+  --color-border-strong: #5a3443;
+  --color-text: #f6ebef;
+  --color-text-muted: #bc9ba8;
+  --color-text-soft: #c4a6b2;
+  --color-accent: #e8c99b;
+  --color-accent-hover: #d9b57f;
+  --color-on-accent: #1c0f14;
+  --color-overlay-base: #0f070a;
+}
+
+/* --- Océano: azul petróleo + coral -------------------------------------- */
+:root[data-theme="oceano"] {
+  --color-bg: #0a1d24;
+  --color-surface: #102a33;
+  --color-surface-alt: #17353f;
+  --color-surface-modal: #0c232b;
+  --color-input: #12303a;
+  --color-input-focus: #183a45;
+  --color-border: #214651;
+  --color-border-strong: #2b5562;
+  --color-text: #e6f4f7;
+  --color-text-muted: #8eb1bb;
+  --color-text-soft: #9bbac3;
+  --color-accent: #ff8a65;
+  --color-accent-hover: #f2744d;
+  --color-on-accent: #0a1d24;
+  --color-overlay-base: #051015;
+}
+
+/* --- Claro: fondo blanco + azul marino ---------------------------------- */
+:root[data-theme="claro"] {
+  --color-bg: #f3f5f9;
+  --color-bg-deep: #0a192f;
+  --color-surface: #ffffff;
+  --color-surface-alt: #e9edf3;
+  --color-surface-modal: #ffffff;
+  --color-input: #f7f9fc;
+  --color-input-focus: #ffffff;
+  --color-border: #d5dce6;
+  --color-border-strong: #c3ccd8;
+  --color-text: #1b2533;
+  --color-text-strong: #0b1220;
+  --color-text-muted: #5b6878;
+  --color-text-soft: #6b7787;
+  --color-accent: #1d4ed8;
+  --color-accent-hover: #1e40af;
+  --color-on-accent: #ffffff;
+  --color-info: #0284c7;
+  --color-info-hover: #0369a1;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-highlight: #ca8a04;
+  --color-tint-base: #0b1220;
+  --color-shadow: #1b2533;
+  --color-overlay-base: #1b2533;
+}

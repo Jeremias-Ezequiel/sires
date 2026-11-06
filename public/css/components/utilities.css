@@ -1,0 +1,244 @@
+/* ==========================================================================
+   SIRES - UTILIDADES Y PIEZAS CHICAS
+   Reemplazan los style="..." que se repetían en las vistas. Solo tokens.
+   ========================================================================== */
+
+/* --- Texto ---------------------------------------------------------------- */
+.text-muted   { color: var(--color-text-muted); }
+.text-info    { color: var(--color-info); }
+.text-danger  { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+.text-success { color: var(--color-success); }
+.text-accent  { color: var(--color-accent); }
+
+.text-lg  { font-size: 1.1em; }
+.text-sm  { font-size: 0.85em; }
+.text-xs  { font-size: 0.78em; }
+.text-bold { font-weight: 600; }
+.text-nowrap { white-space: nowrap; }
+
+/* Ayuda debajo de un campo de formulario */
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-muted);
+}
+
+/* --- Espaciado ------------------------------------------------------------ */
+.m-0   { margin: 0; }
+.mt-2  { margin-top: 2px; }
+.mt-12 { margin-top: 12px; }
+.mt-15 { margin-top: 15px; }
+.mb-8  { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.p-20  { padding: 20px; }
+
+/* --- Layout --------------------------------------------------------------- */
+.d-block      { display: block; }
+.flex-row     { display: flex; gap: 8px; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-1       { flex: 1; }
+.stack-xs     { display: flex; flex-direction: column; gap: 2px; }
+
+/* Fila de tabla de un registro dado de baja */
+.row-inactive { opacity: 0.6; }
+
+/* Dato secundario al lado de un valor (capacidad, motivo, etc.) */
+.room-meta { margin-left: 8px; font-size: 0.9em; }
+
+/* Etiqueta de un campo dentro de un modal */
+.modal-field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Ojo de mostrar/ocultar contraseña dentro de un input */
+.input-icon-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+/* --- Chips (pisos, números de habitación) -------------------------------- */
+.chip-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
+
+.badge--lg   { padding: 6px 14px; font-size: 0.95em; }
+.badge--sm   { font-size: 0.75em; }
+.badge--chip { margin: 2px; padding: 4px 10px; }
+
+/* Pantallas de autenticación centradas (recuperar/restablecer clave) */
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* --- Menú lateral --------------------------------------------------------- */
+/* Doble clase: dashboard.css (que carga después) define .nav-link */
+.nav-link.nav-link--danger,
+.nav-link.nav-link--danger:hover {
+  color: var(--color-danger);
+}
+
+.nav-link.nav-link--danger:hover {
+  background-color: var(--color-danger-bg);
+}
+
+/* --- Paginación ----------------------------------------------------------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 8px;
+}
+
+.pagination__pages {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination__nav {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.pagination__page {
+  padding: 6px 12px;
+  border-radius: var(--radius-xs);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: var(--color-tint-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.pagination__page:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.pagination__page--active,
+.pagination__page--active:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  pointer-events: none;
+}
+
+/* --- Leyenda del timeline de ocupación ----------------------------------- */
+.timeline-legend-dot--libre   { background-color: var(--estado-disponible); }
+.timeline-legend-dot--ocupada { background-color: var(--estado-ocupada); }
+.timeline-legend-dot--seleccion { background-color: var(--estado-seleccion); }
+
+/* Tarjeta de confirmación de la habitación seleccionada (variante info) */
+.room-confirm-card {
+  margin-top: 8px;
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.room-confirm-card .confirm-card-header {
+  background-color: var(--color-info-bg);
+  border-bottom-color: var(--color-info-border);
+}
+
+.room-confirm-card .confirm-icon,
+.room-confirm-card .confirm-label {
+  color: var(--color-info);
+}
+
+/* --- Opción de habitación (mover reserva) -------------------------------- */
+.room-option-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.room-option-list__intro { margin: 0 0 8px 0; }
+
+.room-option__radio { margin-right: 10px; }
+
+.room-option__price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.room-option {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.room-option--sugerida {
+  border-color: var(--color-info);
+  background-color: var(--color-info-bg);
+}
+
+/* --- Selector de tema (pruebas de paleta) -------------------------------- */
+.theme-switcher {
+  margin-top: auto;
+  padding: 12px 8px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.theme-switcher label {
+  display: block;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.theme-switcher select {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  background: var(--select-arrow), var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.theme-switcher select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.theme-switcher option {
+  background-color: var(--color-input);
+  color: var(--color-text);
+}

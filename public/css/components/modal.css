@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(9, 15, 29, 0.85);
+  background-color: var(--color-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -21,14 +21,14 @@
 }
 
 .modal__box {
-  background-color: var(--color-bg-modal);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background-color: var(--color-surface-modal);
+  border: 1px solid var(--color-tint-2);
+  border-radius: var(--radius-lg);
   padding: 35px 30px;
   width: 100%;
   max-width: 420px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
   transform: scale(0.9);
   transition: transform 0.3s ease;
 }
@@ -49,23 +49,23 @@
 }
 
 .modal__icon--deactivate {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .modal__icon--activate {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-strong);
 }
 
 .modal__title {
-  color: #ffffff;
+  color: var(--color-text-strong);
   font-size: 1.3rem;
   margin-bottom: 10px;
 }
 
 .modal__desc {
-  color: #94a3b8;
+  color: var(--color-text-soft);
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 25px;
