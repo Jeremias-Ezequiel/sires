@@ -120,3 +120,12 @@ logs/
 
 # Herramientas de desarrollo
 .phpstan.cache/
+
+# Tests E2E (tests/e2e)
+tests/e2e/.env
+tests/e2e/.auth/
+tests/e2e/node_modules/
+tests/e2e/playwright-report/
+tests/e2e/blob-report/
+tests/e2e/test-results/
+tests/e2e/mcp-output/

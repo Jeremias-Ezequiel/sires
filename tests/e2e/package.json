@@ -1,0 +1,16 @@
+{
+  "name": "sires-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tests E2E de SIRES con Playwright, contra la VM de testing",
+  "type": "commonjs",
+  "scripts": {
+    "test": "playwright test",
+    "test:reservas": "playwright test reservas --reporter=line",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "dotenv": "^18.0.9"
+  }
+}

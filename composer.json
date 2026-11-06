@@ -28,7 +28,7 @@
         "test": "phpunit --testsuite unidad",
         "test:integracion": "phpunit --testsuite integracion",
         "phpstan": "phpstan analyse --memory-limit=512M",
-        "lint": "find App cron tests index.php \\( -name '*.php' -o -name '*.phtml' \\) -print0 | xargs -0 -n1 -P4 php -l | (! grep -v '^No syntax errors')",
+        "lint": "find App cron tests/Unidad tests/Integracion tests/bootstrap.php index.php \\( -name '*.php' -o -name '*.phtml' \\) -print0 | xargs -0 -n1 -P4 php -l | (! grep -v '^No syntax errors')",
         "check": [
             "@lint",
             "@phpstan",

@@ -3,7 +3,9 @@ parameters:
     paths:
         - App
         - cron
-        - tests
+        - tests/Unidad
+        - tests/Integracion
+        - tests/bootstrap.php
         - index.php
     tmpDir: .phpstan.cache
     ignoreErrors:
