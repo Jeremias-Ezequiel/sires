@@ -38,17 +38,22 @@ Los realizan EVENTs de la base de datos (requieren `event_scheduler = ON`):
 ## Configuración del negocio
 
 Las políticas (horas de corte, seña mínima, cancelación, late checkout, No-Show, etc.) viven en la
-tabla `Configuracion`, versionadas por `vigente_desde`. Para cambiar una política se inserta una fila
-nueva; nunca se modifica ni se borra una existente. `App/Config/Politicas.php` tiene solo los valores
-por defecto.
+tabla `Configuracion`, versionadas por `vigente_desde`. Se cambian desde **Configuración** (menú
+lateral, solo administrador), desde ahora o programadas para una fecha futura; cada cambio es una fila
+nueva y queda el historial. Nunca se modifica ni se borra una fila existente.
+
+Las condiciones que acepta el huésped (seña mínima, cancelación sin cargo, penalidad, noches retenidas
+por No-Show, late checkout) se toman según la fecha de alta de la reserva: un cambio no afecta a las
+reservas ya hechas. Las operativas (horarios, corte de pagos, máximo de noches) rigen desde el cambio.
+`App/Config/Politicas.php` tiene solo los valores por defecto.
 
 ## Estilos y temas
 
 - Todos los colores están en `public/css/settings/variables.css` (tokens). Ningún otro CSS ni vista
   usa colores literales.
-- `public/css/settings/themes.css` define temas alternativos. Se eligen desde el selector **Tema** del
-  menú lateral (se guarda por navegador). Para probar una paleta nueva, copiar un bloque de tema,
-  cambiar los valores y agregarlo a `App/views/partials/theme-switcher.phtml`.
+- Tema oscuro por defecto; `public/css/settings/themes.css` define el tema claro. Se elige desde el
+  selector **Tema** del menú lateral (se guarda por navegador).
+- Tamaños de letra con la escala `--fs-*` de `variables.css`.
 - Después de modificar cualquier CSS fuente correr `bash build-css.sh`, que regenera
   `login.bundle.css` y `pages/dashboard.min.css`.
 

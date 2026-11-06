@@ -3,6 +3,30 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.1.0] - 2026-11-06
+
+### Agregado
+- **Inicio** rediseñado como tablero del día: llegadas, salidas, ocupación, disponibles, por limpiar
+  y cobrado hoy; llegadas y salidas con check-in / check-out directo (con confirmación) o acceso a
+  cobrar; estado de todas las habitaciones con filtro; alertas y ocupación de los próximos 7 días.
+- Las alertas del inicio abren la pantalla ya filtrada (reservas, pagos a reembolsar, habitaciones).
+- **Configuración** (solo administrador): editar las políticas del negocio desde ahora o programadas,
+  con historial de cambios y quién los hizo.
+- Calendario de disponibilidad de dos meses al crear y editar reservas; un clic elige entrada y salida.
+- Atajo `N` para nueva reserva desde el inicio.
+
+### Cambiado
+- Seña mínima, cancelación sin cargo, penalidad y noches retenidas por No-Show se toman según la
+  fecha de alta de la reserva: cambiar una política no afecta a reservas ya hechas. Requiere volver
+  a correr el script `02` de la base (EVENT `liberacion_no_show`, migración 010).
+- Nueva identidad visual: paleta azul de marca, tema oscuro por defecto y tema claro; colores fijos
+  por estado de habitación con ícono; tipografía Inter con una escala única de tamaños.
+- Se reemplazaron los temas Esmeralda, Grafito, Vino y Océano por Oscuro y Claro.
+
+### Corregido
+- Doble ícono de "mostrar contraseña" en Edge.
+- Textos por debajo de 12 px y contrastes que no cumplían WCAG AA.
+
 ## [1.0.0] - 2026-11-06
 
 Primera versión estable.
