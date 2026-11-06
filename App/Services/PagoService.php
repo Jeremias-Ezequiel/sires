@@ -10,7 +10,6 @@ use App\Models\ResumenPago;
 use App\Models\EstadoPago;
 use App\Models\TransaccionPago;
 use App\Models\Habitacion;
-use App\Config\Politicas;
 use PDO;
 use PDOException;
 
@@ -289,8 +288,8 @@ class PagoService
 
     /**
      * Aplica el cargo por late checkout a las reservas EN_CASA cuya salida es hoy
-     * y que siguen sin checkout después de Politicas::HORA_CHECKOUT.
-     * El cargo es Politicas::FACTOR_LATE_CHECKOUT × precio base de la noche.
+     * y que siguen sin checkout después de la hora de checkout (Configuracion.hora_checkout).
+     * El cargo es factor_late_checkout (vigente a la fecha_alta de la reserva) × precio base de la noche.
      * Lo ejecuta cron/late-checkout-fee.php.
      *
      * Idempotencia: se marca en observaciones con el texto "Late Checkout Fee Aplicado".
@@ -301,7 +300,7 @@ class PagoService
         $db = $this->resumenModel->getConnection();
 
         $stmt = $db->prepare("
-            SELECT r.id, r.id_habitacion, r.fecha_salida, rp.id AS id_resumen,
+            SELECT r.id, r.id_habitacion, r.fecha_salida, r.fecha_alta, rp.id AS id_resumen,
                    rp.monto_cobrado, rp.saldo_pendiente, rp.monto_total,
                    h.precio_noche_base
             FROM Reservas r
@@ -316,7 +315,7 @@ class PagoService
             ':encasa'        => Reserva::ESTADO_EN_CASA,
             ':fecha_hoy'     => date('Y-m-d'),
             ':hora_actual'   => date('H:i:s'),
-            ':hora_checkout' => Politicas::horaCheckoutSql(),
+            ':hora_checkout' => ConfiguracionService::horaCheckoutSql(),
         ]);
 
         $conLateCheckout = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -328,7 +327,7 @@ class PagoService
                 $idReserva   = (int)$row['id'];
                 $idResumen   = (int)$row['id_resumen'];
                 $precioNoche = (float)$row['precio_noche_base'];
-                $feeLateCheckout = round($precioNoche * Politicas::FACTOR_LATE_CHECKOUT, 2);
+                $feeLateCheckout = round($precioNoche * ConfiguracionService::factorLateCheckout($row['fecha_alta']), 2);
 
                 $nuevoTotal = (float)$row['monto_total'] + $feeLateCheckout;
                 $nuevoSaldo = (float)$row['saldo_pendiente'] + $feeLateCheckout;
@@ -354,7 +353,7 @@ class PagoService
                 );
                 $updReserva->execute([
                     ':fee'     => number_format($feeLateCheckout, 2, ',', '.'),
-                    ':detalle' => ' por salida despues de las ' . Politicas::HORA_CHECKOUT . ' hs.',
+                    ':detalle' => ' por salida despues de las ' . ConfiguracionService::horaCheckout() . ' hs.',
                     ':id'      => $idReserva
                 ]);
 
@@ -379,7 +378,8 @@ class PagoService
 
     public function ejecutarCortePagos(): array
     {
-        $fechaLimite = date('Y-m-d', time() + Politicas::HORAS_CORTE_PAGO * 3600);
+        $horasCorte  = ConfiguracionService::horasCortePago();
+        $fechaLimite = date('Y-m-d', time() + $horasCorte * 3600);
         $db = $this->resumenModel->getConnection();
 
         $stmt = $db->prepare("
@@ -425,7 +425,7 @@ class PagoService
                 );
                 $updateReserva->execute([
                     ':cancelada' => Reserva::ESTADO_CANCELADA,
-                    ':obs'       => ' | Cancelada automática ' . Politicas::HORAS_CORTE_PAGO . 'hs antes del check-in por falta de pago total.',
+                    ':obs'       => ' | Cancelada automática ' . $horasCorte . 'hs antes del check-in por falta de pago total.',
                     ':id'        => $idReserva
                 ]);
 

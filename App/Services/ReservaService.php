@@ -9,7 +9,6 @@ use App\Models\Reserva;
 use App\Models\Habitacion;
 use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
-use App\Config\Politicas;
 use PDO;
 use PDOException;
 
@@ -216,7 +215,7 @@ class ReservaService
 
     /**
      * Libera las habitaciones retenidas por No-Show con pago una vez pasada la fecha
-     * de salida (o el mismo día después de Politicas::HORA_CHECKOUT).
+     * de salida (o el mismo día después de la hora de checkout).
      * La reserva pasa a NO_SHOW y la habitación a DISPONIBLE.
      * Lo ejecuta cron/no-show-release.php.
      */
@@ -237,7 +236,7 @@ class ReservaService
             ':fecha_hoy'     => $fechaActual,
             ':fecha_hoy_2'   => $fechaActual,
             ':hora_actual'   => date('H:i:s'),
-            ':hora_checkout' => Politicas::horaCheckoutSql(),
+            ':hora_checkout' => ConfiguracionService::horaCheckoutSql(),
         ]);
 
         $aLiberar = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -582,8 +581,8 @@ class ReservaService
         if ((string)$reservaData['fecha_entrada'] > $hoy) {
             throw new Exception("No se puede marcar como No-Show antes de la fecha de entrada.");
         }
-        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < Politicas::HORA_CHECKOUT) {
-            throw new Exception("El No-Show solo puede marcarse después de las " . Politicas::HORA_CHECKOUT . " del día de entrada.");
+        if ((string)$reservaData['fecha_entrada'] === $hoy && date('H:i') < ConfiguracionService::horaCheckout()) {
+            throw new Exception("El No-Show solo puede marcarse después de las " . ConfiguracionService::horaCheckout() . " del día de entrada.");
         }
 
         $idHabitacion = (int)$reservaData['id_habitacion'];

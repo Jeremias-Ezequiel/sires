@@ -7,7 +7,7 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
-use App\Config\Politicas;
+use App\Services\ConfiguracionService;
 
 class Habitacion extends Model
 {
@@ -45,9 +45,8 @@ class Habitacion extends Model
     // Jerarquía de precios: Simple ≤ Matrimonial ≤ Doble ≤ Suite
     public const PRICE_HIERARCHY_ORDER = [1, 4, 2, 3];
 
-    // Descuento por ocupación: [capacidad => [huespedes => descuento%]]
-    // Alias: la fuente es App\Config\Politicas::DESCUENTO_OCUPACION
-    public const DESCUENTO_OCUPACION = Politicas::DESCUENTO_OCUPACION;
+    // Descuento por ocupación: [capacidad => [huespedes => descuento%]].
+    // Fuente: tabla Configuracion (clave descuento_ocupacion), ver ConfiguracionService::descuentoOcupacion().
 
     public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): array
     {
@@ -556,7 +555,7 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
 
     public static function descuentoOcupacion(int $capacidad, int $huespedes): float
     {
-        $tabla = self::DESCUENTO_OCUPACION[$capacidad] ?? null;
+        $tabla = ConfiguracionService::descuentoOcupacion()[$capacidad] ?? null;
         if ($tabla === null) return 0.0;
         return (float)($tabla[$huespedes] ?? 0);
     }

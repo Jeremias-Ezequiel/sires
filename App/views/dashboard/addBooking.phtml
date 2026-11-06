@@ -352,8 +352,8 @@
             return false;
         }
 
-        // Fuente única: App\Config\Politicas::DESCUENTO_OCUPACION
-        var DESCUENTOS_TABLA = <?= json_encode(\App\Config\Politicas::DESCUENTO_OCUPACION) ?>;
+        // Fuente única: tabla Configuracion (ConfiguracionService::descuentoOcupacion)
+        var DESCUENTOS_TABLA = <?= json_encode(\App\Services\ConfiguracionService::descuentoOcupacion()) ?>;
 
         function descuentoOcupacion(capacidad, huespedes) {
             return SiresPrecio.descuentoOcupacion(DESCUENTOS_TABLA, capacidad, huespedes);

@@ -15,7 +15,7 @@ use App\Services\PagoService;
 
 function main(): void
 {
-    error_log("[SIRES CRON] Iniciando corte de pagos " . App\Config\Politicas::HORAS_CORTE_PAGO . "hs...");
+    error_log("[SIRES CRON] Iniciando corte de pagos " . App\Services\ConfiguracionService::horasCortePago() . "hs...");
 
     try {
         $pagoService = new PagoService();

@@ -6,7 +6,7 @@ namespace App\Controllers;
 
 use App\Models\Usuario;
 use Exception;
-use App\Config\Politicas;
+use App\Services\ConfiguracionService;
 use App\Helpers\UrlHelper; // Importamos el helper para el ruteo dinámico
 
 class RecoveryController
@@ -55,9 +55,9 @@ class RecoveryController
                 exit;
             }
 
-            // 🟢 1. Generamos un token aleatorio seguro de 32 caracteres y expiración según Politicas::MINUTOS_TOKEN_RECUPERACION
+            // 🟢 1. Generamos un token aleatorio seguro de 32 caracteres y expiración según la configuración (minutos_token_recuperacion)
             $token = bin2hex(random_bytes(16));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . Politicas::MINUTOS_TOKEN_RECUPERACION . ' minutes'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . ConfiguracionService::minutosTokenRecuperacion() . ' minutes'));
 
             // 🟢 2. Guardamos el token en la base de datos (fila del usuario)
             $usuario->saveResetToken($token, $expiresAt);
