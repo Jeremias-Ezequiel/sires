@@ -10,8 +10,8 @@
     </div>
 
     <div class="header-actions-container">
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-            <small style="color: var(--texto-gris); font-size: 0.75em;">Inicializar un piso nuevo</small>
+        <div class="stack-xs">
+            <small class="text-muted text-xs">Inicializar un piso nuevo</small>
             <a href="<?= url('/dashboard/rooms/add/batch') ?>" class="btn btn--ghost">
                 <i class="fas fa-layer-group"></i> Nuevo Piso
             </a>
@@ -136,18 +136,18 @@
                             };
                         endif;
                     ?>
-                        <tr<?= $roomInactiva ? ' style="opacity: 0.6;"' : '' ?>>
+                        <tr<?= $roomInactiva ? ' class="row-inactive"' : '' ?>>
                             <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
                             <td><?= htmlspecialchars($room['tipo']) ?>
                                 <?php
                                 $cap = \App\Models\Habitacion::capacidadParaTipo((int)($room['id_tipo_habitacion'] ?? 0));
                                 ?>
-                                <span style="font-size: 0.8em; color: var(--text-muted, #666);">(<?= $cap ?>p)</span>
+                                <span class="text-muted text-xs">(<?= $cap ?>p)</span>
                             </td>
                             <td><span class="badge <?= $statusClass ?>"><?= $roomInactiva ? 'Inactiva' : htmlspecialchars($room['estado']) ?></span>
                                 <?php if (!empty($room['motivo_descripcion'])): ?>
-                                    <span style="display: block; font-size: 0.8em; color: var(--text-muted, #666); margin-top: 2px;">
+                                    <span class="text-muted text-xs d-block">
                                         <i class="fas fa-tools"></i> <?= htmlspecialchars($room['motivo_descripcion']) ?>
                                     </span>
                                 <?php endif; ?>
@@ -256,9 +256,9 @@
         </div>
         <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
         <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
-        <div id="motivo-select-wrapper" style="display: none; margin-top: 12px;">
-            <label for="modal-motivo-select" style="display: block; font-weight: 600; margin-bottom: 4px;">Motivo del bloqueo:</label>
-            <select id="modal-motivo-select" class="form__select" style="width: 100%;">
+        <div id="motivo-select-wrapper" class="mt-12" style="display: none;">
+            <label for="modal-motivo-select" class="modal-field-label">Motivo del bloqueo:</label>
+            <select id="modal-motivo-select" class="form__select">
                 <option value="">Sin motivo específico</option>
                 <?php if (!empty($motivos)): ?>
                     <?php foreach ($motivos as $motivo): ?>

@@ -84,7 +84,7 @@
                 <div class="form__group">
                     <label class="form__label" for="cantidad_huespedes">Cantidad de Huéspedes *</label>
                     <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? 1)) ?>" min="1" max="10" required>
-                    <small id="precio-ocupacion-ayuda" style="display:block; margin-top:6px; color:#6b7280;">Seleccione una habitación para ver el precio.</small>
+                    <small id="precio-ocupacion-ayuda" class="field-hint">Seleccione una habitación para ver el precio.</small>
                 </div>
             </div>
         </div>
@@ -457,9 +457,9 @@
 
             timelineContainer.innerHTML =
                 '<div class="timeline-legend">' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#22c55e"></span>Libre</span>' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#ef4444"></span>Ocupada</span>' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#eab308"></span>Tu reserva</span>' +
+                    '<span class="timeline-legend-item"><span class="timeline-legend-dot timeline-legend-dot--libre"></span>Libre</span>' +
+                    '<span class="timeline-legend-item"><span class="timeline-legend-dot timeline-legend-dot--ocupada"></span>Ocupada</span>' +
+                    '<span class="timeline-legend-item"><span class="timeline-legend-dot timeline-legend-dot--seleccion"></span>Tu reserva</span>' +
                 '</div>' +
                 '<div class="timeline-scroll">' +
                     '<div class="timeline-labels">' + labelsHtml + '</div>' +
@@ -562,9 +562,9 @@
 
         function showRoomConfirmCard(r) {
             roomConfirmCard.innerHTML =
-                '<div class="confirm-card-header" style="border-color: rgba(56, 189, 248, 0.15); background-color: rgba(56, 189, 248, 0.08);">' +
-                    '<i class="fas fa-door-open confirm-icon" style="color: #38bdf8;"></i>' +
-                    '<span class="confirm-label" style="color: #38bdf8;">Habitación seleccionada</span>' +
+                '<div class="confirm-card-header">' +
+                    '<i class="fas fa-door-open confirm-icon"></i>' +
+                    '<span class="confirm-label">Habitación seleccionada</span>' +
                 '</div>' +
                 '<div class="confirm-card-body">' +
                     '<div class="confirm-field"><span class="confirm-field-label">Habitación</span><span class="confirm-field-value">#' + escHtml(String(r.numero)) + '</span></div>' +

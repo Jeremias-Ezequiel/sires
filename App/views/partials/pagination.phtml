@@ -1,0 +1,40 @@
+<?php
+/**
+ * Paginación compartida por los listados.
+ *
+ * Variables esperadas:
+ *   $paginacionRuta  string  ruta del listado (ej: '/dashboard/clients')
+ *   $currentPage     int     página actual
+ *   $totalPages      int     total de páginas
+ * Conserva los filtros actuales de $_GET y solo cambia 'page'.
+ */
+$enlacePagina = function (int $pagina) use ($paginacionRuta): string {
+    $queryParams = $_GET;
+    unset($queryParams['route']);
+    $queryParams['page'] = $pagina;
+    return url($paginacionRuta . '?' . http_build_query($queryParams));
+};
+?>
+<?php if ($totalPages > 1): ?>
+    <nav class="pagination" aria-label="Paginación">
+        <?php if ($currentPage > 1): ?>
+            <a href="<?= $enlacePagina($currentPage - 1) ?>" class="btn btn--ghost pagination__nav">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+        <?php endif; ?>
+
+        <div class="pagination__pages">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="<?= $enlacePagina($i) ?>"
+                   class="pagination__page<?= $i === $currentPage ? ' pagination__page--active' : '' ?>"
+                   <?= $i === $currentPage ? 'aria-current="page"' : '' ?>><?= $i ?></a>
+            <?php endfor; ?>
+        </div>
+
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="<?= $enlacePagina($currentPage + 1) ?>" class="btn btn--ghost pagination__nav">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </a>
+        <?php endif; ?>
+    </nav>
+<?php endif; ?>

@@ -12,6 +12,14 @@ $isLogin      = ($pageTitle === 'Iniciar Sesión | SIRES');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
 
+    <!-- Tema de color elegido en el selector del menú (antes del CSS para evitar parpadeo) -->
+    <script>
+        try {
+            var temaSires = localStorage.getItem('sires-tema');
+            if (temaSires) { document.documentElement.dataset.theme = temaSires; }
+        } catch (e) {}
+    </script>
+
     <!-- Favicon derivado del logo del sistema (v2: zoom + alta resolución) -->
     <link rel="icon" type="image/x-icon" href="<?= asset('img/favicon.ico?v=2') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= asset('img/favicon-32x32.png') ?>">
@@ -31,9 +39,9 @@ $isLogin      = ($pageTitle === 'Iniciar Sesión | SIRES');
 
     <!-- Estilos globales y específicos de cada página -->
     <?php if (!$isLogin): ?>
-    <link rel="stylesheet" href="<?= asset('css/global.css') ?>">
+    <link rel="stylesheet" href="<?= asset_v('css/global.css') ?>">
     <?php foreach ((array)$pageCss as $css): ?>
-        <link rel="stylesheet" href="<?= asset('css/pages/' . ltrim($css, '/')) ?>">
+        <link rel="stylesheet" href="<?= asset_v('css/pages/' . ltrim($css, '/')) ?>">
     <?php endforeach; ?>
     <?php endif; ?>
 

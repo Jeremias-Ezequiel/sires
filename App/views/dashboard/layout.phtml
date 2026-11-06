@@ -4,7 +4,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Rol;
 
 $pageTitle = $pageTitle ?? 'Dashboard | SIRES';
-$pageCss   = $pageCss ?? ['dashboard.min.css?v=1.2'];
+$pageCss   = $pageCss ?? ['dashboard.min.css'];
 include __DIR__ . '/../partials/head.phtml';
 ?>
 
@@ -74,12 +74,14 @@ include __DIR__ . '/../partials/head.phtml';
                     <?php endif; ?>
 
                     <li>
-                        <a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;">
+                        <a href="<?= url('/logout') ?>" class="nav-link nav-link--danger">
                             <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
                         </a>
                     </li>
                 </ul>
             </nav>
+
+            <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
         </aside>
 
         <main class="main-content">

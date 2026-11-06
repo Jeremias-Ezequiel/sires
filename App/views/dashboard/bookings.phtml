@@ -188,37 +188,10 @@
             </table>
         </div>
 
-        <?php if ($totalPages > 1): ?>
-            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
-                <?php if ($currentPage > 1): ?>
-                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage - 1; ?>
-                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </a>
-                <?php endif; ?>
-
-                <div class="pagination-numbers" style="display: flex; gap: 5px;">
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <?php $queryParams = $_GET; $queryParams['page'] = $i; $isActivePage = ($i === $currentPage); ?>
-                        <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>"
-                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
-                                  <?= $isActivePage
-                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;'
-                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;'
-                                  ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
-                </div>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage + 1; ?>
-                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
-                        Siguiente <i class="fas fa-chevron-right"></i>
-                    </a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
+        <?php
+        $paginacionRuta = '/dashboard/booking';
+        include __DIR__ . '/../partials/pagination.phtml';
+        ?>
     </section>
 <?php else: ?>
     <section class="details-section no-results-container">

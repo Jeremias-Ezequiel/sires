@@ -6,7 +6,7 @@ include __DIR__ . '/../partials/head.phtml';
 
     <div class="error-page-container">
 
-        <h1 class="error-code" style="color: #f59e0b;">500</h1>
+        <h1 class="error-code text-warning">500</h1>
 
         <div class="error-card">
             <h2>Error interno del servidor</h2>
@@ -14,7 +14,7 @@ include __DIR__ . '/../partials/head.phtml';
                 El sistema SIRES experimentó un problema imprevisto en su infraestructura o configuración de base de
                 datos. El incidente ya ha sido registrado en los logs del servidor.
             </p>
-            <p style="color: var(--texto-gris); font-size: 9.5pt; margin-top: -15px; margin-bottom: 25px;">
+            <p class="error-detail">
                 <i class="fa-solid fa-code-branch"></i> Si sos el administrador, verificá el archivo de configuración
                 <code>.env</code> y el estado del servicio MariaDB.
             </p>

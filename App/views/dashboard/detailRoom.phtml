@@ -51,7 +51,7 @@
                         <?php
                         $capacidad = \App\Models\Habitacion::capacidadParaTipo((int)($habitacion['id_tipo_habitacion'] ?? 0));
                         ?>
-                        <span style="margin-left: 8px; font-size: 0.85em; color: var(--text-muted, #666);">
+                        <span class="text-muted text-sm room-meta">
                             (<?= $capacidad ?> personas)
                         </span>
                     </td>
@@ -74,7 +74,7 @@
                         ?>
                         <span class="badge <?= $statusClass ?>"><?= htmlspecialchars($habitacion['estado']) ?></span>
                         <?php if (!empty($habitacion['motivo_descripcion'])): ?>
-                            <span style="margin-left: 8px; font-size: 0.9em;">
+                            <span class="room-meta">
                                 <i class="fas fa-tools"></i> <?= htmlspecialchars($habitacion['motivo_descripcion']) ?>
                             </span>
                         <?php endif; ?>

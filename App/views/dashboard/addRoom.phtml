@@ -41,9 +41,9 @@
 
             <div class="form__group" id="numero-group" style="display: none;">
                 <label class="form__label" for="numero">Número de Habitación</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="number" id="numero" name="numero" placeholder="Ej: 1" readonly class="form__input" autocomplete="off" min="1" style="flex: 1;" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
-                    <span id="numero-sugerido-label" style="font-size: 0.9em; color: var(--texto-gris); white-space: nowrap;"></span>
+                <div class="flex-row">
+                    <input type="number" id="numero" name="numero" placeholder="Ej: 1" readonly class="form__input flex-1" autocomplete="off" min="1" value="<?= htmlspecialchars($_POST['numero'] ?? $old['numero'] ?? '') ?>">
+                    <span id="numero-sugerido-label" class="text-muted text-sm text-nowrap"></span>
                 </div>
                 <small class="form__help">El número se asigna automáticamente de forma consecutiva.</small>
             </div>
@@ -149,14 +149,14 @@
             previewTitle.style.display = 'block';
             roomPreview.style.display = 'block';
             roomPreview.innerHTML = `
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px; background: var(--fondo-panel); border-radius: 8px;">
-                    <span class="badge badge--disponible" style="padding: 6px 14px; font-size: 1em;">
+                <div class="chip-panel">
+                    <span class="badge badge--disponible badge--lg">
                         <i class="fas fa-layer-group"></i> Piso ${piso}
                     </span>
-                    <span class="badge badge--disponible" style="padding: 6px 14px; font-size: 1em;">
+                    <span class="badge badge--disponible badge--lg">
                         <i class="fas fa-door-open"></i> Habitación N° ${numeroFinal}
                     </span>
-                    <span style="color: var(--texto-gris); font-size: 0.85em;">
+                    <span class="text-muted text-sm">
                         (índice ${inputNumero.value})
                     </span>
                 </div>

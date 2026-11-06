@@ -9,6 +9,16 @@ function asset(string $path): string {
     return UrlHelper::asset($path);
 }
 
+/**
+ * URL de un asset con ?v=<fecha de modificación> para que el navegador
+ * descargue la versión nueva cada vez que cambia el archivo.
+ */
+function asset_v(string $path): string {
+    $archivo = dirname(__DIR__, 2) . '/public/' . ltrim($path, '/');
+    $version = is_file($archivo) ? (string)filemtime($archivo) : '1';
+    return UrlHelper::asset($path) . '?v=' . $version;
+}
+
 function csrf_token(): string {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
