@@ -35,3 +35,10 @@ table,
     outline: none;
     box-shadow: var(--focus-ring);
 }
+
+/* Ocultar el botón nativo de "mostrar contraseña" de Edge: los formularios ya
+   tienen su propio ojo y se veían dos al escribir. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
