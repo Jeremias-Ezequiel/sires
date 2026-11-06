@@ -6,16 +6,138 @@ namespace App\Services;
 
 use Exception;
 use App\Models\Habitacion;
+use App\Models\Reserva;
 use PDO;
 use PDOException;
 
 class LimpiezaService
 {
+    /** Prioridades de la lista de housekeeping (menor = antes). */
+    public const PRIORIDAD_URGENTE     = 1;
+    public const PRIORIDAD_LLEGA_HOY   = 2;
+    public const PRIORIDAD_LLEGA_MANANA = 3;
+    public const PRIORIDAD_SIN_LLEGADA = 4;
+
     private Habitacion $habitacionModel;
+    private Reserva $reservaModel;
 
     public function __construct()
     {
         $this->habitacionModel = new Habitacion();
+        $this->reservaModel    = new Reserva();
+    }
+
+    /**
+     * Lista de housekeeping: habitaciones en limpieza (en curso) y sucias (pendientes),
+     * cada una con su prioridad y el motivo, ordenadas por:
+     *   1. urgente (marcada por recepción), 2. llega un huésped hoy, 3. llega mañana,
+     *   4. sin llegada próxima; a igual prioridad, la que lleva más tiempo sucia y luego por piso.
+     * Es una guía: la urgencia real la sigue decidiendo recepción.
+     */
+    public function obtenerTablero(): array
+    {
+        $hoy    = date('Y-m-d');
+        $manana = date('Y-m-d', strtotime('+1 day'));
+
+        $llegaHoy    = $this->llegadasPorHabitacion($hoy);
+        $llegaManana = $this->llegadasPorHabitacion($manana);
+
+        $enCurso = [];
+        $pendientes = [];
+        foreach ($this->habitacionModel->getParaLimpieza() as $h) {
+            $id = (int)$h['id'];
+
+            if ((int)$h['limpieza_urgente'] === 1) {
+                [$prioridad, $motivo] = [self::PRIORIDAD_URGENTE, 'Urgente (marcada por recepción)'];
+            } elseif (isset($llegaHoy[$id])) {
+                [$prioridad, $motivo] = [self::PRIORIDAD_LLEGA_HOY, 'Llega un huésped hoy'];
+            } elseif (isset($llegaManana[$id])) {
+                [$prioridad, $motivo] = [self::PRIORIDAD_LLEGA_MANANA, 'Llega un huésped mañana'];
+            } else {
+                [$prioridad, $motivo] = [self::PRIORIDAD_SIN_LLEGADA, 'Sin llegada próxima'];
+            }
+
+            $fila = $h + [
+                'prioridad'       => $prioridad,
+                'motivo'          => $motivo,
+                'minutos_sucia'   => $h['sucia_desde'] !== null
+                    ? max(0, intdiv(time() - strtotime((string)$h['sucia_desde']), 60))
+                    : null,
+            ];
+
+            if ((int)$h['id_estado_habitacion'] === Habitacion::ESTADO_LIMPIANDO) {
+                $enCurso[] = $fila;
+            } else {
+                $pendientes[] = $fila;
+            }
+        }
+
+        usort($enCurso, [$this, 'compararPrioridad']);
+        usort($pendientes, [$this, 'compararPrioridad']);
+
+        return ['enCurso' => $enCurso, 'pendientes' => $pendientes];
+    }
+
+    /**
+     * Marca o desmarca una habitación como limpieza urgente. Solo sucias o en limpieza;
+     * el trigger de la migración 011 la desmarca sola cuando la habitación sale de esos estados.
+     */
+    public function marcarUrgente(int $idHabitacion, bool $urgente): array
+    {
+        $db = $this->habitacionModel->getConnection();
+        $db->beginTransaction();
+
+        try {
+            $lock = $db->prepare(
+                "SELECT id_estado_habitacion, numero FROM Habitaciones
+                 WHERE id = :id AND is_active = :activa FOR UPDATE"
+            );
+            $lock->execute([':id' => $idHabitacion, ':activa' => Habitacion::ACTIVE]);
+            $hab = $lock->fetch(PDO::FETCH_ASSOC);
+
+            if (!$hab) {
+                throw new Exception("La habitación no existe.");
+            }
+            $estado = (int)$hab['id_estado_habitacion'];
+            if ($estado !== Habitacion::ESTADO_SUCIA && $estado !== Habitacion::ESTADO_LIMPIANDO) {
+                throw new Exception("Solo se puede marcar como urgente una habitación sucia o en limpieza.");
+            }
+
+            $stmt = $db->prepare("UPDATE Habitaciones SET limpieza_urgente = :urgente WHERE id = :id");
+            $stmt->execute([':urgente' => $urgente ? 1 : 0, ':id' => $idHabitacion]);
+
+            $db->commit();
+            $numero = (string)$hab['numero'];
+            return [
+                'success' => true,
+                'message' => $urgente
+                    ? "Habitación #{$numero} marcada como limpieza urgente."
+                    : "Habitación #{$numero} ya no es urgente.",
+            ];
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /** @return array<int, true> id_habitacion => true, con llegada pendiente de check-in esa fecha */
+    private function llegadasPorHabitacion(string $fecha): array
+    {
+        $ids = [];
+        foreach ($this->reservaModel->getLlegadasDelDia($fecha) as $l) {
+            if ((int)$l['id_estado_reserva'] !== Reserva::ESTADO_EN_CASA) {
+                $ids[(int)$l['id_habitacion']] = true;
+            }
+        }
+        return $ids;
+    }
+
+    private function compararPrioridad(array $a, array $b): int
+    {
+        return [$a['prioridad'], $a['sucia_desde'] === null, $a['sucia_desde'], (int)$a['piso'], (string)$a['numero']]
+           <=> [$b['prioridad'], $b['sucia_desde'] === null, $b['sucia_desde'], (int)$b['piso'], (string)$b['numero']];
     }
 
     public function iniciarLimpieza(int $idHabitacion): array

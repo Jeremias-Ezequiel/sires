@@ -17,10 +17,18 @@ include __DIR__ . '/../partials/head.phtml';
             </div>
             <nav>
                 <ul class="nav-links">
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                     <li>
                         <!-- Rutas adaptadas con la función global url() -->
                         <a href="<?= url('/dashboard') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'home.phtml')) ? 'active' : '' ?>">
                             <i class="fas fa-home"></i>Inicio
+                        </a>
+                    </li>
+                    <?php endif; ?>
+
+                    <li>
+                        <a href="<?= url('/dashboard/housekeeping') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'housekeeping.phtml')) ? 'active' : '' ?>">
+                            <i class="fas fa-broom"></i>Limpieza
                         </a>
                     </li>
 

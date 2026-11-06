@@ -12,6 +12,11 @@ class DashboardController extends Controller
 {
     public function showHome(array $vars): void
     {
+        // El inicio del rol Limpieza es la lista de housekeeping
+        if ((int)($_SESSION['user_role'] ?? 0) === Rol::LIMPIEZA) {
+            $this->redirect('/dashboard/housekeeping');
+        }
+
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = (int)($_SESSION['user_role'] ?? 0);
 

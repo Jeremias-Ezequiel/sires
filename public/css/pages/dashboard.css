@@ -1923,3 +1923,201 @@ a.hab:hover {
 .cfg-tabla .cfg-num {
   text-align: right;
 }
+
+/* --- [14. HOUSEKEEPING] --- */
+/* Vista: App/views/dashboard/housekeeping.phtml. Uso principal desde el celular:
+   tarjetas en una columna, botones de al menos 44 px de alto. */
+.hk {
+  display: grid;
+  gap: 16px;
+}
+
+.hk-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background-color: var(--room-cleaning-bg);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--room-cleaning);
+  border-radius: var(--radius-md);
+}
+
+.hk-card--urgente {
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  border-left-color: var(--color-danger);
+}
+
+.hk-card__cabecera {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hk-card__orden {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  background-color: var(--color-tint-3);
+  border-radius: var(--radius-full);
+}
+
+.hk-card__numero {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+.hk-card__datos {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.hk-card__urgente {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-danger-text);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-full);
+}
+
+.hk-card__motivo,
+.hk-card__tiempo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--color-text);
+}
+
+.hk-card__tiempo {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.hk-card__motivo i,
+.hk-card__tiempo i {
+  width: 16px;
+  text-align: center;
+}
+
+.hk-card__motivo--p1 i { color: var(--color-danger); }
+.hk-card__motivo--p2 i { color: var(--room-reserved); }
+.hk-card__motivo--p3 i,
+.hk-card__motivo--p4 i { color: var(--color-text-muted); }
+
+.hk-card__motivo--p2 {
+  font-weight: 600;
+  color: var(--room-reserved-text);
+}
+
+.hk-card__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hk-card__acciones form {
+  display: contents;
+}
+
+.btn.hk-card__boton {
+  flex: 1 1 160px;
+  min-height: 44px;
+  gap: 8px;
+  font-size: var(--fs-md);
+}
+
+.btn.hk-card__boton-sec {
+  min-height: 44px;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .hk-lista {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- [15. LAYOUT EN CELULAR] --- */
+/* Debajo de 600 px la sidebar pasa a ser una barra superior con el menú desplazable.
+   Tablet y escritorio no cambian. Pensado sobre todo para Housekeeping. */
+@media (max-width: 600px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--sidebar-border);
+  }
+
+  .logo-container {
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .logo-sires {
+    width: 40px;
+    max-width: 40px;
+  }
+
+  .sidebar nav {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-link {
+    min-height: 44px;
+    margin-bottom: 0;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+
+  .nav-link i {
+    margin-right: 8px;
+  }
+
+  .sidebar .theme-switcher {
+    display: none;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+}

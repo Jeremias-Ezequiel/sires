@@ -1,0 +1,163 @@
+<?php
+/**
+ * Housekeeping: habitaciones en limpieza y por limpiar, en el orden sugerido
+ * (urgente > llega hoy > llega mañana > sin llegada; a igual prioridad, la más antigua y por piso).
+ * Datos: App\Services\LimpiezaService::obtenerTablero(). Pensada para usar desde el celular.
+ */
+
+use App\Services\LimpiezaService;
+
+// "hace 2 h 10 min" a partir de los minutos que lleva sucia
+$haceCuanto = function (?int $min): string {
+    if ($min === null) return '';
+    if ($min < 1) return 'recién';
+    if ($min < 60) return "hace {$min} min";
+    $h = intdiv($min, 60);
+    if ($h >= 24) {
+        $d = intdiv($h, 24);
+        return 'hace ' . $d . ($d === 1 ? ' día' : ' días');
+    }
+    $resto = $min % 60;
+    return "hace {$h} h" . ($resto > 0 ? " {$resto} min" : '');
+};
+
+$iconoPrioridad = [
+    LimpiezaService::PRIORIDAD_URGENTE      => 'fa-bolt',
+    LimpiezaService::PRIORIDAD_LLEGA_HOY    => 'fa-calendar-day',
+    LimpiezaService::PRIORIDAD_LLEGA_MANANA => 'fa-calendar-plus',
+    LimpiezaService::PRIORIDAD_SIN_LLEGADA  => 'fa-clock',
+];
+
+$enCurso    = $tablero['enCurso'] ?? [];
+$pendientes = $tablero['pendientes'] ?? [];
+
+// Una tarjeta por habitación. $accion: 'start' (iniciar) o 'complete' (terminar).
+$tarjeta = function (array $h, string $accion, ?int $orden) use ($haceCuanto, $iconoPrioridad, $puedeMarcarUrgente): void {
+    $urgente = (int)$h['limpieza_urgente'] === 1;
+    $numero  = htmlspecialchars((string)$h['numero']);
+    ?>
+    <li class="hk-card<?= $urgente ? ' hk-card--urgente' : '' ?><?= $accion === 'complete' ? ' hk-card--en-curso' : '' ?>">
+        <div class="hk-card__cabecera">
+            <?php if ($orden !== null): ?>
+                <span class="hk-card__orden" aria-label="Orden sugerido <?= $orden ?>"><?= $orden ?></span>
+            <?php endif; ?>
+            <span class="hk-card__numero">#<?= $numero ?></span>
+            <span class="hk-card__datos">Piso <?= (int)$h['piso'] ?> · <?= htmlspecialchars((string)$h['tipo']) ?></span>
+            <?php if ($urgente): ?>
+                <span class="hk-card__urgente"><i class="fas fa-bolt" aria-hidden="true"></i>Urgente</span>
+            <?php endif; ?>
+        </div>
+
+        <p class="hk-card__motivo hk-card__motivo--p<?= (int)$h['prioridad'] ?>">
+            <i class="fas <?= $iconoPrioridad[(int)$h['prioridad']] ?? 'fa-clock' ?>" aria-hidden="true"></i>
+            <?= htmlspecialchars($h['motivo']) ?>
+        </p>
+        <?php if ($h['minutos_sucia'] !== null): ?>
+            <p class="hk-card__tiempo">
+                <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+                Sucia <?= htmlspecialchars($haceCuanto($h['minutos_sucia'])) ?>
+            </p>
+        <?php endif; ?>
+
+        <div class="hk-card__acciones">
+            <?php if ($accion === 'start'): ?>
+                <form method="POST" action="<?= url('/dashboard/rooms/cleaning/start') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$h['id'] ?>">
+                    <input type="hidden" name="volver" value="housekeeping">
+                    <button type="submit" class="btn btn--warning hk-card__boton">
+                        <i class="fas fa-broom" aria-hidden="true"></i> Iniciar limpieza
+                    </button>
+                </form>
+            <?php else: ?>
+                <form method="POST" action="<?= url('/dashboard/rooms/cleaning/complete') ?>"
+                      data-confirmar="¿Terminaste la habitación #<?= $numero ?>? Va a quedar disponible para la venta."
+                      data-confirmar-boton="Sí, está limpia">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$h['id'] ?>">
+                    <input type="hidden" name="volver" value="housekeeping">
+                    <button type="submit" class="btn btn--success hk-card__boton">
+                        <i class="fas fa-check" aria-hidden="true"></i> Terminar limpieza
+                    </button>
+                </form>
+            <?php endif; ?>
+
+            <?php if ($puedeMarcarUrgente): ?>
+                <form method="POST" action="<?= url('/dashboard/housekeeping/urgent') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$h['id'] ?>">
+                    <input type="hidden" name="urgente" value="<?= $urgente ? '0' : '1' ?>">
+                    <button type="submit" class="btn btn--ghost hk-card__boton-sec">
+                        <i class="fas <?= $urgente ? 'fa-xmark' : 'fa-bolt' ?>" aria-hidden="true"></i>
+                        <?= $urgente ? 'Quitar urgente' : 'Marcar urgente' ?>
+                    </button>
+                </form>
+            <?php endif; ?>
+        </div>
+    </li>
+    <?php
+};
+?>
+<header class="main-header">
+    <div>
+        <h1>Limpieza</h1>
+        <p>Orden sugerido: urgentes, después las que reciben huésped hoy y mañana. La lista se actualiza sola.</p>
+    </div>
+</header>
+
+<?php if (!empty($errorMessage)): ?>
+    <div class="alert alert--error">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <?= htmlspecialchars($errorMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($flashMessage) && in_array($flashStatus, ['success', 'error'], true)): ?>
+    <div class="alert alert--<?= $flashStatus ?>">
+        <i class="fa-solid <?= $flashStatus === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
+        <?= htmlspecialchars($flashMessage) ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($tablero !== null): ?>
+    <div class="hk">
+        <?php if (!empty($enCurso)): ?>
+            <section class="panel" aria-labelledby="hk-en-curso">
+                <header class="panel__header">
+                    <h2 id="hk-en-curso"><i class="fas fa-spinner" aria-hidden="true"></i>En curso</h2>
+                    <span class="panel__contador"><?= count($enCurso) ?></span>
+                </header>
+                <ul class="hk-lista">
+                    <?php foreach ($enCurso as $h) $tarjeta($h, 'complete', null); ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+
+        <section class="panel" aria-labelledby="hk-pendientes">
+            <header class="panel__header">
+                <h2 id="hk-pendientes"><i class="fas fa-broom" aria-hidden="true"></i>Por limpiar</h2>
+                <span class="panel__contador"><?= count($pendientes) ?></span>
+            </header>
+            <?php if (empty($pendientes)): ?>
+                <p class="panel__vacio panel__vacio--ok">
+                    <i class="fas fa-circle-check" aria-hidden="true"></i>
+                    No hay habitaciones sucias. Todo limpio.
+                </p>
+            <?php else: ?>
+                <ol class="hk-lista">
+                    <?php foreach ($pendientes as $i => $h) $tarjeta($h, 'start', $i + 1); ?>
+                </ol>
+            <?php endif; ?>
+        </section>
+    </div>
+<?php endif; ?>
+
+<script src="<?= asset_v('js/confirmar.js') ?>"></script>
+<script>
+    // Refresco cada 2 minutos para ver lo que marca recepción, salvo que haya un diálogo
+    // abierto o la pestaña esté oculta.
+    setInterval(function () {
+        var dialogoAbierto = window.SiresConfirmar && window.SiresConfirmar.abierto();
+        if (!document.hidden && !dialogoAbierto) location.reload();
+    }, 120000);
+</script>

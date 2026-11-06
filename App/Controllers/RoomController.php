@@ -440,13 +440,13 @@ class RoomController
             $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            header('Location: ' . UrlHelper::to($this->rutaVueltaLimpieza()));
             exit;
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            header('Location: ' . UrlHelper::to($this->rutaVueltaLimpieza()));
             exit;
         }
     }
@@ -469,13 +469,13 @@ class RoomController
             $_SESSION['flash_message'] = $resultado['message'];
             $_SESSION['flash_status']  = "success";
 
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            header('Location: ' . UrlHelper::to($this->rutaVueltaLimpieza()));
             exit;
         } catch (Exception $e) {
             $_SESSION['flash_message'] = $e->getMessage();
             $_SESSION['flash_status']  = "error";
 
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
+            header('Location: ' . UrlHelper::to($this->rutaVueltaLimpieza()));
             exit;
         }
     }
@@ -536,5 +536,14 @@ class RoomController
             header('Location: ' . UrlHelper::to('/dashboard/rooms'));
             exit;
         }
+    }
+
+    /**
+     * Las acciones de limpieza se disparan desde Habitaciones o desde Housekeeping:
+     * se vuelve a la pantalla de origen (valor de una lista fija, nunca una URL del usuario).
+     */
+    private function rutaVueltaLimpieza(): string
+    {
+        return ($_POST['volver'] ?? '') === 'housekeeping' ? '/dashboard/housekeeping' : '/dashboard/rooms';
     }
 }

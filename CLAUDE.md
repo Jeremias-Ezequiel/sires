@@ -68,6 +68,7 @@ $r->addRoute('GET', '/dashboard/employees', [
 ## Base de datos
 
 - Los scripts SQL (migraciones y EVENTs) no se versionan en este repo. Las migraciones aplicadas quedan registradas en la tabla `migraciones`.
+- Triggers: `trg_check_solapamiento_*` (Reservas) y `trg_habitacion_limpieza_*` (Habitaciones, migración 011). Este último setea `sucia_desde` al pasar a Sucia y limpia `sucia_desde`/`limpieza_urgente` al salir de Sucia/Limpiando: no setearlos a mano en los Services.
 
 ## Automatismos (EVENTs y cron)
 

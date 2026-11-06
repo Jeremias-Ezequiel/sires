@@ -527,6 +527,35 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         }
     }
 
+    /**
+     * Habitaciones activas sucias o en limpieza, con lo necesario para ordenar la lista
+     * de housekeeping (sucia_desde y limpieza_urgente, migración 011).
+     */
+    public function getParaLimpieza(): array
+    {
+        $sql = "SELECT h.id, h.numero, h.piso, h.id_estado_habitacion,
+                       h.sucia_desde, h.limpieza_urgente,
+                       th.descripcion AS tipo, eh.descripcion AS estado
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                WHERE h.is_active = :activa
+                  AND h.id_estado_habitacion IN (:sucia, :limpiando)";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':activa'    => self::ACTIVE,
+                ':sucia'     => self::ESTADO_SUCIA,
+                ':limpiando' => self::ESTADO_LIMPIANDO,
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getParaLimpieza: " . $e->getMessage());
+            throw new Exception("Error al obtener las habitaciones para limpiar.");
+        }
+    }
+
     private function tiposPorCapacidad(int $capacidad): array
     {
         return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];

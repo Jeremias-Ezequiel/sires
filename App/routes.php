@@ -9,6 +9,7 @@ use App\Controllers\EmployeeController;
 use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
+use App\Controllers\HousekeepingController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\ApiController;
@@ -263,13 +264,26 @@ return function (RouteCollector $r) {
     $r->addRoute('POST', '/dashboard/rooms/cleaning/start', [
         'action' => [RoomController::class, 'startCleaning'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
     ]);
 
     $r->addRoute('POST', '/dashboard/rooms/cleaning/complete', [
         'action' => [RoomController::class, 'completeCleaning'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
+    ]);
+
+    // Housekeeping (lista de limpieza; inicio del rol Limpieza)
+    $r->addRoute('GET', '/dashboard/housekeeping', [
+        'action' => [HousekeepingController::class, 'mostrar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/urgent', [
+        'action' => [HousekeepingController::class, 'marcarUrgente'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => HousekeepingController::ROLES_MARCAR_URGENTE
     ]);
 
     // Mantenimiento
