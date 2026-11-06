@@ -3,6 +3,15 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-11-06
+
+### Agregado
+- **Planning de ocupación** (menú *Planning*): habitaciones en filas y 14 o 30 días en columnas, con
+  navegación por período y por fecha. Cada reserva es una barra con ícono y texto según su estado
+  (pendiente, confirmada, en casa, sale hoy, No-Show con habitación retenida, finalizada).
+- Clic en una reserva abre su detalle; clic en un día libre abre una reserva nueva con la habitación
+  y la fecha de entrada ya cargadas.
+
 ## [1.4.0] - 2026-11-06
 
 ### Agregado
