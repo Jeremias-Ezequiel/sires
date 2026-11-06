@@ -20,7 +20,19 @@ class CsrfMiddleware
         try {
             csrf_check();
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = "Token de seguridad inválido. Intente nuevamente.";
+            $mensaje = "Token de seguridad inválido. Intente nuevamente.";
+
+            // Las rutas /api/* responden JSON (419 = token vencido o inválido)
+            $route = $_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+            $route = str_replace(['/index.php', '/sires'], '', (string)$route);
+            if (str_starts_with($route, '/api/')) {
+                http_response_code(419);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['error' => $mensaje]);
+                exit;
+            }
+
+            $_SESSION['flash_message'] = $mensaje;
             $_SESSION['flash_status']  = "error";
 
             $referer = $_SERVER['HTTP_REFERER'] ?? '';
@@ -29,7 +41,8 @@ class CsrfMiddleware
             if ($referer !== '' && str_starts_with($referer, $baseUrl)) {
                 header('Location: ' . $referer);
             } else {
-                header('Location: ' . UrlHelper::to('/dashboard/booking'));
+                // Sin referer válido: al inicio (el de Limpieza redirige a su lista)
+                header('Location: ' . UrlHelper::to('/dashboard'));
             }
             exit;
         }

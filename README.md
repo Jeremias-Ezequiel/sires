@@ -22,6 +22,9 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
    `event_scheduler`). Los scripts SQL no se versionan en este repositorio; se entregan aparte
    junto con su `LEEME.md`. Las migraciones aplicadas quedan registradas en la tabla `migraciones`.
 5. Dar permiso de escritura a Apache sobre `logs/` si se usan los cron de respaldo.
+6. Producción: servir por HTTPS (la cookie de sesión pasa a `Secure` y se envía HSTS solos) y no
+   exponer versiones del servidor: `ServerTokens Prod` y `ServerSignature Off` en Apache,
+   `expose_php = Off` en `php.ini`.
 
 ## Procesos automáticos
 
@@ -60,6 +63,8 @@ reservas ya hechas. Las operativas (horarios, corte de pagos, máximo de noches)
 ## Seguridad
 
 - Sesión con cookie `HttpOnly`, `SameSite=Lax` y `Secure` bajo HTTPS; el ID se regenera al iniciar sesión.
+- Bajo HTTPS se envía `Strict-Transport-Security`; nunca se envía `X-Powered-By`.
+- Toda acción que cambia datos va por POST con token CSRF (un GET a esas rutas responde 405).
 - CSRF en todos los formularios POST.
 - Bloqueo temporal tras intentos fallidos de login y límite de pedidos de recuperación de contraseña.
 - Prepared statements en todas las consultas y escape de salida en las vistas.

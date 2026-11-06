@@ -17,16 +17,22 @@ try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 
+    $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
     // Headers de seguridad básicos para todas las respuestas
+    header_remove('X-Powered-By');
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
+    if ($esHttps) {
+        // HSTS solo sobre HTTPS (por HTTP el navegador lo ignora y no tiene sentido enviarlo)
+        header('Strict-Transport-Security: max-age=31536000');
+    }
 
     // Sesión única para toda la petición (controllers y middlewares la asumen iniciada).
     // Cookie de sesión endurecida: no accesible desde JS, SameSite y Secure si hay HTTPS.
     if (session_status() === PHP_SESSION_NONE) {
-        $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
