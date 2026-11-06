@@ -166,6 +166,41 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
     </div>
 </section>
 
+<section class="details-section" aria-labelledby="comprobantes-titulo">
+    <div class="flex-between flex-wrap mb-16">
+        <h2 id="comprobantes-titulo" class="aud-historial__titulo">
+            <i class="fas fa-file-invoice" aria-hidden="true"></i> Comprobantes
+        </h2>
+        <form method="POST" action="<?= url('/dashboard/comprobantes/resumen') ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id_reserva" value="<?= (int)$reserva['id'] ?>">
+            <button type="submit" class="btn btn--ghost" title="Emite un resumen nuevo con número y lo descarga">
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> Descargar resumen (PDF)
+            </button>
+        </form>
+    </div>
+    <?php if (empty($comprobantes)): ?>
+        <p class="text-muted">Todavía no hay comprobantes emitidos.</p>
+    <?php else: ?>
+        <div class="details-table-wrapper">
+            <table class="details-table">
+                <thead><tr><th>Comprobante</th><th>Número</th><th class="text-right">Monto</th><th>Emitido</th><th></th></tr></thead>
+                <tbody>
+                    <?php foreach ($comprobantes as $c): ?>
+                        <tr>
+                            <td><?= htmlspecialchars(\App\Dominio\Comprobante::TITULOS[$c['tipo']] ?? $c['tipo']) ?></td>
+                            <td class="tabular"><?= htmlspecialchars(\App\Dominio\Comprobante::numeroFormateado((int)$c['punto_venta'], (int)$c['numero'])) ?></td>
+                            <td class="text-right tabular">$<?= number_format((float)$c['monto'], 2, ',', '.') ?></td>
+                            <td><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string)$c['fecha_emision']))) ?><?= !empty($c['emitido_por_nombre']) ? ' · ' . htmlspecialchars($c['emitido_por_nombre']) : '' ?></td>
+                            <td><a class="btn-mov" href="<?= url('/dashboard/comprobantes/descargar?id=' . (int)$c['id']) ?>"><i class="fas fa-download" aria-hidden="true"></i>PDF</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+
 <?php if (!empty($mails)):
     $estadoMail = [
         \App\Models\ColaMail::ESTADO_ENVIADO   => ['badge--disponible', 'Enviado'],

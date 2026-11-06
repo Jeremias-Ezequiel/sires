@@ -170,6 +170,8 @@ class PagoService
             }
 
             $this->auditoria->registrar('pago.registrar', 'reserva', $idReserva, 'Pago registrado por $' . number_format($montoAbonado, 2, ',', '.'), $antes);
+            // Recibo numerado en la misma transacción (con el saldo ya actualizado)
+            (new ComprobanteService())->emitirDeTransaccion($idTransaccion, $registradoPor);
             (new MailService())->encolarComprobantePago($idReserva, $idTransaccion);
             $db->commit();
             return ['success' => true, 'message' => $mensaje];
@@ -639,6 +641,7 @@ class PagoService
                 ':monto'      => -$montoReembolso,
                 ':registrado' => $_SESSION['user_id'] ?? 1
             ]);
+            $idTransaccion = (int)$db->lastInsertId();
 
             $update = $db->prepare(
                 "UPDATE Resumen_Pago
@@ -657,6 +660,7 @@ class PagoService
             ]);
 
             $this->auditoria->registrar('pago.reembolso', 'reserva', $idReserva, 'Reembolso', $antes);
+            (new ComprobanteService())->emitirDeTransaccion($idTransaccion, isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null);
             $db->commit();
             return [
                 'success' => true,

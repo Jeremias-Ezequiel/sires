@@ -16,6 +16,8 @@
 .text-xs  { font-size: var(--fs-xs); }
 .text-bold { font-weight: 600; }
 .text-nowrap { white-space: nowrap; }
+.text-right  { text-align: right; }
+.tabular     { font-variant-numeric: tabular-nums; }
 
 /* Ayuda debajo de un campo de formulario */
 .field-hint {
@@ -38,6 +40,7 @@
 .d-block      { display: block; }
 .flex-row     { display: flex; gap: 8px; align-items: center; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-wrap    { flex-wrap: wrap; gap: 8px; }
 .flex-1       { flex: 1; }
 .stack-xs     { display: flex; flex-direction: column; gap: 2px; }
 

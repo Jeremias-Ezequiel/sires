@@ -171,6 +171,7 @@ endif;
                             <th>Método de Pago</th>
                             <th>Monto Abonado</th>
                             <th>Registrado Por</th>
+                            <th>Comprobante</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -181,6 +182,22 @@ endif;
                                 <td><?= htmlspecialchars($tx['metodo_pago_descripcion']) ?></td>
                                 <td>$<?= number_format((float)$tx['monto_abonado'], 2, ',', '.') ?></td>
                                 <td><?= htmlspecialchars(($tx['usuario_nombre'] ?? '') . ' ' . ($tx['usuario_apellido'] ?? '')) ?></td>
+                                <td>
+                                    <?php if (isset($comprobantesPorTx[(int)$tx['id']])):
+                                        $cTx = $comprobantesPorTx[(int)$tx['id']]; ?>
+                                        <a class="btn-mov" href="<?= url('/dashboard/comprobantes/descargar?id=' . (int)$cTx['id']) ?>"
+                                           title="Descargar PDF">
+                                            <i class="fas fa-file-pdf" aria-hidden="true"></i><?= htmlspecialchars(\App\Dominio\Comprobante::numeroFormateado((int)$cTx['punto_venta'], (int)$cTx['numero'])) ?>
+                                        </a>
+                                    <?php elseif ((float)$tx['monto_abonado'] != 0): ?>
+                                        <form method="POST" action="<?= url('/dashboard/comprobantes/transaccion') ?>">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="id_transaccion" value="<?= (int)$tx['id'] ?>">
+                                            <input type="hidden" name="id_reserva" value="<?= (int)$reserva['id'] ?>">
+                                            <button type="submit" class="btn-mov"><i class="fas fa-file-circle-plus" aria-hidden="true"></i>Emitir</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

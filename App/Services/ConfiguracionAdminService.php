@@ -83,6 +83,47 @@ class ConfiguracionAdminService
             'unidad' => 'días antes de la entrada', 'min' => 1, 'max' => 30,
             'ambito' => 'Recordatorios que se encolen desde la vigencia (cron/mails.php).',
         ],
+        // --- Datos del hotel (comprobantes) ---
+        'hotel_nombre' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Nombre del hotel',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Nombre que ven los huéspedes en comprobantes y mails.',
+        ],
+        'hotel_razon_social' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Razón social',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'hotel_cuit' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'CUIT',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'hotel_condicion_iva' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Condición frente al IVA',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'hotel_domicilio' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Domicilio',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'hotel_telefono' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Teléfono',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'hotel_email' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'texto', 'titulo' => 'Email de contacto',
+            'unidad' => '', 'min' => null, 'max' => 150,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Los ya emitidos conservan sus datos.',
+        ],
+        'comprobante_punto_venta' => [
+            'grupo' => 'Datos del hotel', 'tipo' => 'int', 'titulo' => 'Punto de venta',
+            'unidad' => 'de la numeración', 'min' => 1, 'max' => 9999,
+            'ambito' => 'Comprobantes que se emitan desde la vigencia. Cada punto de venta tiene su propia numeración.',
+        ],
         // --- Seguridad ---
         'minutos_token_recuperacion' => [
             'grupo' => 'Seguridad', 'tipo' => 'int', 'titulo' => 'Validez del link de recuperación',
@@ -213,6 +254,13 @@ class ConfiguracionAdminService
                 }
                 $rango((float)$v);
                 return rtrim(rtrim(number_format((float)$v / 100, 4, '.', ''), '0'), '.') ?: '0';
+
+            case 'texto':
+                $v = trim((string)preg_replace('/\s+/u', ' ', (string)($entrada['valor'] ?? '')));
+                if (mb_strlen($v) > (int)$def['max']) {
+                    throw new Exception("\"{$def['titulo']}\" admite hasta {$def['max']} caracteres.");
+                }
+                return $v;
 
             case 'json':
                 // Descuento por ocupación: misma estructura que el valor vigente [capacidad][huéspedes] => %

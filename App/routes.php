@@ -11,6 +11,7 @@ use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
 use App\Controllers\HousekeepingController;
 use App\Controllers\PlanningController;
+use App\Controllers\ComprobanteController;
 use App\Controllers\AuditoriaController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
@@ -445,6 +446,25 @@ return function (RouteCollector $r) {
         'action' => [PaymentController::class, 'recalculateReservation'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
+    // Comprobantes PDF
+    $r->addRoute('GET', '/dashboard/comprobantes/descargar', [
+        'action' => [ComprobanteController::class, 'descargar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/comprobantes/transaccion', [
+        'action' => [ComprobanteController::class, 'emitirDeTransaccion'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/comprobantes/resumen', [
+        'action' => [ComprobanteController::class, 'emitirResumen'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     $r->addRoute('POST', '/dashboard/payments/refund/process', [

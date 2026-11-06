@@ -48,7 +48,7 @@ class ColaMail extends Model
     public function listosParaEnviar(int $limite): array
     {
         $stmt = $this->db->prepare(
-            "SELECT m.id, m.tipo, m.id_reserva, m.destinatario, m.asunto, m.cuerpo_html, m.intentos,
+            "SELECT m.id, m.tipo, m.id_reserva, m.clave_unica, m.destinatario, m.asunto, m.cuerpo_html, m.intentos,
                     r.id_estado_reserva
              FROM Cola_Mails m
              LEFT JOIN Reservas r ON r.id = m.id_reserva

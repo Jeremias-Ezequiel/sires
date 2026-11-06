@@ -267,6 +267,14 @@ class BookingController extends Controller
                 }
             }
 
+            // Comprobantes PDF emitidos para la reserva
+            $comprobantes = [];
+            try {
+                $comprobantes = (new \App\Services\ComprobanteService())->porReserva((int)$id);
+            } catch (\Throwable $e) {
+                error_log("[SIRES COMPROBANTE] " . $e->getMessage());
+            }
+
             // Mails al huésped de esta reserva (Cola_Mails)
             $mails = [];
             try {

@@ -101,6 +101,21 @@ final class Politicas
     public const RECORDATORIO_DIAS_ANTES = 3;
 
     // ------------------------------------------------------------------
+    // Datos del hotel en comprobantes (claves hotel_*) y numeración
+    // ------------------------------------------------------------------
+
+    public const HOTEL_NOMBRE = 'Hotel';
+    public const HOTEL_RAZON_SOCIAL = '';
+    public const HOTEL_CUIT = '';
+    public const HOTEL_CONDICION_IVA = '';
+    public const HOTEL_DOMICILIO = '';
+    public const HOTEL_TELEFONO = '';
+    public const HOTEL_EMAIL = '';
+
+    /** Punto de venta de la numeración de comprobantes (0001-00000012). Clave: comprobante_punto_venta. */
+    public const COMPROBANTE_PUNTO_VENTA = 1;
+
+    // ------------------------------------------------------------------
     // Seguridad
     // ------------------------------------------------------------------
 

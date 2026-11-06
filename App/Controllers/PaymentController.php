@@ -111,6 +111,18 @@ class PaymentController
 
             $metodos = (new MetodoPago())->getAll();
 
+            // Recibos emitidos, por transacción (Comprobantes, SIRES 1.7.0)
+            $comprobantesPorTx = [];
+            try {
+                foreach ((new \App\Services\ComprobanteService())->porReserva((int)$id) as $c) {
+                    if ($c['id_transaccion'] !== null) {
+                        $comprobantesPorTx[(int)$c['id_transaccion']] = $c;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('[SIRES COMPROBANTE] ' . $e->getMessage());
+            }
+
             $contentView = __DIR__ . '/../views/dashboard/detailPago.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 

@@ -10,6 +10,7 @@ $mostrar = function (array $p, mixed $valor): string {
     return match ($p['tipo']) {
         'decimal' => rtrim(rtrim(number_format((float)$valor * 100, 2, ',', '.'), '0'), ','),
         'json'    => 'Tabla',
+        'texto'   => (string)$valor === '' ? 'Sin cargar' : (string)$valor,
         default   => (string)$valor,
     };
 };
@@ -123,9 +124,11 @@ $minProgramar = date('Y-m-d\TH:i', time() + 60);
                                 </div>
                             <?php else: ?>
                                 <label class="cfg-form__campo">
-                                    <span>Nuevo valor (<?= htmlspecialchars($p['unidad']) ?>)</span>
+                                    <span>Nuevo valor<?= $p['unidad'] !== '' ? ' (' . htmlspecialchars($p['unidad']) . ')' : '' ?></span>
                                     <?php if ($p['tipo'] === 'time'): ?>
                                         <input type="time" class="form__input" name="valor" value="<?= htmlspecialchars((string)$p['valor']) ?>" required>
+                                    <?php elseif ($p['tipo'] === 'texto'): ?>
+                                        <input type="text" class="form__input" name="valor" value="<?= htmlspecialchars((string)$p['valor']) ?>" maxlength="<?= (int)$p['max'] ?>">
                                     <?php else: ?>
                                         <input type="number" class="form__input" name="valor"
                                                value="<?= htmlspecialchars($p['tipo'] === 'decimal' ? (string)round((float)$p['valor'] * 100, 2) : (string)$p['valor']) ?>"

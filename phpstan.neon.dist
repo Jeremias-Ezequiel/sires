@@ -20,4 +20,6 @@ parameters:
         # PHPStan supone que inTransaction() no cambia entre dos llamadas; acá sí cambia.
         -
             identifier: booleanAnd.rightAlwaysFalse
-            path: App/Services/PagoService.php
+            paths:
+                - App/Services/PagoService.php
+                - App/Services/ComprobanteService.php

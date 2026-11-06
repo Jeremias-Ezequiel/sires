@@ -37,6 +37,14 @@ final class ConfiguracionService
         'cancelacion_penalidad_noches' => 'CANCELACION_PENALIDAD_NOCHES',
         'noshow_noches_retenidas'    => 'NOSHOW_NOCHES_RETENIDAS',
         'recordatorio_dias_antes'    => 'RECORDATORIO_DIAS_ANTES',
+        'hotel_nombre'               => 'HOTEL_NOMBRE',
+        'hotel_razon_social'         => 'HOTEL_RAZON_SOCIAL',
+        'hotel_cuit'                 => 'HOTEL_CUIT',
+        'hotel_condicion_iva'        => 'HOTEL_CONDICION_IVA',
+        'hotel_domicilio'            => 'HOTEL_DOMICILIO',
+        'hotel_telefono'             => 'HOTEL_TELEFONO',
+        'hotel_email'                => 'HOTEL_EMAIL',
+        'comprobante_punto_venta'    => 'COMPROBANTE_PUNTO_VENTA',
     ];
 
     /** @var array<string, mixed> Caché por petición: "clave@fecha" => valor. */
@@ -125,6 +133,26 @@ final class ConfiguracionService
     public static function recordatorioDiasAntes(): int
     {
         return (int)self::get('recordatorio_dias_antes');
+    }
+
+    /**
+     * Datos del hotel vigentes hoy, para comprobantes y mails.
+     *
+     * @return array{nombre: string, razon_social: string, cuit: string, condicion_iva: string, domicilio: string, telefono: string, email: string}
+     */
+    public static function datosHotel(): array
+    {
+        $datos = [];
+        foreach (['nombre', 'razon_social', 'cuit', 'condicion_iva', 'domicilio', 'telefono', 'email'] as $campo) {
+            $datos[$campo] = trim((string)self::get('hotel_' . $campo));
+        }
+        return $datos;
+    }
+
+    /** Punto de venta de la numeración de comprobantes. */
+    public static function puntoVenta(): int
+    {
+        return max(1, (int)self::get('comprobante_punto_venta'));
     }
 
     /** Máximo de noches por reserva. */

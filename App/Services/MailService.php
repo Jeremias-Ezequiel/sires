@@ -160,7 +160,7 @@ final class MailService
                     continue;
                 }
                 try {
-                    $this->transporte->enviar((string)$m['destinatario'], (string)$m['asunto'], (string)$m['cuerpo_html']);
+                    $this->transporte->enviar((string)$m['destinatario'], (string)$m['asunto'], (string)$m['cuerpo_html'], $this->adjuntos($m));
                     $this->cola->marcarEnviado($id);
                     $enviados++;
                 } catch (Throwable $e) {
@@ -202,28 +202,9 @@ final class MailService
     public function render(string $plantilla, array $datos): string
     {
         $base = dirname(__DIR__) . '/views/mail/';
-        $datos += [
-            'hotel'  => SmtpTransporte::nombreRemitente(),
-            'e'      => fn (mixed $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'),
-            'dinero' => fn (mixed $v): string => '$' . number_format((float)$v, 2, ',', '.'),
-            'fecha'  => fn (string $f): string => date('d/m/Y', strtotime($f)),
-        ];
-        $datos['contenido'] = self::incluir($base . $plantilla . '.phtml', $datos);
-        return self::incluir($base . 'layout.phtml', $datos);
-    }
-
-    /** @param array<string, mixed> $datos */
-    private static function incluir(string $archivoPlantilla, array $datos): string
-    {
-        extract($datos, EXTR_SKIP);
-        ob_start();
-        try {
-            require $archivoPlantilla;
-            return (string)ob_get_clean();
-        } catch (Throwable $e) {
-            ob_end_clean();
-            throw $e;
-        }
+        $datos += ['hotel' => self::nombreHotel()];
+        $datos['contenido'] = Plantilla::render($base . $plantilla . '.phtml', $datos);
+        return Plantilla::render($base . 'layout.phtml', $datos);
     }
 
     /**
@@ -242,12 +223,42 @@ final class MailService
             throw new Exception('el cliente no tiene email');
         }
         return [
-            'hotel'        => SmtpTransporte::nombreRemitente(),
+            'hotel'        => self::nombreHotel(),
             'reserva'      => $reserva,
             'noches'       => Tarifa::noches((string)$reserva['fecha_entrada'], (string)$reserva['fecha_salida']),
             'politica'     => ConfiguracionService::politicaReserva((string)$reserva['fecha_alta']),
             'horaCheckout' => ConfiguracionService::horaCheckout(),
         ];
+    }
+
+    /**
+     * Adjuntos de un mail de la cola: el recibo PDF en el comprobante de pago.
+     * Si el PDF no se puede generar, el mail sale igual sin adjunto (se loguea).
+     *
+     * @param array<string, mixed> $mail
+     * @return list<array{nombre: string, contenido: string, tipo: string}>
+     */
+    private function adjuntos(array $mail): array
+    {
+        if ($mail['tipo'] !== ColaMail::TIPO_COMPROBANTE_PAGO
+            || !preg_match('/^pago:(\d+)$/', (string)$mail['clave_unica'], $m)) {
+            return [];
+        }
+        try {
+            $comprobantes = new ComprobanteService();
+            $comprobante = $comprobantes->porTransaccion((int)$m[1]);
+            return $comprobante === null ? [] : [$comprobantes->pdf($comprobante)];
+        } catch (Throwable $e) {
+            error_log('[SIRES MAIL] Mail #' . $mail['id'] . ' sin adjunto: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /** Nombre del hotel (Configuracion.hotel_nombre); si está vacío, el del remitente. */
+    private static function nombreHotel(): string
+    {
+        $nombre = ConfiguracionService::datosHotel()['nombre'];
+        return $nombre !== '' ? $nombre : SmtpTransporte::nombreRemitente();
     }
 
     /** Ejecuta un encolado; si falla lo loguea y devuelve false, sin cortar la operación. */
