@@ -3,6 +3,16 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.1.1] - 2026-11-06
+
+### Seguridad
+- Alta, edición y alta por lote de habitaciones validan el token CSRF.
+- Activar/desactivar empleados y bloquear, desbloquear, dar de baja, reactivar, limpieza y
+  mantenimiento de habitaciones solo se aceptan por POST con token CSRF; un GET responde 405.
+
+### Corregido
+- El motivo elegido al bloquear una habitación no se guardaba.
+
 ## [1.1.0] - 2026-11-06
 
 ### Agregado
