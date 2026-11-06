@@ -165,7 +165,7 @@ class PaymentController
         }
 
         try {
-            $id = $vars['id'] ?? '';
+            $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
                 throw new Exception("ID de reserva inválido.");
             }

@@ -12,10 +12,13 @@
                     <button type="button"
                         class="btn btn--warning open-sires-modal"
                         data-action="recalculate"
-                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
-                        data-url="<?= url('/dashboard/payments/recalculate?id=' . $reserva['id']) ?>">
+                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>">
                         <i class="fas fa-calculator"></i> Recalcular Precio
                     </button>
+                    <form id="recalculate-form" action="<?= url('/dashboard/payments/recalculate') ?>" method="POST" hidden>
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int)$reserva['id'] ?>">
+                    </form>
                 <?php endif; ?>
                 <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB
                     && \App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR])): ?>
@@ -337,6 +340,7 @@ endif;
             const btnConfirm = document.getElementById('btn-modal-confirm');
             const btnCancel = document.getElementById('btn-modal-cancel');
             const refundForm = document.getElementById('refund-form');
+            const recalculateForm = document.getElementById('recalculate-form');
 
             if (!modal) return;
 
@@ -349,8 +353,11 @@ endif;
                 modalIcon.className = 'fas fa-calculator';
                 modalIconFrame.classList.add('modal__icon--warning');
                 btnConfirm.classList.add('btn--warning');
-                btnConfirm.setAttribute('href', targetUrl);
-                btnConfirm.onclick = null;
+                btnConfirm.setAttribute('href', '#');
+                btnConfirm.onclick = function(e) {
+                    e.preventDefault();
+                    if (recalculateForm) recalculateForm.submit();
+                };
             } else if (actionType === 'refund') {
                 const monto = this.getAttribute('data-monto') ?? '0,00';
                 modalTitle.innerText = 'Procesar Reembolso';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Helpers\UrlHelper;
+use Exception;
 
 class CsrfMiddleware
 {

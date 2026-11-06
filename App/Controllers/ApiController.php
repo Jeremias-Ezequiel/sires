@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Models\Provincia;
 use App\Models\Localidad;
+use Exception;
 
 class ApiController
 {
