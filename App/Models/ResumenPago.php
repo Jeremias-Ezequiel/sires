@@ -17,10 +17,12 @@ class ResumenPago extends Model
     private float $monto_pagado = 0.0;
     private float $saldo_pendiente = 0.0;
 
-    public const ESTADO_PENDIENTE = 1;
-    public const ESTADO_PAGO_PARCIAL = 2;
-    public const ESTADO_PAGADO_TOTAL = 3;
-    public const ESTADO_REEMBOLSADO = 4;
+    // Alias: los valores se definen en EstadoPago (espejo de la tabla catálogo).
+    public const ESTADO_PENDIENTE = EstadoPago::PENDIENTE;
+    public const ESTADO_PAGO_PARCIAL = EstadoPago::PAGO_PARCIAL;
+    public const ESTADO_PAGADO_TOTAL = EstadoPago::PAGADO_TOTAL;
+    public const ESTADO_REEMBOLSADO = EstadoPago::REEMBOLSADO;
+    public const ESTADO_A_REEMBOLSAR = EstadoPago::A_REEMBOLSAB;
 
     public function getByReserva(int $id_reserva): ?ResumenPago
     {

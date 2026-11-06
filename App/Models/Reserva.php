@@ -24,13 +24,14 @@ class Reserva extends Model
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    public const ESTADO_PENDIENTE = 1;
-    public const ESTADO_CONFIRMADA = 2;
-    public const ESTADO_CANCELADA = 3;
-    public const ESTADO_FINALIZADA = 4;
-    public const ESTADO_EN_CASA = 5;
-    public const ESTADO_NO_SHOW = 6;
-    public const ESTADO_NO_SHOW_CON_PAGO = 7;
+    // Alias: los valores se definen en EstadoReserva (espejo de la tabla catálogo).
+    public const ESTADO_PENDIENTE = EstadoReserva::PENDIENTE;
+    public const ESTADO_CONFIRMADA = EstadoReserva::CONFIRMADA;
+    public const ESTADO_CANCELADA = EstadoReserva::CANCELADA;
+    public const ESTADO_FINALIZADA = EstadoReserva::FINALIZADA_CHECKOUT;
+    public const ESTADO_EN_CASA = EstadoReserva::EN_CASA;
+    public const ESTADO_NO_SHOW = EstadoReserva::NO_SHOW;
+    public const ESTADO_NO_SHOW_CON_PAGO = EstadoReserva::NO_SHOW_CON_PAGO;
 
     public function countReservasHoy(?string $fecha = null): int
     {

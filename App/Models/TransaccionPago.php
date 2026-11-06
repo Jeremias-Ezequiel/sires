@@ -17,10 +17,11 @@ class TransaccionPago extends Model
     private string $fecha_hora;
     private int $registrado_por;
 
-    public const ESTADO_PENDIENTE = 1;
-    public const ESTADO_PAGO_PARCIAL = 2;
-    public const ESTADO_PAGADO_TOTAL = 3;
-    public const ESTADO_REEMBOLSADO = 4;
+    // Alias: los valores se definen en EstadoPago (espejo de la tabla catálogo).
+    public const ESTADO_PENDIENTE = EstadoPago::PENDIENTE;
+    public const ESTADO_PAGO_PARCIAL = EstadoPago::PAGO_PARCIAL;
+    public const ESTADO_PAGADO_TOTAL = EstadoPago::PAGADO_TOTAL;
+    public const ESTADO_REEMBOLSADO = EstadoPago::REEMBOLSADO;
 
     public function sumIngresosDelDia(?string $fecha = null): float
     {
