@@ -4,12 +4,31 @@ declare(strict_types=1);
 
 namespace App\Dominio;
 
+use App\Models\EstadoReserva;
+
 /**
  * Reglas de cancelación y No-Show sin acceso a la base.
  * Las fechas y la hora actual se reciben por parámetro para poder probarlas.
  */
 final class ReglasReserva
 {
+    /** Salida en la fecha pactada (o después). */
+    public const CHECKOUT = 'checkout';
+    /** Salida antes de la fecha pactada: las noches no usadas no se reembolsan. */
+    public const CHECKOUT_ANTICIPADO = 'anticipado';
+
+    /**
+     * Qué salida corresponde a una reserva: solo con el huésped en casa; check-out desde el
+     * día de salida y checkout anticipado antes. null si todavía no puede salir (no está en casa).
+     */
+    public static function tipoCheckout(int $idEstadoReserva, string $fechaSalida, string $hoy): ?string
+    {
+        if ($idEstadoReserva !== EstadoReserva::EN_CASA) {
+            return null;
+        }
+        return $fechaSalida > $hoy ? self::CHECKOUT_ANTICIPADO : self::CHECKOUT;
+    }
+
     /** Horas que faltan desde $ahora (timestamp) hasta las 00:00 del día de entrada. Negativo si ya pasó. */
     public static function horasAnticipacion(string $fechaEntrada, int $ahora): float
     {

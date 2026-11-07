@@ -166,7 +166,7 @@ test.describe('pagos y estados', () => {
     const { id } = await crearReserva(page, { id_habitacion: hab.id, fecha_entrada: fecha(-5), fecha_salida: fecha(-3) });
     await pagar(page, id!, (await resumen(page, id!)).saldo);
     const ck = await accion(page, 'checkin', id!);
-    if (ck.ok) { await accion(page, 'early-checkout', id!); await limpiar(page, hab.id); }
+    if (ck.ok) { await accion(page, 'finalize', id!); await limpiar(page, hab.id); }
     expect(ck.ok, 'check-in aceptado con la estadía vencida').toBe(false);
   });
 });

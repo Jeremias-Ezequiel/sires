@@ -29,12 +29,16 @@
                 <i class="fas fa-user-slash"></i> No-Show
             </button>
         <?php endif; ?>
-        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
+        <?php
+        // Check-out desde el día de salida; antes, solo checkout anticipado
+        $tipoCheckout = \App\Dominio\ReglasReserva::tipoCheckout((int)$reserva['id_estado_reserva'], (string)$reserva['fecha_salida'], date('Y-m-d'));
+        ?>
+        <?php if ($tipoCheckout === \App\Dominio\ReglasReserva::CHECKOUT): ?>
             <button type="button" class="btn btn--primary open-sires-modal" data-action="finalize" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/finalize') ?>">
-                <i class="fas fa-flag-checkered"></i> Finalizar
+                <i class="fas fa-flag-checkered"></i> Check-out
             </button>
         <?php endif; ?>
-        <?php if ((int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
+        <?php if ($tipoCheckout === \App\Dominio\ReglasReserva::CHECKOUT_ANTICIPADO): ?>
             <button type="button" class="btn btn--warning open-sires-modal" data-action="early-checkout" data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>" data-id="<?= $reserva['id'] ?>" data-url="<?= url('/dashboard/booking/early-checkout') ?>">
                 <i class="fas fa-door-open"></i> Checkout Anticipado
             </button>
@@ -378,8 +382,8 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'finalize') {
-                    modalTitle.innerText = 'Finalizar Reserva';
-                    modalText.innerHTML = `¿Está seguro de que desea finalizar la <br><strong>${escHtml(reservaName)}</strong>? Se liberará la habitación.`;
+                    modalTitle.innerText = 'Realizar Check-out';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-out de la <br><strong>${escHtml(reservaName)}</strong>?<br><small>La reserva se finaliza y la habitación pasa a limpieza.</small>`;
                     modalIcon.className = 'fas fa-flag-checkered';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');

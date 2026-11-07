@@ -558,12 +558,12 @@ class ReservaService
 
         $hoy = date('Y-m-d');
         $estadoActual = (int)$reservaData['id_estado_reserva'];
-        if ($estadoActual === Reserva::ESTADO_CONFIRMADA && (string)$reservaData['fecha_salida'] > $hoy) {
-            throw new Exception("No se puede finalizar la reserva antes de la fecha de salida.");
+        $tipo = ReglasReserva::tipoCheckout($estadoActual, (string)$reservaData['fecha_salida'], $hoy);
+        if ($tipo === null) {
+            throw new Exception("Solo se puede hacer el check-out de una reserva en estadía.");
         }
-
-        if ($estadoActual !== Reserva::ESTADO_CONFIRMADA && $estadoActual !== Reserva::ESTADO_EN_CASA) {
-            throw new Exception("No se puede finalizar una reserva que no está confirmada o en estadía.");
+        if ($tipo === ReglasReserva::CHECKOUT_ANTICIPADO) {
+            throw new Exception("La salida pactada es el " . date('d/m/Y', (int)strtotime((string)$reservaData['fecha_salida'])) . ". Para que el huésped se retire antes, usá Checkout anticipado.");
         }
 
         $resumen = $this->resumenModel->getByReserva($idReserva);
@@ -579,16 +579,6 @@ class ReservaService
             $reservaOk = $this->reservaModel->cambiarEstado($idReserva, Reserva::ESTADO_FINALIZADA, $estadoActual);
             if (!$reservaOk) {
                 throw new Exception("No se pudo finalizar la reserva.");
-            }
-
-            if ((string)$reservaData['fecha_salida'] > $hoy) {
-                $obsActual = (string)($reservaData['observaciones'] ?? '');
-                $nuevaObs = ReglasReserva::agregarObservacion(
-                    ReglasReserva::observacionesLegibles($obsActual),
-                    "Se retiró de forma temprana el " . $hoy . "."
-                );
-                $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
-                $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
             }
 
             $roomOk = $this->habitacionModel->cambiarEstado(
@@ -618,8 +608,12 @@ class ReservaService
         if (!$reservaData) {
             throw new Exception("La reserva no existe.");
         }
-        if ((int)$reservaData['id_estado_reserva'] !== Reserva::ESTADO_EN_CASA) {
+        $tipo = ReglasReserva::tipoCheckout((int)$reservaData['id_estado_reserva'], (string)$reservaData['fecha_salida'], date('Y-m-d'));
+        if ($tipo === null) {
             throw new Exception("Solo se puede hacer checkout anticipado de reservas en estadía.");
+        }
+        if ($tipo === ReglasReserva::CHECKOUT) {
+            throw new Exception("Hoy es el día de salida pactado: usá Check-out.");
         }
 
         $resumen = $this->resumenModel->getByReserva($idReserva);

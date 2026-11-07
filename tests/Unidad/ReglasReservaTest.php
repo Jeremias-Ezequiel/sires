@@ -110,4 +110,20 @@ final class ReglasReservaTest extends TestCase
         $this->assertSame("Pago & seña de O'Brien", ReglasReserva::observacionesLegibles('Pago &amp; seña de O&#039;Brien'));
         $this->assertSame("- A\n- B", ReglasReserva::observacionesLegibles("- A\n- B"));
     }
+
+    public function testTipoCheckoutSegunLaFechaDeSalida(): void
+    {
+        $enCasa = \App\Models\EstadoReserva::EN_CASA;
+        $this->assertSame(ReglasReserva::CHECKOUT_ANTICIPADO, ReglasReserva::tipoCheckout($enCasa, '2026-11-10', '2026-11-07'));
+        $this->assertSame(ReglasReserva::CHECKOUT, ReglasReserva::tipoCheckout($enCasa, '2026-11-07', '2026-11-07'));
+        // Se pasó de la fecha de salida: sigue siendo check-out normal
+        $this->assertSame(ReglasReserva::CHECKOUT, ReglasReserva::tipoCheckout($enCasa, '2026-11-05', '2026-11-07'));
+    }
+
+    public function testSinCheckoutSiElHuespedNoEstaEnCasa(): void
+    {
+        foreach ([\App\Models\EstadoReserva::CONFIRMADA, \App\Models\EstadoReserva::PENDIENTE, \App\Models\EstadoReserva::FINALIZADA_CHECKOUT] as $estado) {
+            $this->assertNull(ReglasReserva::tipoCheckout($estado, '2026-11-07', '2026-11-07'));
+        }
+    }
 }

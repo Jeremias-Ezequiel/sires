@@ -14,10 +14,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 
 ### Cambiado
 - **Menú lateral:** Configuración, Reloj Oficial, Tema y Cerrar sesión pasan a un pie separado de la
-  navegación, junto con la versión. El menú queda fijo al alto de la ventana.
+  navegación, con el selector de tema al final y la versión. El menú queda fijo al alto de la ventana.
 - **Observaciones de la reserva:** cada mensaje automático (upgrade, recálculo, late checkout, corte de
   pagos, No-Show, salida anticipada) va en su propia línea como `- Mensaje`, y el detalle respeta los
   saltos de línea. Las reservas anteriores se muestran con el formato nuevo sin migrar datos.
+- **Check-out:** con el huésped en casa, el botón *Check-out* aparece desde el día de salida y
+  *Checkout anticipado* solo antes; en el listado de reservas y en el detalle. Una reserva confirmada sin
+  check-in ya no se puede finalizar (corresponde No-Show). El servidor aplica la misma regla.
 - Base de datos: **volver a correr los scripts 01 y 02** (EVENTs `corte_pagos`, `cargo_late_checkout` y
   `liberacion_no_show` con el formato nuevo de observaciones). No hay migración nueva.
 
