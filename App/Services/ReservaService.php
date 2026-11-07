@@ -380,8 +380,8 @@ class ReservaService
                 $updR = $db->prepare(
                     "UPDATE Reservas
                      SET id_estado_reserva = :noshow,
-                         observaciones = CONCAT(COALESCE(observaciones, ''),
-                             ' | Liberacion automatica tras retencion por No-Show con pago.')
+                         observaciones = CONCAT(COALESCE(observaciones, ''), " . Reserva::SQL_SEPARADOR_OBS . ",
+                             'Liberacion automatica tras retencion por No-Show con pago.')
                      WHERE id = :id AND id_estado_reserva = :actual"
                 );
                 $updR->execute([
@@ -583,7 +583,10 @@ class ReservaService
 
             if ((string)$reservaData['fecha_salida'] > $hoy) {
                 $obsActual = (string)($reservaData['observaciones'] ?? '');
-                $nuevaObs = $obsActual . ($obsActual !== '' ? "\n" : '') . "- Se retiró de forma temprana el " . $hoy . ".";
+                $nuevaObs = ReglasReserva::agregarObservacion(
+                    ReglasReserva::observacionesLegibles($obsActual),
+                    "Se retiró de forma temprana el " . $hoy . "."
+                );
                 $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
                 $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
             }
@@ -640,7 +643,10 @@ class ReservaService
 
             $hoy = date('Y-m-d');
             $obsActual = (string)($reservaData['observaciones'] ?? '');
-            $nuevaObs = $obsActual . ($obsActual !== '' ? "\n" : '') . "- Se retiró de forma temprana el " . $hoy . ".";
+            $nuevaObs = ReglasReserva::agregarObservacion(
+                    ReglasReserva::observacionesLegibles($obsActual),
+                    "Se retiró de forma temprana el " . $hoy . "."
+                );
             $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
             $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);
 
@@ -1193,9 +1199,10 @@ class ReservaService
             $nuevoTipo = (string)($nuevaHab['tipo'] ?? '');
             $hoy = date('Y-m-d');
             $obsActual = (string)($reservaData['observaciones'] ?? '');
-            $nuevaObs = $obsActual
-                . ($obsActual !== '' ? "\n" : '')
-                . "- Upgrade: de #" . $habOriginalNum . " (" . $habOriginalTipo . " $" . number_format($precioOriginal, 2, ',', '.') . ") → #" . $nuevoNum . " (" . $nuevoTipo . ") sin costo adicional el " . $hoy . ".";
+            $nuevaObs = ReglasReserva::agregarObservacion(
+                ReglasReserva::observacionesLegibles($obsActual),
+                "Upgrade: de #" . $habOriginalNum . " (" . $habOriginalTipo . " $" . number_format($precioOriginal, 2, ',', '.') . ") → #" . $nuevoNum . " (" . $nuevoTipo . ") sin costo adicional el " . $hoy . "."
+            );
 
             $updObs = $db->prepare("UPDATE Reservas SET observaciones = :obs WHERE id = :id");
             $updObs->execute([':obs' => $nuevaObs, ':id' => $idReserva]);

@@ -1066,6 +1066,11 @@ input[type="password"]::-ms-clear {
   background-color: var(--sidebar-danger-bg);
 }
 
+/* Respeta los saltos de línea del texto (observaciones de la reserva) */
+.text-multilinea {
+  white-space: pre-line;
+}
+
 /* --- Paginación ----------------------------------------------------------- */
 .pagination {
   display: flex;

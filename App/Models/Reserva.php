@@ -25,6 +25,13 @@ class Reserva extends Model
     private ?string $fecha_baja = null;
 
     // Alias: los valores se definen en EstadoReserva (espejo de la tabla catálogo).
+    /**
+     * Separador SQL para sumar un mensaje a `observaciones` (mismo formato que
+     * ReglasReserva::agregarObservacion): "- " en la primera línea, salto + "- " después.
+     * Uso: SET observaciones = CONCAT(COALESCE(observaciones, ''), SQL_SEPARADOR_OBS, 'Mensaje').
+     */
+    public const SQL_SEPARADOR_OBS = "IF(COALESCE(observaciones, '') = '', '- ', CONCAT(CHAR(10), '- '))";
+
     public const ESTADO_PENDIENTE = EstadoReserva::PENDIENTE;
     public const ESTADO_CONFIRMADA = EstadoReserva::CONFIRMADA;
     public const ESTADO_CANCELADA = EstadoReserva::CANCELADA;
@@ -623,7 +630,8 @@ class Reserva extends Model
     public function setObservaciones(?string $observaciones): void
     {
         if ($observaciones !== null && $observaciones !== '') {
-            $this->observaciones = htmlspecialchars(trim($observaciones), ENT_QUOTES, 'UTF-8');
+            // Se guarda el texto tal cual; el escape se hace al mostrarlo en la vista
+            $this->observaciones = trim($observaciones);
         } else {
             $this->observaciones = null;
         }

@@ -60,4 +60,22 @@ final class ReglasReserva
         }
         return null;
     }
+
+    /** Agrega un mensaje al final de las observaciones, en su propia línea: "- Mensaje". */
+    public static function agregarObservacion(?string $actual, string $mensaje): string
+    {
+        $actual = rtrim((string)$actual);
+        return ($actual === '' ? '' : $actual . "\n") . '- ' . $mensaje;
+    }
+
+    /**
+     * Observaciones listas para mostrar o editar (texto plano: la vista escapa).
+     * Normaliza los datos anteriores a 1.8.0: mensajes separados con " | " y texto
+     * guardado ya escapado como HTML.
+     */
+    public static function observacionesLegibles(?string $observaciones): string
+    {
+        $texto = html_entity_decode((string)$observaciones, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(str_replace(' | ', "\n- ", $texto));
+    }
 }

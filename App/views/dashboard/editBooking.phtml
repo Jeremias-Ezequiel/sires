@@ -118,7 +118,7 @@ if (!empty($habitaciones)) {
             <h2 class="form__section-title">Observaciones</h2>
 
             <div class="form__group">
-                <textarea name="observaciones" id="observaciones" class="form__input form__textarea" rows="3" placeholder="Notas adicionales..."><?= htmlspecialchars($old['observaciones'] ?? $reserva['observaciones'] ?? '') ?></textarea>
+                <textarea name="observaciones" id="observaciones" class="form__input form__textarea" rows="3" placeholder="Notas adicionales..."><?= htmlspecialchars($old['observaciones'] ?? \App\Dominio\ReglasReserva::observacionesLegibles($reserva['observaciones'] ?? null)) ?></textarea>
             </div>
         </div>
 

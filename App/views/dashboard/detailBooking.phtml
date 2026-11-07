@@ -159,7 +159,8 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
 
                 <tr>
                     <td class="detail-label">Observaciones</td>
-                    <td class="detail-value"><?= !empty($reserva['observaciones']) ? htmlspecialchars($reserva['observaciones']) : '-' ?></td>
+                    <?php $obsLegibles = \App\Dominio\ReglasReserva::observacionesLegibles($reserva['observaciones'] ?? null); ?>
+                    <td class="detail-value text-multilinea"><?= $obsLegibles !== '' ? htmlspecialchars($obsLegibles) : '-' ?></td>
                 </tr>
             </tbody>
         </table>

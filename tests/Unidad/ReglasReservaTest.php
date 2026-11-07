@@ -88,4 +88,26 @@ final class ReglasReservaTest extends TestCase
         $this->assertNull(ReglasReserva::errorNoShow('2026-11-10', '2026-11-10', '23:00', '23:00'));
         $this->assertNull(ReglasReserva::errorNoShow('2026-11-09', '2026-11-10', '08:00', '23:00'));
     }
+
+    public function testAgregarObservacionVaEnSuPropiaLinea(): void
+    {
+        $this->assertSame('- Upgrade', ReglasReserva::agregarObservacion(null, 'Upgrade'));
+        $this->assertSame('- Upgrade', ReglasReserva::agregarObservacion('', 'Upgrade'));
+        $this->assertSame("Cliente VIP\n- Upgrade", ReglasReserva::agregarObservacion("Cliente VIP\n", 'Upgrade'));
+        $this->assertSame("- A\n- B", ReglasReserva::agregarObservacion('- A', 'B'));
+    }
+
+    public function testObservacionesLegiblesNormalizaElFormatoViejo(): void
+    {
+        $this->assertSame('', ReglasReserva::observacionesLegibles(null));
+        $this->assertSame(
+            "Cliente VIP\n- Recálculo manual\n- Late Checkout Fee Aplicado",
+            ReglasReserva::observacionesLegibles('Cliente VIP | Recálculo manual | Late Checkout Fee Aplicado')
+        );
+        // Sin observación inicial, el CONCAT viejo dejaba " | " al principio
+        $this->assertSame('- Cancelada automática', ReglasReserva::observacionesLegibles(' | Cancelada automática'));
+        // Texto escapado al guardar en versiones anteriores
+        $this->assertSame("Pago & seña de O'Brien", ReglasReserva::observacionesLegibles('Pago &amp; seña de O&#039;Brien'));
+        $this->assertSame("- A\n- B", ReglasReserva::observacionesLegibles("- A\n- B"));
+    }
 }

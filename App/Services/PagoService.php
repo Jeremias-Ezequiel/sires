@@ -264,8 +264,8 @@ class PagoService
                 $updateObs = $db->prepare(
                     "UPDATE Reservas
                      SET observaciones = CONCAT(
-                         COALESCE(observaciones, ''),
-                         ' | Recálculo automático de precio: $',
+                         COALESCE(observaciones, ''), " . Reserva::SQL_SEPARADOR_OBS . ",
+                         'Recálculo automático de precio: $',
                          :anterior, ' → $', :nuevo, '. Fecha: ', NOW()
                      )
                      WHERE id = :id"
@@ -379,8 +379,8 @@ class PagoService
                     "UPDATE Reservas
                      SET late_fee_aplicado = 1,
                          observaciones = CONCAT(
-                             COALESCE(observaciones, ''),
-                             ' | Late Checkout Fee Aplicado: $', :fee, :detalle
+                             COALESCE(observaciones, ''), " . Reserva::SQL_SEPARADOR_OBS . ",
+                             'Late Checkout Fee Aplicado: $', :fee, :detalle
                          )
                      WHERE id = :id AND late_fee_aplicado = 0"
                 );
@@ -464,12 +464,12 @@ class PagoService
                 $this->aplicarRetencion($idReserva, (float)$row['monto_cobrado']);
 
                 $motivo = (string)$row['fecha_entrada'] < date('Y-m-d')
-                    ? ' | Cancelada automática: reserva pendiente con la fecha de entrada vencida.'
-                    : ' | Cancelada automática ' . $horasCorte . 'hs antes del check-in por falta de pago total.';
+                    ? 'Cancelada automática: reserva pendiente con la fecha de entrada vencida.'
+                    : 'Cancelada automática ' . $horasCorte . 'hs antes del check-in por falta de pago total.';
 
                 $updateReserva = $db->prepare(
                     "UPDATE Reservas SET id_estado_reserva = :cancelada,
-                         observaciones = CONCAT(COALESCE(observaciones, ''), :obs)
+                         observaciones = CONCAT(COALESCE(observaciones, ''), " . Reserva::SQL_SEPARADOR_OBS . ", :obs)
                      WHERE id = :id"
                 );
                 $updateReserva->execute([
@@ -572,8 +572,8 @@ class PagoService
             $updateObs = $db->prepare(
                 "UPDATE Reservas
                  SET observaciones = CONCAT(
-                     COALESCE(observaciones, ''),
-                     ' | Recálculo manual de precio: $',
+                     COALESCE(observaciones, ''), " . Reserva::SQL_SEPARADOR_OBS . ",
+                     'Recálculo manual de precio: $',
                      :anterior, ' → $', :nuevo, '. Fecha: ', NOW()
                  )
                  WHERE id = :id"
