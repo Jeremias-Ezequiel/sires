@@ -3,6 +3,32 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.8.0] - 2026-11-07
+
+### Agregado
+- **Paginación de Habitaciones** (20 por página, conserva los filtros).
+- El paginador de todos los listados muestra la primera, la última y las páginas cercanas a la actual,
+  con "…" entre saltos, en lugar de un botón por página.
+- El historial del detalle de reserva y de habitación enlaza a *Auditoría* filtrada cuando llega a su
+  tope de 30 acciones.
+
+### Cambiado
+- **Menú lateral:** Configuración, Reloj Oficial, Tema y Cerrar sesión pasan a un pie separado de la
+  navegación, junto con la versión. El menú queda fijo al alto de la ventana.
+- **Observaciones de la reserva:** cada mensaje automático (upgrade, recálculo, late checkout, corte de
+  pagos, No-Show, salida anticipada) va en su propia línea como `- Mensaje`, y el detalle respeta los
+  saltos de línea. Las reservas anteriores se muestran con el formato nuevo sin migrar datos.
+- Base de datos: **volver a correr los scripts 01 y 02** (EVENTs `corte_pagos`, `cargo_late_checkout` y
+  `liberacion_no_show` con el formato nuevo de observaciones). No hay migración nueva.
+
+### Corregido
+- **Seguridad:** el token de recuperación de contraseña se guarda hasheado; dar de baja a un empleado o
+  cambiarle el rol rige al instante aunque tenga la sesión abierta; *Reloj Oficial* exige iniciar sesión.
+- Las advertencias del detalle de pago (reembolso pendiente, reserva cancelada, pagada) ya no desaparecen
+  a los 3 segundos.
+- Las observaciones de la reserva ya no se escapan dos veces (`&` se veía como `&amp;`).
+- "Habitaciones" se marca como activa en el menú.
+
 ## [1.7.0] - 2026-11-06
 
 ### Agregado
