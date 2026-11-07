@@ -10,10 +10,11 @@ use App\Models\ResumenPago;
 use App\Models\TransaccionPago;
 use App\Models\MetodoPago;
 use App\Services\PagoService;
-use App\Helpers\UrlHelper;
 
-class PaymentController
+class PaymentController extends Controller
 {
+    private const ID_INVALIDO = 'ID de reserva inválido.';
+
     private PagoService $pagoService;
 
     public function __construct()
@@ -23,14 +24,9 @@ class PaymentController
 
     public function showPayments(array $vars): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         if ($currentPage < 1) { $currentPage = 1; }
@@ -60,41 +56,29 @@ class PaymentController
 
     public function showPaymentDetail(array $vars): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         try {
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
-            $reserva = (new Reserva())->findById((int)$id);
+            $reserva = (new Reserva())->findById($id);
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
             }
 
             $resumenModel = new ResumenPago();
-            $resumen = $resumenModel->getByReserva((int)$id);
+            $resumen = $resumenModel->getByReserva($id);
 
             if ($resumen === null && (int)$reserva['id_estado_reserva'] !== Reserva::ESTADO_CANCELADA) {
                 $resumen = $this->pagoService->generarResumen($reserva);
 
                 if ($resumen !== null) {
-                    $_SESSION['flash_message'] = "Se generó el resumen de pago de la reserva automáticamente.";
-                    $_SESSION['flash_status']  = "success";
-                    $flashMessage = $_SESSION['flash_message'];
-                    $flashStatus  = $_SESSION['flash_status'];
-                    unset($_SESSION['flash_message'], $_SESSION['flash_status']);
+                    $flashMessage = "Se generó el resumen de pago de la reserva automáticamente.";
+                    $flashStatus  = "success";
                 }
             }
 
@@ -108,7 +92,7 @@ class PaymentController
             // Recibos emitidos, por transacción (Comprobantes, SIRES 1.7.0)
             $comprobantesPorTx = [];
             try {
-                foreach ((new \App\Services\ComprobanteService())->porReserva((int)$id) as $c) {
+                foreach ((new \App\Services\ComprobanteService())->porReserva($id) as $c) {
                     if ($c['id_transaccion'] !== null) {
                         $comprobantesPorTx[(int)$c['id_transaccion']] = $c;
                     }
@@ -121,111 +105,39 @@ class PaymentController
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments'));
-            exit;
+            $this->flash($e->getMessage(), 'error');
+            $this->redirect('/dashboard/payments');
         }
     }
 
     public function addPayment(): void
     {
-        try {
+        $idReserva = (int)($_POST['id_reserva'] ?? 0);
+        $this->ejecutarAccion(function () use ($idReserva): array {
             csrf_check();
-
-            $idReserva     = (int)($_POST['id_reserva'] ?? 0);
-            $idMetodoPago  = (int)($_POST['id_metodo_pago'] ?? 0);
-            $montoAbonado  = (float)($_POST['monto_abonado'] ?? 0);
-
-            $resultado = $this->pagoService->registrarPago(
+            return $this->pagoService->registrarPago(
                 $idReserva,
-                $idMetodoPago,
-                $montoAbonado,
+                (int)($_POST['id_metodo_pago'] ?? 0),
+                (float)($_POST['monto_abonado'] ?? 0),
                 (int)($_SESSION['user_id'] ?? 0)
             );
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $idReserva));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . (int)($_POST['id_reserva'] ?? 0)));
-            exit;
-        }
+        }, '/dashboard/payments/detail?id=' . $idReserva, null, true);
     }
 
     public function recalculateReservation(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->pagoService->recalcularManual((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $id));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $id));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->pagoService->recalcularManual($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/payments/detail?id=' . (int)($_POST['id'] ?? 0)
+        );
     }
 
     public function refundPayment(): void
     {
-        try {
+        // Las validaciones (estado A Reembolsar, monto > 0) las hace PagoService::procesarReembolso
+        $this->ejecutarAccion(function (): array {
             csrf_check();
-
-            $idReserva = (int)($_POST['id_reserva'] ?? 0);
-            if ($idReserva <= 0) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $reserva = (new Reserva())->findById($idReserva);
-            if (!$reserva) {
-                throw new Exception("La reserva no existe.");
-            }
-
-            $resumenModel = new ResumenPago();
-            $resumen = $resumenModel->getByReserva($idReserva);
-            if ($resumen === null) {
-                throw new Exception("La reserva no tiene un resumen de pago asociado.");
-            }
-            if ($resumen->getIdEstadoPago() !== \App\Models\EstadoPago::A_REEMBOLSAB) {
-                throw new Exception("El estado del pago no está pendiente de reembolso.");
-            }
-
-            $montoReembolso = $resumen->getMontoAReembolsar();
-            if ($montoReembolso <= 0) {
-                throw new Exception("No hay monto cobrado para reembolsar.");
-            }
-
-            $resultado = $this->pagoService->procesarReembolso($idReserva);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . $idReserva));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/payments/detail?id=' . ($_POST['id_reserva'] ?? 0)));
-            exit;
-        }
+            return $this->pagoService->procesarReembolso($this->idDe('id_reserva', self::ID_INVALIDO));
+        }, '/dashboard/payments/detail?id=' . (int)($_POST['id_reserva'] ?? 0));
     }
 }

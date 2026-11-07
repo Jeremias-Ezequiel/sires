@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-class ErrorController
+class ErrorController extends Controller
 {
     public function notFound(): void
     {

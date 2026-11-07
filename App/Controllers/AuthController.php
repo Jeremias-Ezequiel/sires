@@ -7,15 +7,13 @@ namespace App\Controllers;
 use Exception;
 use App\Models\Usuario;
 use App\Middleware\AuthMiddleware;
-use App\Helpers\UrlHelper;
 use App\Services\LimiteIntentosService;
 
-class AuthController
+class AuthController extends Controller
 {
     public function showLogin(): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
         require_once __DIR__ . '/../views/auth/login.phtml';
     }
@@ -76,14 +74,12 @@ class AuthController
             $_SESSION['user_id'] = $user->getId();
             $_SESSION['user_role'] = $user->getIdRol();
 
-            header('Location:' . UrlHelper::to('/dashboard'));
-            exit;
+            $this->redirect('/dashboard');
         } catch (Exception $e) {
             // Cualquier excepción (campos vacíos, formato de mail roto o clave inválida)
             // se captura acá de forma centralizada y se envía a la vista.
             $_SESSION['auth_error'] = $e->getMessage();
-            header('Location:' . UrlHelper::to('/login'));
-            exit;
+            $this->redirect('/login');
         }
     }
     public function logout(): void

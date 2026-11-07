@@ -14,6 +14,8 @@ use App\Dominio\Planning;
 
 class BookingController extends Controller
 {
+    private const ID_INVALIDO = 'ID de reserva inválido.';
+
     private ReservaService $reservaService;
 
     public function __construct()
@@ -23,14 +25,9 @@ class BookingController extends Controller
 
     public function showBooking(array $vars): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -72,17 +69,11 @@ class BookingController extends Controller
 
     public function showNewBookingForm(array $vars = []): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         // Desde el planning: habitación y fecha de entrada precargadas (salida = entrada + 1)
         if ($old === [] && isset($vars['id_habitacion'], $vars['fecha_entrada'])) {
@@ -141,29 +132,20 @@ class BookingController extends Controller
 
     public function showEditBookingForm(array $vars): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
             $reservaModel = new Reserva();
-            $reserva = $reservaModel->findById((int)$id);
+            $reserva = $reservaModel->findById($id);
 
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
@@ -226,25 +208,17 @@ class BookingController extends Controller
 
     public function showBookingDetail(array $vars): void
     {
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
-            $reserva = (new Reserva())->findById((int)$id);
+            $reserva = (new Reserva())->findById($id);
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
             }
@@ -253,7 +227,7 @@ class BookingController extends Controller
             $upgradeOptions = [];
             if ($estadoReserva === Reserva::ESTADO_CONFIRMADA || $estadoReserva === Reserva::ESTADO_EN_CASA) {
                 try {
-                    $upgradeOptions = $this->reservaService->getOpcionesUpgrade((int)$id);
+                    $upgradeOptions = $this->reservaService->getOpcionesUpgrade($id);
                 } catch (Exception $e) {
                     $upgradeOptions = [];
                 }
@@ -263,7 +237,7 @@ class BookingController extends Controller
             $historial = null;
             if (\App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])) {
                 try {
-                    $historial = (new \App\Services\AuditoriaService())->historial('reserva', (int)$id);
+                    $historial = (new \App\Services\AuditoriaService())->historial('reserva', $id);
                 } catch (Exception $e) {
                     error_log("[SIRES AUDITORIA] " . $e->getMessage());
                 }
@@ -272,7 +246,7 @@ class BookingController extends Controller
             // Comprobantes PDF emitidos para la reserva
             $comprobantes = [];
             try {
-                $comprobantes = (new \App\Services\ComprobanteService())->porReserva((int)$id);
+                $comprobantes = (new \App\Services\ComprobanteService())->porReserva($id);
             } catch (\Throwable $e) {
                 error_log("[SIRES COMPROBANTE] " . $e->getMessage());
             }
@@ -280,7 +254,7 @@ class BookingController extends Controller
             // Mails al huésped de esta reserva (Cola_Mails)
             $mails = [];
             try {
-                $mails = (new \App\Models\ColaMail())->porReserva((int)$id);
+                $mails = (new \App\Models\ColaMail())->porReserva($id);
             } catch (\Throwable $e) {
                 error_log("[SIRES MAIL] " . $e->getMessage());
             }
@@ -297,122 +271,50 @@ class BookingController extends Controller
 
     public function cancelBooking(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->cancelar((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->cancelar($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function confirmBooking(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->confirmar((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->confirmar($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function checkInBooking(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkIn((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect($this->destinoTrasAccion());
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect($this->destinoTrasAccion());
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkIn($this->idDe('id', self::ID_INVALIDO)),
+            $this->destinoTrasAccion()
+        );
     }
 
     public function markNoShow(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->marcarNoShow((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->marcarNoShow($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function finalizeBooking(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkOut((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect($this->destinoTrasAccion());
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect($this->destinoTrasAccion());
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkOut($this->idDe('id', self::ID_INVALIDO)),
+            $this->destinoTrasAccion()
+        );
     }
 
     public function earlyCheckoutBooking(array $vars): void
     {
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkoutAnticipado((int)$id);
-
-            $this->flash($resultado['message']);
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $this->flash($e->getMessage(), 'error');
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkoutAnticipado($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function moveRoomBooking(array $vars): void

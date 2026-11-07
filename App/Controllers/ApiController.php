@@ -8,7 +8,7 @@ use App\Models\Provincia;
 use App\Models\Localidad;
 use Exception;
 
-class ApiController
+class ApiController extends Controller
 {
     public function getProvinces(array $vars): void
     {
