@@ -89,7 +89,7 @@ include __DIR__ . '/../partials/head.phtml';
                 </ul>
             </nav>
 
-            <!-- Pie del menú: herramientas, tema, cierre de sesión y versión, separados de la navegación -->
+            <!-- Pie del menú: herramientas, cierre de sesión, tema y versión, separados de la navegación -->
             <div class="sidebar__pie">
                 <ul class="nav-links">
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
@@ -109,11 +109,11 @@ include __DIR__ . '/../partials/head.phtml';
                     <?php endif; ?>
                 </ul>
 
-                <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
-
                 <a href="<?= url('/logout') ?>" class="nav-link nav-link--pie nav-link--danger">
                     <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
                 </a>
+
+                <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
 
                 <div class="sidebar__version">
                     SIRES <span class="system-version">v<?= \App\Config\App::VERSION ?></span>
