@@ -40,8 +40,48 @@
   color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
-  padding: 30px 20px;
+  padding: 30px 20px 16px;
   border-right: 1px solid var(--sidebar-border);
+  /* Fija al alto de la ventana: el pie (tema, cerrar sesión, versión) queda siempre a la vista.
+     Si el menú no entra, la barra se desplaza sola sin mover el contenido. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+/* Pie del menú lateral: separado de la navegación principal */
+.sidebar__pie {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Ítems del pie más compactos que los de navegación */
+.nav-link.nav-link--pie {
+  padding: 9px 20px;
+  margin-bottom: 0;
+}
+
+.sidebar__pie .nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__version {
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--sidebar-text);
+}
+
+.sidebar__version .system-version {
+  font-weight: 600;
 }
 
 .logo-container {
@@ -2073,6 +2113,11 @@ a.hab:hover {
 
   .sidebar {
     width: auto;
+    position: static;
+    height: auto;
+    /* Toda la barra (menú + pie) se desplaza en horizontal */
+    overflow-x: auto;
+    overflow-y: hidden;
     flex-direction: row;
     align-items: center;
     gap: 12px;
@@ -2091,10 +2136,9 @@ a.hab:hover {
     max-width: 40px;
   }
 
-  .sidebar nav {
-    flex: 1;
-    min-width: 0;
-    overflow-x: auto;
+  .sidebar nav,
+  .sidebar__pie {
+    flex: 0 0 auto;
   }
 
   .nav-links {
@@ -2113,8 +2157,27 @@ a.hab:hover {
     margin-right: 8px;
   }
 
-  .sidebar .theme-switcher {
+  .sidebar .theme-switcher,
+  .sidebar__version {
     display: none;
+  }
+
+  /* El pie se suma a la barra superior como un grupo más, sin línea divisoria */
+  .sidebar__pie {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    gap: 4px;
+  }
+
+  .sidebar__pie .nav-links {
+    flex-direction: row;
+  }
+
+  .nav-link.nav-link--pie {
+    padding: 8px 12px;
   }
 
   .main-content {
@@ -2250,6 +2313,21 @@ a.hab:hover {
   font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--color-text);
+}
+
+/* Enlace a Auditoría cuando el historial del detalle llega a su tope de filas */
+.aud-historial__ver-todo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.aud-historial__ver-todo:hover {
+  text-decoration: underline;
 }
 
 

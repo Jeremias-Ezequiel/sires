@@ -1,12 +1,14 @@
-    <div class="system-footer">
-        SIRES <span class="system-version">v<?= \App\Config\App::VERSION ?></span>
-    </div>
+    <?php if (empty($versionEnSidebar)): ?>
+        <div class="system-footer">
+            SIRES <span class="system-version">v<?= \App\Config\App::VERSION ?></span>
+        </div>
+    <?php endif; ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Solo se ocultan los mensajes flash; las advertencias de estado (.alert--fija) quedan
             setTimeout(function() {
                 document.querySelectorAll('.alert:not(.alert--fija)').forEach(function(el) {
-            // Solo se ocultan los mensajes flash; las advertencias de estado (.alert--fija) quedan
                     el.style.transition = 'opacity 0.3s ease';
                     el.style.opacity = '0';
                     setTimeout(function() { el.remove(); }, 300);

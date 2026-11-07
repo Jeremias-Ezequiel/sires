@@ -64,7 +64,7 @@ include __DIR__ . '/../partials/head.phtml';
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'rooms.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-bed"></i>Habitaciones
                             </a>
                         </li>
@@ -86,9 +86,15 @@ include __DIR__ . '/../partials/head.phtml';
                         </li>
                     <?php endif; ?>
 
+                </ul>
+            </nav>
+
+            <!-- Pie del menú: herramientas, tema, cierre de sesión y versión, separados de la navegación -->
+            <div class="sidebar__pie">
+                <ul class="nav-links">
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
                         <li>
-                            <a href="<?= url('/dashboard/settings') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'configuracion.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/settings') ?>" class="nav-link nav-link--pie <?= (isset($contentView) && str_contains($contentView, 'configuracion.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-sliders"></i>Configuración
                             </a>
                         </li>
@@ -96,21 +102,23 @@ include __DIR__ . '/../partials/head.phtml';
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= url('/api/reloj') ?>" class="nav-link">
+                            <a href="<?= url('/api/reloj') ?>" class="nav-link nav-link--pie">
                                 <i class="fas fa-clock"></i>Reloj Oficial
                             </a>
                         </li>
                     <?php endif; ?>
-
-                    <li>
-                        <a href="<?= url('/logout') ?>" class="nav-link nav-link--danger">
-                            <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
-                        </a>
-                    </li>
                 </ul>
-            </nav>
 
-            <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
+                <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
+
+                <a href="<?= url('/logout') ?>" class="nav-link nav-link--pie nav-link--danger">
+                    <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+                </a>
+
+                <div class="sidebar__version">
+                    SIRES <span class="system-version">v<?= \App\Config\App::VERSION ?></span>
+                </div>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -124,4 +132,8 @@ include __DIR__ . '/../partials/head.phtml';
 
     </div>
 
-<?php include __DIR__ . '/../partials/footer.phtml'; ?>
+<?php
+// La versión ya se muestra al pie del menú lateral
+$versionEnSidebar = true;
+include __DIR__ . '/../partials/footer.phtml';
+?>

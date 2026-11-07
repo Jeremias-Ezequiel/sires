@@ -208,10 +208,9 @@
 }
 
 /* --- Selector de tema (pruebas de paleta) -------------------------------- */
+/* Vive en el pie del menú lateral (.sidebar__pie), que pone la separación */
 .theme-switcher {
-  margin-top: auto;
-  padding: 12px 8px 0;
-  border-top: 1px solid var(--sidebar-border);
+  padding: 4px 8px;
 }
 
 .theme-switcher label {
