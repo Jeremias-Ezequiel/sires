@@ -13,9 +13,9 @@ Gestión de reservas de hotel. PHP 8+ sin framework, arquitectura MVC propia sob
 ## Estructura y flujo
 
 - `index.php` = front controller. Rutas definidas en `App/routes.php` (FastRoute).
-- `App/Controllers/*` reciben `$vars` y renderizan vistas `.phtml` de `App/views/` con `require`.
+- `App/Controllers/*` extienden `Controller`, reciben `$vars` y renderizan vistas `.phtml` de `App/views/` con `require`. No escriben modelos: leen para armar la vista y delegan toda mutación en un Service. Acciones POST con `ejecutarAccion(fn () => $this->servicio->x($this->idDe('id', '...')), $rutaExito, $rutaError, $recordarInputs)` (try / flash / redirect en un solo lugar); en las vistas, `tomarFlash()`, `tomarInputs()`, `tomarDeSesion()`. Si la ruta no tiene `CsrfMiddleware`, `csrf_check()` va **dentro** del closure (si no, un token vencido termina en 500).
 - `App/Models/*` extienden `App\Models\Model` (PDO singleton vía `App\Config\Database`). Constantes de negocio como consts de clase (estados de reserva/habitación, roles).
-- `App/Services/*` = lógica de negocio compleja: transacciones, bloqueos `FOR UPDATE`, validaciones.
+- `App/Services/*` = lógica de negocio compleja: transacciones, bloqueos `FOR UPDATE`, validaciones. `ReservaService` es una fachada: la lógica vive en `App/Services/Reserva/` (`AltaReservaService`, `EstadiaService`, `CambioHabitacionService`, `BajaReservaService`, base común `ServicioReservaBase`); un método nuevo va en el grupo que corresponde y se expone en la fachada. Empleados, clientes y recuperación de contraseña: `EmpleadoService`, `ClienteService`, `RecuperacionService`; la cascada nacionalidad/provincia/localidad, en `UbicacionService`.
 - `App/Middleware/*` = clases con métodos **estáticos** invocadas desde la definición de ruta.
 - `App/Core/ErrorHandler.php` registrado en `index.php`; loguea con prefijo `[SIRES ...]`. Rutas `/api/*` responden JSON.
 - `App/Helpers/functions.php` = helpers globales cargados por Composer: `url()`, `asset()`, `asset_v()` (asset con `?v=filemtime`, usar para CSS/JS), `csrf_token()`, `csrf_field()`, `csrf_check()`.
@@ -85,7 +85,7 @@ $r->addRoute('GET', '/dashboard/employees', [
 ## Tests
 
 - `composer check` antes de cada commit. Dependencias de desarrollo: PHPUnit 11 y PHPStan 2 (`require-dev`).
-- **Unidad** (`tests/Unidad`, suite por defecto): reglas puras de `App/Dominio` (`Tarifa`, `ReglasPago`, `ReglasReserva`, `PoliticaReserva`, `ConfiguracionVersionada`, `Planning`, `ReglasMail`, `Comprobante`). Sin PDO ni `date()` implícito: fechas, hora actual y configuración entran por parámetro. Una regla de negocio nueva va ahí y se testea; el Service solo lee la base y delega.
+- **Unidad** (`tests/Unidad`, suite por defecto): reglas puras de `App/Dominio` (`Tarifa`, `ReglasPago`, `ReglasReserva`, `PoliticaReserva`, `ConfiguracionVersionada`, `Planning`, `ReglasMail`, `Comprobante`, `ReglasEmpleado`, `ReglasCliente`). Sin PDO ni `date()` implícito: fechas, hora actual y configuración entran por parámetro. Una regla de negocio nueva va ahí y se testea; el Service solo lee la base y delega.
 - **Integración** (`tests/Integracion`, `composer test:integracion`): extienden `TestIntegracion`; corren dentro de la VM con su `.env`. `PdoConSavepoints` convierte las transacciones de los Services en SAVEPOINTs y el test termina con ROLLBACK. Nunca crear un `.env` nuevo ni levantar una base local.
 - **E2E** (`tests/e2e`, Playwright, `npx playwright test` desde esa carpeta): credenciales en `tests/e2e/.env` (no se versiona). Un spec que cambia datos sin vuelta atrás va con `@muta` y `test.skip(process.env.E2E_MUTAR !== '1')`.
 - PHPStan: no bajar el nivel ni sumar `ignoreErrors` sin un comentario que explique el falso positivo.
