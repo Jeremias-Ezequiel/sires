@@ -290,7 +290,8 @@ class Clientes extends Model
     {
         return $this->telefono;
     }
-    public function setTelefono(string $telefono): void
+    /** El teléfono es opcional: vacío o null queda null. */
+    public function setTelefono(?string $telefono): void
     {
         $this->telefono = \App\Helpers\Validator::telefonoE164((string)$telefono);
     }
