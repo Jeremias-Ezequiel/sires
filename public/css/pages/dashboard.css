@@ -74,6 +74,13 @@
   gap: 2px;
 }
 
+/* Línea igual a la del pie que separa el tema de Configuración, Reloj y Cerrar sesión */
+.sidebar__pie .theme-switcher {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
 .sidebar__version {
   text-align: center;
   font-size: var(--fs-xs);
