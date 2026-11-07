@@ -622,13 +622,17 @@ class PagoService
 
         try {
             $lock = $db->prepare(
-                "SELECT id, monto_cobrado FROM Resumen_Pago WHERE id = :id FOR UPDATE"
+                "SELECT id, monto_cobrado, id_estado_pago FROM Resumen_Pago WHERE id = :id FOR UPDATE"
             );
             $lock->execute([':id' => $resumen->getId()]);
             $row = $lock->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
                 throw new Exception("El resumen de pago no existe.");
+            }
+            // Con la fila bloqueada: otro pedido simultáneo pudo haber reembolsado entre la lectura y el bloqueo
+            if ((int)$row['id_estado_pago'] !== EstadoPago::A_REEMBOLSAB) {
+                throw new Exception("La reserva no está pendiente de reembolso.");
             }
 
             $insertTx = $db->prepare(
