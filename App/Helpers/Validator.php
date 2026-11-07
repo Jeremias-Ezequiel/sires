@@ -148,8 +148,11 @@ class Validator
         return $clean;
     }
 
-    /** Valida una fecha de nacimiento real (entre 18 y 130 años). Acepta strings vacíos (opcional). */
-    public static function fechaNacimientoValida(string $fecha): string
+    /**
+     * Valida una fecha de nacimiento real (entre 18 y 130 años). Acepta strings vacíos (opcional).
+     * $hoy (Y-m-d) permite fijar la fecha de referencia; si es null se usa la actual.
+     */
+    public static function fechaNacimientoValida(string $fecha, ?string $hoy = null): string
     {
         $clean = trim($fecha);
         if ($clean === '') {
@@ -164,7 +167,7 @@ class Validator
             throw new Exception('La fecha de nacimiento no es válida (AAAA-MM-DD).');
         }
 
-        $hoy = new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires'));
+        $hoy = new DateTime($hoy ?? 'now', new DateTimeZone('America/Argentina/Buenos_Aires'));
         $hoy->setTime(0, 0, 0);
         if ($dt > $hoy) {
             throw new Exception('La fecha de nacimiento no puede ser futura.');
