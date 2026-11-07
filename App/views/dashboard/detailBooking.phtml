@@ -253,6 +253,11 @@ elseif (strpos($estadoLower, 'finaliz') !== false) $statusClass = 'badge--dispon
             $historialConEntidad = false;
             include __DIR__ . '/../partials/historial-auditoria.phtml';
             ?>
+            <?php if (count($historial) >= \App\Services\AuditoriaService::HISTORIAL_LIMITE): ?>
+                <a href="<?= url('/dashboard/audit?' . http_build_query(['entidad' => 'reserva', 'id_entidad' => (int)$reserva['id']])) ?>" class="aud-historial__ver-todo">
+                    Se muestran las últimas <?= \App\Services\AuditoriaService::HISTORIAL_LIMITE ?> acciones. Ver el historial completo en Auditoría <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 <?php endif; ?>

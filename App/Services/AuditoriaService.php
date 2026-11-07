@@ -155,7 +155,10 @@ class AuditoriaService
     }
 
     /** Últimos registros de una entidad (pestaña Historial de reservas y habitaciones). */
-    public function historial(string $entidad, int $idEntidad, int $limite = 30): array
+    /** Filas que muestra la pestaña Historial de los detalles; el resto se ve en Auditoría. */
+    public const HISTORIAL_LIMITE = 30;
+
+    public function historial(string $entidad, int $idEntidad, int $limite = self::HISTORIAL_LIMITE): array
     {
         return $this->listar(['entidad' => $entidad, 'id_entidad' => $idEntidad], 1, $limite)['filas'];
     }

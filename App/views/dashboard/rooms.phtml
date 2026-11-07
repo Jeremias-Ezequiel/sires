@@ -235,6 +235,11 @@
                 </tbody>
             </table>
         </div>
+
+        <?php
+        $paginacionRuta = '/dashboard/rooms';
+        include __DIR__ . '/../partials/pagination.phtml';
+        ?>
     </section>
 <?php else: ?>
     <section class="details-section no-results-container">

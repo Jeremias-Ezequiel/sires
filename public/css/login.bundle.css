@@ -1102,6 +1102,13 @@ input[type="password"]::-ms-clear {
   color: var(--color-accent);
 }
 
+/* Salto entre páginas no consecutivas ("1 … 7 8 9 … 40") */
+.pagination__gap {
+  align-self: center;
+  padding: 0 2px;
+  color: var(--color-text-muted);
+}
+
 .pagination__page--active,
 .pagination__page--active:hover {
   background-color: var(--color-accent);

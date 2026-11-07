@@ -50,9 +50,18 @@ class RoomController
         $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
 
         $roomModel = new Habitacion();
+        $soloInactivas = $showInactive === 'inactive' ? '1' : null;
+
+        $currentPage = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 20;
+
+        $totalHabitaciones = $roomModel->countWithFilters($search, $status, $type, $floor, $soloInactivas);
+        $totalPages = max(1, (int)ceil($totalHabitaciones / $limit));
+        $currentPage = min($currentPage, $totalPages);
+
         $habitaciones = $roomModel->getAllWithFilters(
-            $search, $status, $type, $floor,
-            $showInactive === 'inactive' ? '1' : null
+            $search, $status, $type, $floor, $soloInactivas,
+            $limit, ($currentPage - 1) * $limit
         );
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();

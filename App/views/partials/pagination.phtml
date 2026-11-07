@@ -7,6 +7,7 @@
  *   $currentPage     int     página actual
  *   $totalPages      int     total de páginas
  * Conserva los filtros actuales de $_GET y solo cambia 'page'.
+ * Muestra la primera, la última y dos páginas a cada lado de la actual; el resto, con "…".
  */
 $enlacePagina = function (int $pagina) use ($paginacionRuta): string {
     $queryParams = $_GET;
@@ -14,6 +15,13 @@ $enlacePagina = function (int $pagina) use ($paginacionRuta): string {
     $queryParams['page'] = $pagina;
     return url($paginacionRuta . '?' . http_build_query($queryParams));
 };
+
+$paginasVisibles = [];
+foreach (range(1, max(1, $totalPages)) as $i) {
+    if ($i === 1 || $i === $totalPages || abs($i - $currentPage) <= 2) {
+        $paginasVisibles[] = $i;
+    }
+}
 ?>
 <?php if ($totalPages > 1): ?>
     <nav class="pagination" aria-label="Paginación">
@@ -24,11 +32,16 @@ $enlacePagina = function (int $pagina) use ($paginacionRuta): string {
         <?php endif; ?>
 
         <div class="pagination__pages">
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <?php $anterior = 0; ?>
+            <?php foreach ($paginasVisibles as $i): ?>
+                <?php if ($i - $anterior > 1): ?>
+                    <span class="pagination__gap" aria-hidden="true">…</span>
+                <?php endif; ?>
                 <a href="<?= $enlacePagina($i) ?>"
                    class="pagination__page<?= $i === $currentPage ? ' pagination__page--active' : '' ?>"
                    <?= $i === $currentPage ? 'aria-current="page"' : '' ?>><?= $i ?></a>
-            <?php endfor; ?>
+                <?php $anterior = $i; ?>
+            <?php endforeach; ?>
         </div>
 
         <?php if ($currentPage < $totalPages): ?>

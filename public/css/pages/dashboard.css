@@ -2315,6 +2315,21 @@ a.hab:hover {
 
 .plan-vista__opcion + .plan-vista__opcion {
   border-left: 1px solid var(--color-border);
+/* Enlace a Auditoría cuando el historial del detalle llega a su tope de filas */
+.aud-historial__ver-todo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.aud-historial__ver-todo:hover {
+  text-decoration: underline;
+}
+
 }
 
 .plan-vista__opcion:hover {
