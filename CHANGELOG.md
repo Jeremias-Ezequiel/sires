@@ -31,8 +31,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 - **Check-out:** con el huésped en casa, el botón *Check-out* aparece desde el día de salida y
   *Checkout anticipado* solo antes; en el listado de reservas y en el detalle. Una reserva confirmada sin
   check-in ya no se puede finalizar (corresponde No-Show). El servidor aplica la misma regla.
-- Base de datos: **volver a correr los scripts 01 y 02** (EVENTs `corte_pagos`, `cargo_late_checkout` y
-  `liberacion_no_show` con el formato nuevo de observaciones). No hay migración nueva.
+- Base de datos: **migración `016_reservas_fecha_checkout`** (columna `Reservas.fecha_checkout`, con
+  backfill desde Auditoría; no está en el dump v1.7.0: aplicarla antes de deployar) y **volver a correr los
+  scripts 01 y 02** (EVENTs `corte_pagos`, `cargo_late_checkout` y `liberacion_no_show` con el formato nuevo
+  de observaciones).
 
 ### Corregido
 - **Seguridad:** el token de recuperación de contraseña se guarda hasheado; dar de baja a un empleado o
@@ -41,6 +43,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
   a los 3 segundos.
 - Las observaciones de la reserva ya no se escapan dos veces (`&` se veía como `&amp;`).
 - "Habitaciones" se marca como activa en el menú.
+- **Planning:** una reserva con checkout anticipado se dibujaba hasta la salida pactada, encima de la
+  reserva que ocupó después esas noches. Ahora se guarda el día en que el huésped se retiró
+  (`fecha_checkout`) y la barra termina ahí; si se fue el mismo día que entró, no ocupa noches y no se dibuja.
 - La agenda del alta y la edición de reservas no mostraba como ocupadas las estadías en curso (En casa)
   ni las habitaciones retenidas por No-Show; el servidor sí las rechazaba al guardar.
 

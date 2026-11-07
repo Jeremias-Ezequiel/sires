@@ -405,6 +405,18 @@ class Reserva extends Model
         }
     }
 
+    /** Día real en que el huésped se retiró (check-out o checkout anticipado). fecha_salida sigue siendo la pactada. */
+    public function registrarCheckout(int $id, string $fecha): void
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE Reservas SET fecha_checkout = :fecha WHERE id = :id");
+            $stmt->execute([':fecha' => $fecha, ':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::registrarCheckout: " . $e->getMessage());
+            throw new Exception("Error al registrar la fecha de salida.");
+        }
+    }
+
     public function cambiarEstado(int $id, int $nuevoEstado, ?int $soloSiEstaEn = null): bool
     {
         try {

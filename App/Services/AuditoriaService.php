@@ -25,7 +25,7 @@ class AuditoriaService
 {
     /** Campos de cada entidad que se comparan. Nunca contraseñas ni tokens. */
     private const FOTOS = [
-        'reserva' => "SELECT r.id_estado_reserva, r.id_habitacion, r.id_cliente, r.fecha_entrada, r.fecha_salida,
+        'reserva' => "SELECT r.id_estado_reserva, r.id_habitacion, r.id_cliente, r.fecha_entrada, r.fecha_salida, r.fecha_checkout,
                              r.cantidad_huespedes, r.precio_noche_pactado,
                              rp.monto_total, rp.monto_cobrado, rp.saldo_pendiente, rp.monto_retenido, rp.id_estado_pago
                       FROM Reservas r LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
@@ -51,6 +51,7 @@ class AuditoriaService
         'id_cliente'           => 'Cliente (id)',
         'fecha_entrada'        => 'Entrada',
         'fecha_salida'         => 'Salida',
+        'fecha_checkout'       => 'Se retiró el',
         'cantidad_huespedes'   => 'Huéspedes',
         'precio_noche_pactado' => 'Precio por noche',
         'monto_total'          => 'Total',

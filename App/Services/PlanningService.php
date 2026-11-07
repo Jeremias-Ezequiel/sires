@@ -44,7 +44,8 @@ final class PlanningService
 
         foreach ($this->reservas($desde, $hasta) as $r) {
             $id = (int)$r['id_habitacion'];
-            $barra = Planning::barra((string)$r['fecha_entrada'], (string)$r['fecha_salida'], $desde, $dias);
+            $salida = Planning::salidaDibujada((string)$r['fecha_salida'], $r['fecha_checkout'] ?? null);
+            $barra = Planning::barra((string)$r['fecha_entrada'], $salida, $desde, $dias);
             if (!isset($habitaciones[$id]) || $barra === null) {
                 continue;
             }
@@ -54,7 +55,7 @@ final class PlanningService
                 'huesped'   => trim($r['apellido'] . ', ' . $r['nombre']),
                 'huespedes' => (int)$r['cantidad_huespedes'],
                 'entrada'   => (string)$r['fecha_entrada'],
-                'salida'    => (string)$r['fecha_salida'],
+                'salida'    => $salida,
                 'estilo'    => $estilo,
                 'estado'    => Planning::ESTILOS[$estilo][0],
                 'icono'     => Planning::ESTILOS[$estilo][1],
@@ -95,7 +96,7 @@ final class PlanningService
         $marcas = implode(', ', array_map(fn (int $i): string => ':e' . $i, array_keys($estados)));
         $stmt = $this->db->prepare(
             "SELECT r.id, r.id_habitacion, r.id_estado_reserva, r.fecha_entrada, r.fecha_salida,
-                    r.cantidad_huespedes, c.nombre, c.apellido
+                    r.fecha_checkout, r.cantidad_huespedes, c.nombre, c.apellido
              FROM Reservas r
              JOIN Clientes c ON c.id = r.id_cliente
              WHERE r.fecha_entrada < :hasta AND r.fecha_salida > :desde

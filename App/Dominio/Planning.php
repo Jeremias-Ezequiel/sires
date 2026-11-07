@@ -109,6 +109,18 @@ final class Planning
         ];
     }
 
+    /**
+     * Hasta dónde se dibuja una reserva: la fecha real de salida si el huésped se fue antes
+     * de la pactada (checkout anticipado); si no, la pactada. Así una reserva finalizada no
+     * se superpone con la que ocupó después esas noches.
+     */
+    public static function salidaDibujada(string $salidaPactada, ?string $fechaCheckout): string
+    {
+        return $fechaCheckout !== null && $fechaCheckout !== '' && $fechaCheckout < $salidaPactada
+            ? $fechaCheckout
+            : $salidaPactada;
+    }
+
     /** Clase visual de una reserva (clave de ESTILOS). */
     public static function estilo(int $idEstado, string $salida, string $hoy): string
     {

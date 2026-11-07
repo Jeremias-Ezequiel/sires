@@ -580,6 +580,7 @@ class ReservaService
             if (!$reservaOk) {
                 throw new Exception("No se pudo finalizar la reserva.");
             }
+            $this->reservaModel->registrarCheckout($idReserva, $hoy);
 
             $roomOk = $this->habitacionModel->cambiarEstado(
                 (int)$reservaData['id_habitacion'],
@@ -636,6 +637,8 @@ class ReservaService
             }
 
             $hoy = date('Y-m-d');
+            // Se retiró hoy: el Planning corta acá la barra (la salida pactada no cambia)
+            $this->reservaModel->registrarCheckout($idReserva, $hoy);
             $obsActual = (string)($reservaData['observaciones'] ?? '');
             $nuevaObs = ReglasReserva::agregarObservacion(
                     ReglasReserva::observacionesLegibles($obsActual),

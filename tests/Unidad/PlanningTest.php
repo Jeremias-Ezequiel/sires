@@ -100,4 +100,21 @@ final class PlanningTest extends TestCase
             $this->assertArrayHasKey(Planning::estilo($estado, '2026-11-10', '2026-11-06'), Planning::ESTILOS);
         }
     }
+
+    public function testCheckoutAnticipadoCortaLaBarraEnLaSalidaReal(): void
+    {
+        $this->assertSame('2026-11-08', Planning::salidaDibujada('2026-11-10', '2026-11-08'));
+        // Sin fecha real (reservas viejas o no finalizadas): la pactada
+        $this->assertSame('2026-11-10', Planning::salidaDibujada('2026-11-10', null));
+        $this->assertSame('2026-11-10', Planning::salidaDibujada('2026-11-10', ''));
+        // Check-out el día pactado o después: no se alarga la barra
+        $this->assertSame('2026-11-10', Planning::salidaDibujada('2026-11-10', '2026-11-10'));
+        $this->assertSame('2026-11-10', Planning::salidaDibujada('2026-11-10', '2026-11-11'));
+    }
+
+    public function testSeRetiroElMismoDiaDeEntradaNoOcupaNoches(): void
+    {
+        $salida = Planning::salidaDibujada('2026-11-10', '2026-11-07');
+        $this->assertNull(Planning::barra('2026-11-07', $salida, '2026-11-01', 14));
+    }
 }
