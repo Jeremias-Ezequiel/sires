@@ -440,6 +440,17 @@
   margin-left: 8px;
 }
 
+/* Habitación ocupada en las fechas cargadas: se puede elegir para ver su agenda */
+.autocomplete-item__aviso {
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-bg);
+  border-radius: var(--radius-full);
+}
+
 .autocomplete-no-results {
   padding: 14px;
   color: var(--color-text-muted);

@@ -441,7 +441,6 @@
             var exact = [];
             var partial = [];
             ROOMS.forEach(function(r) {
-                if (habitacionOcupadaEnFechas(r)) return;
                 var num = String(r.numero);
                 var label = '#' + r.numero + ' - piso ' + r.piso + ' (' + r.tipo.toLowerCase() + ')';
                 if (num === q || '#' + num === q) {
@@ -449,6 +448,10 @@
                 } else if (label.indexOf(q) !== -1 || r.tipo.toLowerCase().indexOf(q) !== -1 || String(r.piso).indexOf(q) !== -1) {
                     partial.push(r);
                 }
+            });
+            // Las ocupadas en las fechas cargadas también se listan (para ver su agenda), al final
+            partial.sort(function(a, b) {
+                return habitacionOcupadaEnFechas(a) - habitacionOcupadaEnFechas(b);
             });
             if (exact.length > 0) return { type: 'exact', results: exact };
             if (partial.length > 0) return { type: 'partial', results: partial };
@@ -492,7 +495,8 @@
                 item.dataset.precio = r.precio;
                 item.dataset.capacidad = r.capacidad;
                 var label = '#' + r.numero + ' - Piso ' + r.piso;
-                item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>';
+                item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>' +
+                    (habitacionOcupadaEnFechas(r) ? ' <span class="autocomplete-item__aviso">Ocupada en esas fechas</span>' : '');
                 item.addEventListener('click', function() {
                     confirmRoom(r);
                 });
@@ -523,12 +527,28 @@
                     '<div class="confirm-field"><span class="confirm-field-label">Piso</span><span class="confirm-field-value">' + escHtml(String(r.piso)) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Tipo</span><span class="confirm-field-value">' + escHtml(r.tipo) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Capacidad</span><span class="confirm-field-value">' + escHtml(String(r.capacidad)) + ' personas</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value">' + escHtml('Disponible para las fechas ingresadas') + '</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value" id="room-disponibilidad"></span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0,00</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Total estimado</span><span class="confirm-field-value" id="room-precio-total">$0,00</span></div>' +
                 '</div>';
             roomConfirmCard.style.display = 'block';
             roomDropdown.classList.remove('open');
+            marcarDisponibilidad(r);
+        }
+
+        /**
+         * Texto de disponibilidad de la tarjeta y validación del formulario: una habitación
+         * ocupada en esas fechas se puede elegir (para ver su agenda y buscar días libres),
+         * pero no se puede guardar la reserva hasta elegir fechas libres. El servidor vuelve a validar.
+         */
+        function marcarDisponibilidad(r) {
+            var ocupada = habitacionOcupadaEnFechas(r);
+            var el = document.getElementById('room-disponibilidad');
+            if (el) {
+                el.textContent = ocupada ? 'Ocupada en esas fechas: elegí días libres en la agenda' : 'Disponible para las fechas ingresadas';
+                el.classList.toggle('text-danger', ocupada);
+            }
+            entrada.setCustomValidity(ocupada ? 'La habitación está ocupada en esas fechas. Elegí días libres en la agenda.' : '');
         }
 
         roomSearch.addEventListener('input', function() {
@@ -536,6 +556,7 @@
             if (!val) {
                 roomHidden.value = '';
                 roomConfirmedId = null;
+                entrada.setCustomValidity(''); // sin habitación elegida no hay choque que marcar
                 roomDropdown.classList.remove('open');
                 roomConfirmCard.style.display = 'none';
                 calendario.ocultar();
@@ -553,6 +574,7 @@
                 }
             }
             roomConfirmedId = null;
+            entrada.setCustomValidity(''); // sin habitación elegida no hay choque que marcar
             roomHidden.value = '';
             roomConfirmCard.style.display = 'none';
             var filtered = filterRooms(val);
@@ -645,16 +667,10 @@
         function actualizarDisponibilidadHabitaciones() {
             if (roomConfirmedId !== null) {
                 var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
-                if (match && habitacionOcupadaEnFechas(match)) {
-                    roomConfirmedId = null;
-                    roomHidden.value = '';
-                    roomSearch.value = '';
-                    roomConfirmCard.style.display = 'none';
-                    calendario.ocultar();
-                    alert('La habitación seleccionada ya no está disponible para las fechas ingresadas.');
-                } else {
-                    renderizarTimelineOcupacion(roomConfirmedId);
-                }
+                // Ya no se descarta la habitación si las fechas chocan: la agenda muestra el
+                // choque y el formulario no se envía hasta que las fechas queden libres.
+                if (match) marcarDisponibilidad(match);
+                renderizarTimelineOcupacion(roomConfirmedId);
             }
         }
 

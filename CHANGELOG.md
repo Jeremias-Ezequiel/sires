@@ -26,6 +26,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 - La agenda muestra las reservas de la habitación con el color de su estado, como el Planning, y las
   lista debajo (cliente, fechas, estado y enlace al detalle). Al elegir la salida solo se puede llegar
   hasta el día en que entra la reserva siguiente; las noches ocupadas no se pueden elegir.
+- El buscador de habitaciones lista también las ocupadas en las fechas cargadas (al final, marcadas),
+  para poder ver su agenda y reservar los días libres. La reserva no se guarda hasta elegir fechas libres.
 - **Check-out:** con el huésped en casa, el botón *Check-out* aparece desde el día de salida y
   *Checkout anticipado* solo antes; en el listado de reservas y en el detalle. Una reserva confirmada sin
   check-in ya no se puede finalizar (corresponde No-Show). El servidor aplica la misma regla.
