@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Dominio\ReglasReserva;
 use App\Config\Database;
 use App\Dominio\Planning;
 use App\Models\Habitacion;
@@ -37,7 +38,7 @@ final class PlanningService
 
         $habitaciones = [];
         foreach ($this->habitaciones() as $h) {
-            $h['reservable'] = ReservaService::habitacionReservable((int)$h['id_estado_habitacion']);
+            $h['reservable'] = ReglasReserva::habitacionReservable((int)$h['id_estado_habitacion']);
             $h['barras'] = [];
             $habitaciones[(int)$h['id']] = $h;
         }

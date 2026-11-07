@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Dominio;
 
+use App\Models\EstadoHabitacion;
 use App\Models\EstadoReserva;
 
 /**
- * Reglas de cancelación y No-Show sin acceso a la base.
+ * Reglas de reservas sin acceso a la base: fechas, habitaciones reservables, cancelación y No-Show.
  * Las fechas y la hora actual se reciben por parámetro para poder probarlas.
  */
 final class ReglasReserva
@@ -16,6 +17,28 @@ final class ReglasReserva
     public const CHECKOUT = 'checkout';
     /** Salida antes de la fecha pactada: las noches no usadas no se reembolsan. */
     public const CHECKOUT_ANTICIPADO = 'anticipado';
+
+    /**
+     * Estados de habitación en los que no se puede asignar una reserva.
+     * Ocupada, Sucia y Limpiando son estados del día: no impiden reservar a futuro
+     * (el check-in sigue exigiendo que la habitación esté Disponible).
+     */
+    public const ESTADOS_HABITACION_NO_RESERVABLES = [
+        EstadoHabitacion::MANTENIMIENTO,
+        EstadoHabitacion::BLOQUEADA,
+    ];
+
+    public static function habitacionReservable(int $idEstadoHabitacion): bool
+    {
+        return !in_array($idEstadoHabitacion, self::ESTADOS_HABITACION_NO_RESERVABLES, true);
+    }
+
+    /** Verifica que la fecha tenga formato Y-m-d y exista en el calendario (ej. rechaza 2026-02-30). */
+    public static function esFechaValida(string $fecha): bool
+    {
+        $dt = \DateTime::createFromFormat('!Y-m-d', $fecha);
+        return $dt !== false && $dt->format('Y-m-d') === $fecha;
+    }
 
     /**
      * Qué salida corresponde a una reserva: solo con el huésped en casa; check-out desde el

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Dominio\ReglasReserva;
 use Exception;
 use App\Models\Reserva;
 use App\Models\Habitacion;
@@ -94,7 +95,7 @@ class BookingController extends Controller
         $clientes     = (new Clientes())->getAll();
         $habitaciones = array_filter(
             (new Habitacion())->getAllWithFilters(null, null, null, null),
-            fn (array $h): bool => ReservaService::habitacionReservable((int)$h['id_estado_habitacion'])
+            fn (array $h): bool => ReglasReserva::habitacionReservable((int)$h['id_estado_habitacion'])
         );
         $reservasActivas = (new Reserva())->getReservasActivas();
         $canales      = (new CanalOrigen())->getAll();
@@ -164,7 +165,7 @@ class BookingController extends Controller
                 (new Habitacion())->getAllWithFilters(null, null, null, null),
                 // La habitación actual de la reserva se muestra siempre, aunque hoy no sea reservable.
                 fn (array $h): bool => (int)$h['id'] === (int)$reserva['id_habitacion']
-                    || ReservaService::habitacionReservable((int)$h['id_estado_habitacion'])
+                    || ReglasReserva::habitacionReservable((int)$h['id_estado_habitacion'])
             );
             $reservasActivas = (new Reserva())->getReservasActivas();
             $canales      = (new CanalOrigen())->getAll();

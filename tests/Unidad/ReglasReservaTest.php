@@ -6,6 +6,7 @@ namespace Tests\Unidad;
 
 use App\Dominio\PoliticaReserva;
 use App\Dominio\ReglasReserva;
+use App\Models\EstadoHabitacion;
 use PHPUnit\Framework\TestCase;
 
 final class ReglasReservaTest extends TestCase
@@ -124,6 +125,23 @@ final class ReglasReservaTest extends TestCase
     {
         foreach ([\App\Models\EstadoReserva::CONFIRMADA, \App\Models\EstadoReserva::PENDIENTE, \App\Models\EstadoReserva::FINALIZADA_CHECKOUT] as $estado) {
             $this->assertNull(ReglasReserva::tipoCheckout($estado, '2026-11-07', '2026-11-07'));
+        }
+    }
+
+    public function testFechaValidaRechazaDiasInexistentesYOtrosFormatos(): void
+    {
+        $this->assertTrue(ReglasReserva::esFechaValida('2028-02-29'));
+        $this->assertFalse(ReglasReserva::esFechaValida('2026-02-30'));
+        $this->assertFalse(ReglasReserva::esFechaValida('07/11/2026'));
+        $this->assertFalse(ReglasReserva::esFechaValida(''));
+    }
+
+    public function testSoloMantenimientoYBloqueadaImpidenReservar(): void
+    {
+        $this->assertFalse(ReglasReserva::habitacionReservable(EstadoHabitacion::MANTENIMIENTO));
+        $this->assertFalse(ReglasReserva::habitacionReservable(EstadoHabitacion::BLOQUEADA));
+        foreach ([EstadoHabitacion::DISPONIBLE, EstadoHabitacion::OCUPADA, EstadoHabitacion::SUCIA, EstadoHabitacion::LIMPIANDO] as $estado) {
+            $this->assertTrue(ReglasReserva::habitacionReservable($estado), "estado {$estado}");
         }
     }
 }
