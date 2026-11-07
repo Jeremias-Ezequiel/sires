@@ -89,8 +89,11 @@ return function (RouteCollector $r) {
         'action' => [ApiController::class, 'getCities']
     ]);
 
+    // Usa las credenciales del servidor contra la API externa: solo personal logueado
     $r->addRoute('GET', '/api/reloj', [
-        'action' => [ApiController::class, 'consultarReloj']
+        'action'      => [ApiController::class, 'consultarReloj'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles'       => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA],
     ]);
 
     // =====================================================================

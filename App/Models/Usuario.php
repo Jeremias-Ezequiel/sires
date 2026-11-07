@@ -317,8 +317,9 @@ class Usuario extends Model
         try {
             $sql = "UPDATE Usuarios SET reset_token = :token, reset_expires_at = :expires_at WHERE id = :id";
             $stmt = $this->db->prepare($sql);
+            // Se guarda solo el hash: si se filtra la base, el token no sirve para entrar
             return $stmt->execute([
-                ':token'      => $token,
+                ':token'      => self::hashToken($token),
                 ':expires_at' => $expiresAt,
                 ':id'         => $this->id
             ]);
@@ -326,6 +327,12 @@ class Usuario extends Model
             error_log("Error en saveResetToken: " . $e->getMessage());
             throw new Exception("Error al guardar el token de verificación.");
         }
+    }
+
+    /** Hash del token de recuperación tal como se guarda en Usuarios.reset_token. */
+    private static function hashToken(string $token): string
+    {
+        return hash('sha256', $token);
     }
 
     public function findByValidToken(string $token): ?Usuario
@@ -338,7 +345,7 @@ class Usuario extends Model
                     LIMIT 1";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':token' => $token]);
+            $stmt->execute([':token' => self::hashToken($token)]);
             
             $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, Usuario::class);
             $user = $stmt->fetch();

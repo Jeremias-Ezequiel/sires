@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Helpers\UrlHelper;
+use App\Models\Usuario;
 
 class AuthMiddleware
 {
@@ -38,7 +39,22 @@ class AuthMiddleware
             exit;
         }
 
-        // Si pasó ambos filtros, actualizamos la marca de tiempo activa
+        // 3. Caso: el usuario fue dado de baja o le cambiaron el rol con la sesión abierta.
+        // Se relee en cada petición para que la baja y el cambio de rol rijan al instante.
+        $usuario = (new Usuario())->findById((int)$_SESSION['user_id']);
+        if ($usuario === null || !$usuario->getIsActive()) {
+            self::destroySession();
+
+            session_start();
+            $_SESSION['auth_error'] = "Su cuenta se encuentra desactivada. Contacte a un administrador.";
+
+            header('Location:' . UrlHelper::to('/login'));
+            exit;
+        }
+        $_SESSION['user_role'] = $usuario->getIdRol();
+        $_SESSION['user_name'] = $usuario->getNombre();
+
+        // Si pasó todos los filtros, actualizamos la marca de tiempo activa
         $_SESSION['last_activity'] = time();
     }
 
