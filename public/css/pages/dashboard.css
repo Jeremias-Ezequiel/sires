@@ -989,12 +989,31 @@
   box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-/* Noches ocupadas por otra reserva: franja continua tachada */
+/* Noches ocupadas por otra reserva: franja continua con el color de su estado,
+   igual que las barras del Planning (.plan-estado--*). */
 .cal-dia--ocupado {
+  --res-color: var(--room-occupied);
   background-color: var(--room-occupied-bg);
   color: var(--room-occupied-text);
-  text-decoration: line-through;
   border-radius: 0;
+}
+
+.cal-dia--res-pendiente  { --res-color: var(--reserva-pendiente);  background-color: var(--reserva-pendiente-bg);  color: var(--reserva-pendiente-text); }
+.cal-dia--res-confirmada { --res-color: var(--reserva-confirmada); background-color: var(--reserva-confirmada-bg); color: var(--reserva-confirmada-text); }
+.cal-dia--res-en-casa    { --res-color: var(--reserva-en-casa);    background-color: var(--reserva-en-casa-bg);    color: var(--reserva-en-casa-text); }
+.cal-dia--res-sale-hoy   { --res-color: var(--reserva-sale-hoy);   background-color: var(--reserva-sale-hoy-bg);   color: var(--reserva-sale-hoy-text); }
+.cal-dia--res-no-show    { --res-color: var(--reserva-no-show);    background-color: var(--reserva-no-show-bg);    color: var(--reserva-no-show-text); }
+.cal-dia--res-finalizada { --res-color: var(--reserva-finalizada); background-color: var(--reserva-finalizada-bg); color: var(--reserva-finalizada-text); }
+
+/* Primera y última noche de cada reserva: borde de color al inicio, como la barra del Planning */
+.cal-dia--res-ini {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  box-shadow: inset 3px 0 0 var(--res-color);
+}
+
+.cal-dia--res-fin {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
 }
 
 .cal-dia--ocupado:disabled {
@@ -1059,7 +1078,7 @@
 }
 
 .cal-muestra--libre   { background-color: var(--color-tint-2); border: 1px solid var(--color-border-strong); }
-.cal-muestra--ocupado { background-color: var(--room-occupied-bg); border: 1px solid var(--room-occupied); }
+.cal-muestra[class*="cal-dia--res-"] { border: 1px solid var(--res-color); }
 .cal-muestra--rango   { background-color: var(--color-accent); }
 .cal-muestra--hoy     { box-shadow: inset 0 0 0 1px var(--color-accent); }
 
@@ -1074,6 +1093,62 @@
   gap: 6px;
   font-size: var(--fs-sm);
   color: var(--color-danger);
+}
+
+/* Reservas de los meses visibles (debajo de la leyenda) */
+.cal-reservas {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.cal-reservas__titulo {
+  margin-bottom: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.cal-reservas__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Colores: .plan-estado--* (mismo estilo que la leyenda del Planning) */
+.cal-reservas__item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 6px 12px;
+  border-left: 3px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+}
+
+a.cal-reservas__item:hover {
+  text-decoration: underline;
+}
+
+.cal-reservas__id {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-reservas__fechas {
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-reservas__estado {
+  margin-left: auto;
+  font-weight: 600;
 }
 
 @media (max-width: 760px) {

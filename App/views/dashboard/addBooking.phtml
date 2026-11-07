@@ -141,14 +141,19 @@
         ];
     }, array_values($habitaciones ?? []))) ?>;
 
+    // Reservas que ocupan noches, con estado (mismos colores que el Planning) y cliente para la agenda
     var RESERVAS = <?= json_encode(array_map(function (array $r) {
         return [
             'id'         => (int)$r['id'],
             'habitacion' => (int)$r['id_habitacion'],
             'entrada'    => $r['fecha_entrada'],
             'salida'     => $r['fecha_salida'],
+            'estilo'     => \App\Dominio\Planning::estilo((int)$r['id_estado_reserva'], (string)$r['fecha_salida'], date('Y-m-d')),
+            'cliente'    => trim(($r['cliente_apellido'] ?? '') . ', ' . ($r['cliente_nombre'] ?? ''), ', '),
         ];
-    }, $reservasActivas ?? [])) ?>;
+    }, $reservasActivas ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var PLANNING_ESTILOS = <?= json_encode(\App\Dominio\Planning::ESTILOS, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var URL_DETALLE_RESERVA = <?= json_encode(url('/dashboard/booking/detail'), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
     var RESERVA_ID_A_IGNORAR = <?= (int)($reservaIdAExcluir ?? 0) ?>;
 
@@ -402,7 +407,9 @@
             contenedor: timelineContainer,
             entrada: entrada,
             salida: salida,
-            ignorarId: RESERVA_ID_A_IGNORAR
+            ignorarId: RESERVA_ID_A_IGNORAR,
+            estilos: PLANNING_ESTILOS,
+            urlDetalle: URL_DETALLE_RESERVA
         });
 
         function renderizarTimelineOcupacion(roomId) {

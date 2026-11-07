@@ -23,6 +23,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
   canal de origen comparten la fila siguiente.
 - **Agenda de disponibilidad:** cada mes es un panel propio y los días libres se ven como celdas, para
   distinguir los dos meses y los días de los huecos.
+- La agenda muestra las reservas de la habitación con el color de su estado, como el Planning, y las
+  lista debajo (cliente, fechas, estado y enlace al detalle). Al elegir la salida solo se puede llegar
+  hasta el día en que entra la reserva siguiente; las noches ocupadas no se pueden elegir.
 - **Check-out:** con el huésped en casa, el botón *Check-out* aparece desde el día de salida y
   *Checkout anticipado* solo antes; en el listado de reservas y en el detalle. Una reserva confirmada sin
   check-in ya no se puede finalizar (corresponde No-Show). El servidor aplica la misma regla.
@@ -36,6 +39,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
   a los 3 segundos.
 - Las observaciones de la reserva ya no se escapan dos veces (`&` se veía como `&amp;`).
 - "Habitaciones" se marca como activa en el menú.
+- La agenda del alta y la edición de reservas no mostraba como ocupadas las estadías en curso (En casa)
+  ni las habitaciones retenidas por No-Show; el servidor sí las rechazaba al guardar.
 
 ## [1.7.0] - 2026-11-06
 

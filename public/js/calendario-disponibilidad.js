@@ -8,9 +8,15 @@
  * Una noche "ocupada" es cada fecha d con entrada <= d < salida (el día de
  * salida queda libre para otra entrada). El servidor vuelve a validar todo.
  *
+ * Cada reserva se pinta con el color de su estado, igual que en el Planning
+ * (estilo: pendiente, confirmada, en-casa, sale-hoy, no-show), y debajo se listan
+ * las reservas de los meses visibles con enlace a su detalle.
+ *
  * Uso:
- *   var cal = SiresCalendario.crear({ contenedor, entrada, salida, ignorarId });
- *   cal.mostrar(reservasDeLaHabitacion);   // [{ id, entrada, salida }, ...]
+ *   var cal = SiresCalendario.crear({ contenedor, entrada, salida, ignorarId,
+ *                                     estilos, urlDetalle });
+ *   //   estilos: { 'en-casa': ['En casa', 'fa-user'], ... } (Planning::ESTILOS)
+ *   cal.mostrar(reservasDeLaHabitacion);   // [{ id, entrada, salida, estilo, cliente }, ...]
  *   cal.ocultar();
  */
 var SiresCalendario = (function () {
@@ -50,6 +56,8 @@ var SiresCalendario = (function () {
         var inEntrada = opciones.entrada;
         var inSalida = opciones.salida;
         var ignorarId = opciones.ignorarId || 0;
+        var estilos = opciones.estilos || {};
+        var urlDetalle = opciones.urlDetalle || '';
 
         var reservas = [];
         var pendiente = false;      // true = ya se eligió la entrada, falta la salida
@@ -58,13 +66,39 @@ var SiresCalendario = (function () {
         var ultimaEntrada = null;   // para recentrar cuando la entrada cambia desde el input
         var foco = null;            // fecha con tabindex=0 (navegación con flechas)
 
-        function ocupada(fecha) {
+        /** Reserva (de otra) que ocupa la noche de esa fecha, o null. */
+        function reservaEn(fecha) {
             for (var i = 0; i < reservas.length; i++) {
                 var r = reservas[i];
                 if (r.id === ignorarId) continue;
-                if (fecha >= r.entrada && fecha < r.salida) return true;
+                if (fecha >= r.entrada && fecha < r.salida) return r;
             }
-            return false;
+            return null;
+        }
+
+        function ocupada(fecha) {
+            return reservaEn(fecha) !== null;
+        }
+
+        function nombreEstilo(r) {
+            return (estilos[r.estilo] || ['Reservada'])[0];
+        }
+
+        function textoReserva(r) {
+            return 'Reserva #' + r.id + (r.cliente ? ' · ' + r.cliente : '') + ' · ' + nombreEstilo(r) +
+                ' (' + fechaCorta(r.entrada) + ' → ' + fechaCorta(r.salida) + ')';
+        }
+
+        /**
+         * Mientras se elige la salida: primera noche ocupada después de la entrada (null si
+         * no hay en el próximo año). Ese día todavía sirve como salida; los siguientes no.
+         */
+        var cacheTope = { entrada: null, tope: null };
+        function topeSalida(entrada) {
+            if (cacheTope.entrada !== entrada) {
+                cacheTope = { entrada: entrada, tope: primeraOcupada(sumarDias(entrada, 1), sumarDias(entrada, 366)) };
+            }
+            return cacheTope.tope;
         }
 
         /** Primera noche ocupada en [desde, hasta), o null si el rango está libre. */
@@ -79,10 +113,19 @@ var SiresCalendario = (function () {
             return inEntrada.min || iso(new Date());
         }
 
-        /** Un día ocupado solo bloquea como entrada: como salida vale si las noches previas están libres. */
+        /**
+         * Elegible o no. Una noche ocupada no se puede elegir como entrada. Al elegir la salida,
+         * solo se puede hasta la primera noche ocupada inclusive (ese día otra reserva entra y
+         * la nuestra sale); más allá, todo deshabilitado.
+         */
         function deshabilitado(fecha) {
             if (fecha < minimo()) return true;
-            return ocupada(fecha) && !(pendiente && inEntrada.value && fecha > inEntrada.value);
+            var e = inEntrada.value;
+            if (pendiente && e && fecha > e) {
+                var tope = topeSalida(e);
+                return tope !== null && fecha > tope;
+            }
+            return ocupada(fecha);
         }
 
         function asignar(entradaVal, salidaVal) {
@@ -144,14 +187,20 @@ var SiresCalendario = (function () {
             var dias = new Date(anio, mes + 1, 0).getDate();
             for (var n = 1; n <= dias; n++) {
                 var f = iso(new Date(anio, mes, n));
-                var esOcupada = ocupada(f);
+                var res = reservaEn(f);
+                var esOcupada = res !== null;
                 var pasada = f < min;
                 var enRango = e && s && f >= e && f <= s;
                 var clases = ['cal-dia'];
                 var estado = 'libre';
 
                 if (pasada) { clases.push('cal-dia--pasado'); estado = 'no disponible'; }
-                if (esOcupada) { clases.push('cal-dia--ocupado'); estado = 'ocupada'; }
+                if (esOcupada) {
+                    clases.push('cal-dia--ocupado', 'cal-dia--res-' + res.estilo);
+                    if (f === res.entrada) clases.push('cal-dia--res-ini');
+                    if (sumarDias(f, 1) === res.salida) clases.push('cal-dia--res-fin');
+                    estado = 'ocupada: ' + textoReserva(res);
+                }
                 if (enRango) {
                     clases.push('cal-dia--rango');
                     if (f === e) clases.push('cal-dia--inicio');
@@ -171,6 +220,47 @@ var SiresCalendario = (function () {
                     (deshabilitado(f) ? ' disabled' : '') + '>' + n + '</button>';
             }
             return html + '</div></div>';
+        }
+
+        /** Reservas (de otras) que tienen alguna noche en los meses visibles. */
+        function reservasVisibles() {
+            var desde = iso(vista);
+            var hasta = iso(new Date(vista.getFullYear(), vista.getMonth() + MESES_VISIBLES, 1));
+            return reservas.filter(function (r) {
+                return r.id !== ignorarId && r.entrada < hasta && r.salida > desde;
+            });
+        }
+
+        function htmlLeyenda(visibles) {
+            var html = '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--libre"></span>Libre</span>';
+            var vistos = {};
+            visibles.forEach(function (r) {
+                if (vistos[r.estilo]) return;
+                vistos[r.estilo] = true;
+                html += '<span class="cal-leyenda__item"><span class="cal-muestra cal-dia--res-' + escHtml(r.estilo) + '"></span>' +
+                    escHtml(nombreEstilo(r)) + '</span>';
+            });
+            return html +
+                '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--rango"></span>Tu estadía</span>' +
+                '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--hoy"></span>Hoy</span>';
+        }
+
+        function htmlReservas(visibles) {
+            if (!visibles.length) return '';
+            var html = '<div class="cal-reservas"><div class="cal-reservas__titulo">Reservas de la habitación en estos meses</div><ul class="cal-reservas__lista">';
+            visibles.forEach(function (r) {
+                var icono = (estilos[r.estilo] || [null, 'fa-bed'])[1];
+                var href = urlDetalle ? urlDetalle + (urlDetalle.indexOf('?') === -1 ? '?' : '&') + 'id=' + encodeURIComponent(r.id) : '';
+                var cuerpo = '<i class="fas ' + escHtml(icono) + '" aria-hidden="true"></i>' +
+                    '<span class="cal-reservas__id">#' + escHtml(String(r.id)) + '</span>' +
+                    (r.cliente ? '<span>' + escHtml(r.cliente) + '</span>' : '') +
+                    '<span class="cal-reservas__fechas">' + escHtml(fechaCorta(r.entrada) + ' → ' + fechaCorta(r.salida)) + '</span>' +
+                    '<span class="cal-reservas__estado">' + escHtml(nombreEstilo(r)) + '</span>';
+                html += '<li>' + (href
+                    ? '<a class="cal-reservas__item plan-estado--' + escHtml(r.estilo) + '" href="' + escHtml(href) + '" target="_blank" rel="noopener" title="Abrir el detalle en otra pestaña">' + cuerpo + '</a>'
+                    : '<span class="cal-reservas__item plan-estado--' + escHtml(r.estilo) + '">' + cuerpo + '</span>') + '</li>';
+            });
+            return html + '</ul></div>';
         }
 
         function render() {
@@ -197,6 +287,7 @@ var SiresCalendario = (function () {
                 ? fechaCorta(e) + (s && !pendiente ? ' → ' + fechaCorta(s) : ' → …')
                 : 'Sin fechas';
             var est = estadoResumen(e, s);
+            var visibles = reservasVisibles();
 
             var html =
                 '<div class="cal-cabecera">' +
@@ -216,17 +307,12 @@ var SiresCalendario = (function () {
             }
             html += '</div>' +
                 '<div class="cal-pie">' +
-                    '<div class="cal-leyenda" aria-hidden="true">' +
-                        '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--libre"></span>Libre</span>' +
-                        '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--ocupado"></span>Ocupada</span>' +
-                        '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--rango"></span>Tu estadía</span>' +
-                        '<span class="cal-leyenda__item"><span class="cal-muestra cal-muestra--hoy"></span>Hoy</span>' +
-                    '</div>' +
+                    '<div class="cal-leyenda" aria-hidden="true">' + htmlLeyenda(visibles) + '</div>' +
                     '<span class="cal-ayuda' + (aviso ? ' cal-ayuda--error' : '') + '" role="status">' +
                         (aviso ? '<i class="fas fa-circle-exclamation" aria-hidden="true"></i>' + escHtml(aviso)
                                : (pendiente ? 'Clic en el día de salida · Esc para cancelar' : 'Clic en un día para elegir la entrada')) +
                     '</span>' +
-                '</div>';
+                '</div>' + htmlReservas(visibles);
 
             var teniaFoco = cont.contains(document.activeElement);
             cont.innerHTML = html;

@@ -33,6 +33,14 @@ class Reserva extends Model
     public const SQL_SEPARADOR_OBS = "IF(COALESCE(observaciones, '') = '', '- ', CONCAT(CHAR(10), '- '))";
 
     public const ESTADO_PENDIENTE = EstadoReserva::PENDIENTE;
+
+    /** Estados que ocupan noches de la habitación: control de solapamiento y agenda de disponibilidad. */
+    public const ESTADOS_QUE_OCUPAN = [
+        EstadoReserva::PENDIENTE,
+        EstadoReserva::CONFIRMADA,
+        EstadoReserva::EN_CASA,
+        EstadoReserva::NO_SHOW_CON_PAGO,
+    ];
     public const ESTADO_CONFIRMADA = EstadoReserva::CONFIRMADA;
     public const ESTADO_CANCELADA = EstadoReserva::CANCELADA;
     public const ESTADO_FINALIZADA = EstadoReserva::FINALIZADA_CHECKOUT;
@@ -70,24 +78,42 @@ class Reserva extends Model
         }
     }
 
+    /**
+     * Reservas que ocupan noches (las mismas que bloquea existeSolapamiento) y que todavía no
+     * terminaron, con el cliente: las usa la agenda de disponibilidad del alta y la edición.
+     */
     public function getReservasActivas(): array
     {
+        [$in, $params] = self::placeholdersEstadosQueOcupan();
         try {
             $stmt = $this->db->prepare(
-                "SELECT id, id_habitacion, fecha_entrada, fecha_salida
-                 FROM Reservas
-                 WHERE id_estado_reserva IN (:pendiente, :confirmada)
-                 ORDER BY fecha_entrada ASC"
+                "SELECT r.id, r.id_habitacion, r.fecha_entrada, r.fecha_salida, r.id_estado_reserva,
+                        c.nombre AS cliente_nombre, c.apellido AS cliente_apellido
+                 FROM Reservas r
+                 LEFT JOIN Clientes c ON c.id = r.id_cliente
+                 WHERE r.id_estado_reserva IN ($in)
+                   AND r.fecha_salida >= CURDATE()
+                 ORDER BY r.fecha_entrada ASC"
             );
-            $stmt->execute([
-                ':pendiente'  => self::ESTADO_PENDIENTE,
-                ':confirmada' => self::ESTADO_CONFIRMADA,
-            ]);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error en Reserva::getReservasActivas: " . $e->getMessage());
             throw new Exception("Error al consultar las reservas activas.");
         }
+    }
+
+    /**
+     * Placeholders y parámetros para "id_estado_reserva IN (...)" con ESTADOS_QUE_OCUPAN.
+     * @return array{0: string, 1: array<string, int>}
+     */
+    private static function placeholdersEstadosQueOcupan(): array
+    {
+        $params = [];
+        foreach (self::ESTADOS_QUE_OCUPAN as $i => $estado) {
+            $params[':ocupa' . $i] = $estado;
+        }
+        return [implode(', ', array_keys($params)), $params];
     }
 
     public function existeSolapamiento(
@@ -96,22 +122,19 @@ class Reserva extends Model
         string $fechaSalida,
         ?int $exceptoId = null
     ): bool {
+        [$in, $estados] = self::placeholdersEstadosQueOcupan();
         try {
             $sql = "SELECT COUNT(*) FROM Reservas
                     WHERE id_habitacion = :id_habitacion
                       AND fecha_entrada < :fecha_salida
                       AND fecha_salida > :fecha_entrada
-                      AND id_estado_reserva IN (:pendiente, :confirmada, :encasa, :noshowpago)";
+                      AND id_estado_reserva IN ($in)";
 
             $params = [
                 ':id_habitacion' => $idHabitacion,
                 ':fecha_entrada' => $fechaEntrada,
                 ':fecha_salida'  => $fechaSalida,
-                ':pendiente'     => self::ESTADO_PENDIENTE,
-                ':confirmada'    => self::ESTADO_CONFIRMADA,
-                ':encasa'        => self::ESTADO_EN_CASA,
-                ':noshowpago'    => self::ESTADO_NO_SHOW_CON_PAGO,
-            ];
+            ] + $estados;
 
             if ($exceptoId !== null) {
                 $sql .= " AND id <> :excepto_id";
