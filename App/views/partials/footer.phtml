@@ -5,7 +5,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(function(el) {
+                document.querySelectorAll('.alert:not(.alert--fija)').forEach(function(el) {
+            // Solo se ocultan los mensajes flash; las advertencias de estado (.alert--fija) quedan
                     el.style.transition = 'opacity 0.3s ease';
                     el.style.opacity = '0';
                     setTimeout(function() { el.remove(); }, 300);

@@ -216,7 +216,7 @@ endif;
         <div class="form__section-title">
             <i class="fas fa-undo-alt"></i> Reembolso Pendiente
         </div>
-        <div class="alert alert--warning">
+        <div class="alert alert--warning alert--fija">
             <i class="fa-solid fa-triangle-exclamation"></i>
             Esta reserva tiene un pago pendiente de reembolso por
             <strong>$<?= number_format($resumen->getMontoAReembolsar(), 2, ',', '.') ?></strong>.
@@ -289,14 +289,14 @@ endif;
     </section>
 <?php elseif ($resumen !== null && (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CANCELADA): ?>
     <section class="details-section">
-        <div class="alert alert--error">
+        <div class="alert alert--error alert--fija">
             <i class="fa-solid fa-triangle-exclamation"></i>
             No se pueden registrar pagos sobre una reserva cancelada.
         </div>
     </section>
 <?php elseif ($resumen !== null && $resumen->getSaldoPendiente() <= 0): ?>
     <section class="details-section">
-        <div class="alert alert--success">
+        <div class="alert alert--success alert--fija">
             <i class="fa-solid fa-circle-check"></i>
             La reserva se encuentra totalmente pagada.
         </div>
