@@ -17,10 +17,6 @@ class RecoveryController
      */
     public function showRecoveryForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['error_message'] ?? null;
         unset($_SESSION['error_message']);
 
@@ -33,10 +29,6 @@ class RecoveryController
      */
     public function processRecovery(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
         } catch (Exception $e) {
@@ -157,10 +149,6 @@ class RecoveryController
      */
     public function showResetForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $token = $vars['token'] ?? '';
         $errorMessage = $_SESSION['error_message'] ?? null;
         unset($_SESSION['error_message']);
@@ -174,10 +162,6 @@ class RecoveryController
      */
     public function processReset(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $token           = (string)($_POST['token'] ?? '');
         $password        = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';

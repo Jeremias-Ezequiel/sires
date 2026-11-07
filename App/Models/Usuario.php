@@ -23,21 +23,21 @@ class Usuario extends Model
     private string $email;
     private string $password;
 
-    // 📋 ATRIBUTOS PARA REGISTRO DE EMPLEADOS ARGENTINOS
+    // Datos personales del empleado
     private ?string $telefono = null;
     private ?string $dni = null;
     private ?string $cuil = null;
     private ?string $direccion = null;
     private ?string $fecha_nacimiento = null;
 
-    // ⚡ ATRIBUTOS DE BAJA LÓGICA E HISTORIAL
+    // Baja lógica
     private int $is_active = 1;
     private string $fecha_alta = '';
     private ?string $fecha_baja = null;
 
     private ?string $rol_descripcion = null;
 
-    // 🔑 ATRIBUTOS ADICIONALES PARA RECUPERACIÓN DE CONTRASEÑA
+    // Recuperación de contraseña
     private ?string $reset_token = null;
     private ?string $reset_expires_at = null;
 
@@ -45,7 +45,7 @@ class Usuario extends Model
     public const INACTIVE = 0;
 
     // =====================================================================
-    // MÉTODOS DE NEGOCIO MÁSTER (FUSIONADOS)
+    // LISTADO Y BÚSQUEDA
     // =====================================================================
 
     public function findByEmail(string $email): ?Usuario
@@ -169,9 +169,7 @@ class Usuario extends Model
             return 0;
         }
     }
-    /**
-     * 🔑 METODO REQUERIDO POR AUTHCONTROLLER (Recuperado)
-     */
+    /** Compara la contraseña ingresada con el hash guardado. */
     public function verifyPassword(string $inputPassword): bool
     {
         return password_verify($inputPassword, $this->password);
@@ -306,12 +304,10 @@ class Usuario extends Model
     }
 
     // =====================================================================
-    // ⚙️ MÉTODOS PARA LA RECUPERACIÓN DE CONTRASEÑA (Recuperados)
+    // RECUPERACIÓN DE CONTRASEÑA
     // =====================================================================
 
-    /**
-     * 🔑 METODO REQUERIDO POR RECOVERYCONTROLLER (Recuperado)
-     */
+    /** Guarda el token de recuperación (hasheado) y su vencimiento. */
     public function saveResetToken(string $token, string $expiresAt): bool
     {
         try {
@@ -381,7 +377,7 @@ class Usuario extends Model
         }
     }
     /**
-     * Permite cambiar la clave a un usuario directamente por base de datos (Uso de Dashboard)
+     * Cambio de contraseña hecho por un administrador desde el dashboard.
      */
     public function changePasswordAdmin(string $newPassword): bool
     {
@@ -389,7 +385,6 @@ class Usuario extends Model
 
             \App\Helpers\Validator::passwordValida($newPassword);
 
-            // Encriptamos usando la configuración nativa de tu sistema (BCRYPT)
             $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
             
             $sql = "UPDATE Usuarios SET password = :password WHERE id = :id";
@@ -405,8 +400,8 @@ class Usuario extends Model
         }
     }
 
-// =====================================================================
-    // 🛡️ MÉTODOS DE CAMBIO DE ESTADO (BAJA LÓGICA Y REACTIVACIÓN)
+    // =====================================================================
+    // BAJA LÓGICA Y REACTIVACIÓN
     // =====================================================================
 
     public function deactivate(int $id): bool
@@ -453,7 +448,7 @@ class Usuario extends Model
         }
     }
     // =====================================================================
-    // GETTERS Y SETTERS CON LÓGICA DE NEGOCIO Y SANITIZACIÓN STRICT
+    // GETTERS Y SETTERS
     // =====================================================================
 
     public function getId(): int
@@ -553,7 +548,7 @@ class Usuario extends Model
     }
 
     // =====================================================================
-    // GETTERS Y SETTERS PARA CAMPOS DE EMPLEADOS ARGENTINOS
+    // GETTERS Y SETTERS DE DATOS PERSONALES
     // =====================================================================
 
     public function getTelefono(): ?string

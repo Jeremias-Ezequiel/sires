@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -12,10 +14,6 @@ class AuthController
 {
     public function showLogin(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -67,10 +65,6 @@ class AuthController
             }
 
             // 8. Iniciar sesión exitosa si todo salió bien
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-
             $limiteEmail->limpiar($email);
 
             // Nuevo ID de sesión y nuevo token CSRF (evita fijación de sesión)
@@ -87,10 +81,6 @@ class AuthController
         } catch (Exception $e) {
             // Cualquier excepción (campos vacíos, formato de mail roto o clave inválida)
             // se captura acá de forma centralizada y se envía a la vista.
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-
             $_SESSION['auth_error'] = $e->getMessage();
             header('Location:' . UrlHelper::to('/login'));
             exit;

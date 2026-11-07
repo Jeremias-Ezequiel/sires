@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Config; // O el namespace que uses para tus clases base
 
 use PDO;

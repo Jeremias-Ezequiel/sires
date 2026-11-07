@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 use App\Helpers\UrlHelper;
 
 function url(string $path): string {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -14,10 +16,6 @@ class ClienteController
 {
     public function showClients(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -53,10 +51,6 @@ class ClienteController
 
     public function showNewClientForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -78,10 +72,6 @@ class ClienteController
 
     public function addClient(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 
@@ -118,10 +108,6 @@ class ClienteController
 
     public function showEditClientForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -161,10 +147,6 @@ class ClienteController
 
     public function editClient(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 

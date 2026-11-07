@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -21,10 +23,6 @@ class PaymentController
 
     public function showPayments(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -62,10 +60,6 @@ class PaymentController
 
     public function showPaymentDetail(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -137,10 +131,6 @@ class PaymentController
 
     public function addPayment(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 
@@ -172,10 +162,6 @@ class PaymentController
 
     public function recalculateReservation(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
             if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
@@ -200,10 +186,6 @@ class PaymentController
 
     public function refundPayment(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 

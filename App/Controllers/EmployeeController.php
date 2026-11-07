@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -16,10 +18,6 @@ class EmployeeController
 {
     public function showEmployees(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -66,10 +64,6 @@ class EmployeeController
     }
     public function showNewEmployeeForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -95,10 +89,6 @@ class EmployeeController
 
     public function addEmployee(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 
@@ -144,10 +134,6 @@ class EmployeeController
 
     public function showEditEmployeeForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -191,10 +177,6 @@ class EmployeeController
 
     public function editEmployee(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             csrf_check();
 
@@ -371,10 +353,6 @@ class EmployeeController
      */
     public function deactivateEmployee(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $idToDeactivate = $_POST['id'] ?? '';
             
@@ -414,10 +392,6 @@ class EmployeeController
      */
     public function activateEmployee(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $idToActivate = $_POST['id'] ?? '';
             
@@ -457,10 +431,6 @@ class EmployeeController
      */
     public function showResetPasswordForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $flashMessage = $_SESSION['flash_message'] ?? '';
         unset($_SESSION['flash_message']);
 
@@ -500,10 +470,6 @@ class EmployeeController
      */
     public function resetPassword(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $id = $_POST['id'] ?? '';
 
         try {

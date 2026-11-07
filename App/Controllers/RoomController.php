@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -22,10 +24,6 @@ class RoomController
 
     public function showRooms(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -75,10 +73,6 @@ class RoomController
 
     public function showNewRoomForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -107,10 +101,6 @@ class RoomController
 
     public function addRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $piso        = (int)($_POST['piso'] ?? -1);
             $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
@@ -135,10 +125,6 @@ class RoomController
 
     public function showEditRoomForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -185,10 +171,6 @@ class RoomController
 
     public function editRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id          = (int)($_POST['id'] ?? 0);
             $numero      = (int)($_POST['numero'] ?? 0);
@@ -216,10 +198,6 @@ class RoomController
 
     public function showBatchRoomForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -247,10 +225,6 @@ class RoomController
 
     public function addBatchRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $piso        = (int)($_POST['piso'] ?? -1);
             $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
@@ -277,10 +251,6 @@ class RoomController
 
     public function showRoomDetail(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $errorMessage = $_SESSION['auth_error'] ?? '';
         unset($_SESSION['auth_error']);
 
@@ -325,10 +295,6 @@ class RoomController
 
     public function deactivateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
             $idMotivoBloqueo = $_POST['motivo'] ?? '';
@@ -356,10 +322,6 @@ class RoomController
 
     public function activateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -385,10 +347,6 @@ class RoomController
 
     public function bajaLogicaRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -414,10 +372,6 @@ class RoomController
 
     public function reactivateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -443,10 +397,6 @@ class RoomController
 
     public function startCleaning(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -472,10 +422,6 @@ class RoomController
 
     public function completeCleaning(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -501,10 +447,6 @@ class RoomController
 
     public function putInMaintenance(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
@@ -530,10 +472,6 @@ class RoomController
 
     public function outOfMaintenance(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $id = $_POST['id'] ?? '';
 
