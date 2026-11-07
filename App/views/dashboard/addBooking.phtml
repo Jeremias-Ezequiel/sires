@@ -449,10 +449,8 @@
                     partial.push(r);
                 }
             });
-            // Las ocupadas en las fechas cargadas también se listan (para ver su agenda), al final
-            partial.sort(function(a, b) {
-                return habitacionOcupadaEnFechas(a) - habitacionOcupadaEnFechas(b);
-            });
+            // Las ocupadas en las fechas cargadas también se listan, en su orden (las fechas
+            // del formulario son un valor por defecto): solo llevan la marca "Ocupada en esas fechas"
             if (exact.length > 0) return { type: 'exact', results: exact };
             if (partial.length > 0) return { type: 'partial', results: partial };
             return { type: 'none', results: [] };
