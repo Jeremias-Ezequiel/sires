@@ -903,11 +903,21 @@
 .cal-meses {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px;
+  gap: 16px;
+}
+
+/* Cada mes es un panel propio para que se lean como dos bloques separados */
+.cal-mes {
+  padding: 12px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .cal-mes__titulo {
-  margin-bottom: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
   text-align: center;
   font-size: var(--fs-base);
   font-weight: 600;
@@ -933,6 +943,7 @@
   height: 36px;
   padding: 0;
   background: transparent;
+  isolation: isolate; /* el ::before de la celda libre queda debajo del número */
   color: var(--color-text);
   border: 0;
   border-radius: var(--radius-md);
@@ -954,6 +965,17 @@
 
 .cal-dia:disabled {
   cursor: default;
+}
+
+/* Día libre: celda con fondo propio (inset para que las celdas no se peguen),
+   así se distingue de los huecos del mes. Las franjas de ocupado/estadía siguen continuas. */
+.cal-dia:not(.cal-dia--pasado):not(.cal-dia--ocupado):not(.cal-dia--rango):not(.cal-dia--previa):not(.cal-dia--inicio):not(.cal-dia--fin)::before {
+  content: '';
+  position: absolute;
+  inset: 0 2px;
+  z-index: -1;
+  background-color: var(--color-tint-2);
+  border-radius: var(--radius-sm);
 }
 
 .cal-dia--pasado {
@@ -1036,7 +1058,7 @@
   flex-shrink: 0;
 }
 
-.cal-muestra--libre   { border: 1px solid var(--color-border-strong); }
+.cal-muestra--libre   { background-color: var(--color-tint-2); border: 1px solid var(--color-border-strong); }
 .cal-muestra--ocupado { background-color: var(--room-occupied-bg); border: 1px solid var(--room-occupied); }
 .cal-muestra--rango   { background-color: var(--color-accent); }
 .cal-muestra--hoy     { box-shadow: inset 0 0 0 1px var(--color-accent); }

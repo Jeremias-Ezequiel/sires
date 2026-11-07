@@ -31,26 +31,30 @@
         <div class="form__section">
             <h2 class="form__section-title">Información de la Reserva</h2>
 
-            <div class="form__group">
-                <label class="form__label" for="cliente-search">Cliente *</label>
-                <div class="autocomplete-wrapper">
-                    <input type="text" name="cliente_text" id="cliente-search" class="form__input" placeholder="Buscar cliente por DNI o Pasaporte..." value="<?= htmlspecialchars($old['cliente_text'] ?? '') ?>" autocomplete="off" required>
-                    <input type="hidden" name="id_cliente" id="id_cliente" value="<?= (int)($old['id_cliente'] ?? 0) ?>">
-                    <div class="autocomplete-dropdown" id="cliente-dropdown"></div>
-                    <div class="cliente-confirm-card" id="cliente-confirm-card" style="display: none;"></div>
+            <!-- Cliente y habitación lado a lado; la agenda va debajo a todo el ancho -->
+            <div class="form__row">
+                <div class="form__group">
+                    <label class="form__label" for="cliente-search">Cliente *</label>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" name="cliente_text" id="cliente-search" class="form__input" placeholder="Buscar cliente por DNI o Pasaporte..." value="<?= htmlspecialchars($old['cliente_text'] ?? '') ?>" autocomplete="off" required>
+                        <input type="hidden" name="id_cliente" id="id_cliente" value="<?= (int)($old['id_cliente'] ?? 0) ?>">
+                        <div class="autocomplete-dropdown" id="cliente-dropdown"></div>
+                        <div class="cliente-confirm-card" id="cliente-confirm-card" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="habitacion-search">Habitación *</label>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" name="habitacion_text" id="habitacion-search" class="form__input" placeholder="Buscar por número, piso o tipo..." value="<?= htmlspecialchars($old['habitacion_text'] ?? '') ?>" autocomplete="off" required>
+                        <input type="hidden" name="id_habitacion" id="id_habitacion" value="<?= (int)($old['id_habitacion'] ?? 0) ?>">
+                        <div class="autocomplete-dropdown" id="habitacion-dropdown"></div>
+                        <div class="room-confirm-card" id="habitacion-confirm-card" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form__group">
-                <label class="form__label" for="habitacion-search">Habitación *</label>
-                <div class="autocomplete-wrapper">
-                    <input type="text" name="habitacion_text" id="habitacion-search" class="form__input" placeholder="Buscar por número, piso o tipo..." value="<?= htmlspecialchars($old['habitacion_text'] ?? '') ?>" autocomplete="off" required>
-                    <input type="hidden" name="id_habitacion" id="id_habitacion" value="<?= (int)($old['id_habitacion'] ?? 0) ?>">
-                    <div class="autocomplete-dropdown" id="habitacion-dropdown"></div>
-                    <div class="room-confirm-card" id="habitacion-confirm-card" style="display: none;"></div>
-                    <div class="calendario-disp" id="timeline-container" style="display: none;"></div>
-                </div>
-            </div>
+            <div class="calendario-disp" id="timeline-container" style="display: none;"></div>
 
             <!-- Fechas justo debajo de la agenda de disponibilidad -->
             <div class="form__row">

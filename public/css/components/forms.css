@@ -58,6 +58,7 @@
 
 .form__row .form__group {
   flex: 1;
+  min-width: 0; /* que un contenido largo no ensanche la columna */
 }
 
 .form__grid {
