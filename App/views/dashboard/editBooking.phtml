@@ -77,25 +77,8 @@ if (!empty($habitaciones)) {
                 </div>
             </div>
 
-            <div class="form__group">
-                <label class="form__label" for="id_canal_origen">Canal de Origen *</label>
-                <select name="id_canal_origen" id="id_canal_origen" class="form__input" required>
-                    <option value="">Seleccione un Canal</option>
-                    <?php if (!empty($canales)): ?>
-                        <?php foreach ($canales as $can): ?>
-                            <option value="<?= $can->getId() ?>" <?= ((int)($old['id_canal_origen'] ?? $reserva['id_canal_origen']) === $can->getId()) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($can->getDescripcion()) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </div>
-        </div>
-
-        <div class="form__section">
-            <h2 class="form__section-title">Fechas y Huéspedes</h2>
-
-            <div class="form-row">
+            <!-- Fechas justo debajo de la agenda de disponibilidad -->
+            <div class="form__row">
                 <div class="form__group">
                     <label class="form__label" for="fecha_entrada">Fecha de Entrada *</label>
                     <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" min="<?= htmlspecialchars(min(date('Y-m-d'), (string)$reserva['fecha_entrada'])) ?>" value="<?= htmlspecialchars($old['fecha_entrada'] ?? $reserva['fecha_entrada']) ?>" required>
@@ -105,11 +88,31 @@ if (!empty($habitaciones)) {
                     <label class="form__label" for="fecha_salida">Fecha de Salida *</label>
                     <input type="date" name="fecha_salida" id="fecha_salida" class="form__input" value="<?= htmlspecialchars($old['fecha_salida'] ?? $reserva['fecha_salida']) ?>" required>
                 </div>
+            </div>
+        </div>
 
+        <div class="form__section">
+            <h2 class="form__section-title">Huéspedes y Canal</h2>
+
+            <div class="form__row">
                 <div class="form__group">
                     <label class="form__label" for="cantidad_huespedes">Cantidad de Huéspedes *</label>
                     <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? $reserva['cantidad_huespedes'])) ?>" min="1" max="10" required>
                     <small id="precio-ocupacion-ayuda" class="field-hint">Seleccione una habitación para ver el precio.</small>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="id_canal_origen">Canal de Origen *</label>
+                    <select name="id_canal_origen" id="id_canal_origen" class="form__input" required>
+                        <option value="">Seleccione un Canal</option>
+                        <?php if (!empty($canales)): ?>
+                            <?php foreach ($canales as $can): ?>
+                                <option value="<?= $can->getId() ?>" <?= ((int)($old['id_canal_origen'] ?? $reserva['id_canal_origen']) === $can->getId()) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($can->getDescripcion()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
                 </div>
             </div>
         </div>
