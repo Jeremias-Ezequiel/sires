@@ -3,6 +3,12 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.8.2] - 2026-11-08
+
+### Cambiado
+- El formulario de alta y edición de reserva queda centrado con el mismo ancho máximo que el de
+  empleados, clientes y habitaciones, en lugar de ocupar todo el ancho de la pantalla.
+
 ## [1.8.1] - 2026-11-08
 
 ### Agregado

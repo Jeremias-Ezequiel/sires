@@ -48,7 +48,7 @@ if (!empty($habitaciones)) {
 }
 ?>
 
-<section class="details-section">
+<section class="details-section form-container-section">
     <form action="<?= url('/dashboard/booking/edit/process') ?>" method="POST" class="form" id="form-reserva">
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= $reserva['id'] ?>">
