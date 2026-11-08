@@ -29,6 +29,8 @@ RewriteRule ^(?i)vendor/.*$ index.php [QSA,L]
 RewriteRule ^(?i)composer\.(json|lock)$ index.php [QSA,L]
 RewriteRule ^(?i)cron/.*$ index.php [QSA,L]
 RewriteRule ^(?i)logs/.*$ index.php [QSA,L]
+RewriteRule ^(?i)database/.*$ index.php [QSA,L]
+RewriteRule ^(?i)tests/.*$ index.php [QSA,L]
 RewriteRule ^(?i)[^/]+\.(md|sh)$ index.php [QSA,L]
 RewriteRule ^(?i)\.env\.example$ index.php [QSA,L]
 

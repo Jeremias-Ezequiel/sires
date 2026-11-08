@@ -12,19 +12,53 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
 
 ## Instalación
 
-1. Copiar el proyecto en el `DocumentRoot` como carpeta `sires` (la app se sirve en `/sires`).
+1. Clonar el proyecto en el `DocumentRoot` como carpeta `sires` (la app se sirve en `/sires`):
+   ```bash
+   cd /var/www/html
+   git clone <url-del-repositorio> sires
+   cd sires
+   ```
 2. Instalar dependencias:
    ```bash
    composer install --no-dev --optimize-autoloader
    ```
-3. Crear `.env` a partir de `.env.example` y completar la base de datos, `APP_URL` y SMTP.
-4. Base de datos: importar el dump vigente y correr los scripts posteriores (triggers, EVENTs,
-   `event_scheduler`). Los scripts SQL no se versionan en este repositorio; se entregan aparte
-   junto con su `LEEME.md`. Las migraciones aplicadas quedan registradas en la tabla `migraciones`.
-5. Dar permiso de escritura a Apache sobre `logs/` si se usan los cron de respaldo.
-6. Producción: servir por HTTPS (la cookie de sesión pasa a `Secure` y se envía HSTS solos) y no
+3. Base de datos: crear la base y su usuario, importar `database/sires-demo.sql.gz` y correr los
+   scripts `database/scripts/01` a `04`. Paso a paso en [`database/README.md`](database/README.md):
+   ```bash
+   zcat database/sires-demo.sql.gz | mariadb -u sires -p siresDB
+   mariadb -u sires -p siresDB < database/scripts/01_reparar_triggers_y_corte.sql
+   mariadb -u sires -p siresDB < database/scripts/02_eventos_late_fee_y_no_show.sql
+   mariadb -u root -p         < database/scripts/03_activar_scheduler.sql
+   mariadb -u sires -p -t siresDB < database/scripts/04_verificar.sql
+   ```
+4. Crear `.env` a partir de `.env.example`: base de datos (`DB_*`, el mismo usuario que importó),
+   `APP_URL` y SMTP. Sin SMTP la app funciona; los mails quedan pendientes.
+5. Dar permiso de escritura a Apache sobre `logs/`:
+   ```bash
+   sudo chown -R apache:apache logs     # www-data en Debian/Ubuntu
+   ```
+   En Fedora/RHEL con SELinux, además: `sudo chcon -R -t httpd_sys_rw_content_t logs`,
+   `sudo setsebool -P httpd_can_network_connect_db 1` (base por TCP) y
+   `sudo setsebool -P httpd_can_network_connect 1` (SMTP).
+6. Crontab de los mails (ver "Procesos automáticos").
+7. Entrar a `http://<servidor>/sires` con un usuario de demo (contraseña `Sires2026`):
+
+   | Rol | Usuario |
+   |---|---|
+   | Administrador | `admin@hotel.com` |
+   | Recepcionista | `recepcion1@hotel.com` / `recepcion2@hotel.com` |
+   | Gerente | `gerencia@hotel.com` |
+   | Personal de Limpieza | `limpieza1@hotel.com` |
+
+   El dump trae datos inventados (habitaciones, clientes, políticas y datos del hotel) y ninguna
+   reserva. En una instalación real: cambiar las contraseñas de los usuarios de demo (o darlos de
+   baja desde Empleados) y completar los datos del hotel en Configuración.
+8. Producción: servir por HTTPS (la cookie de sesión pasa a `Secure` y se envía HSTS solos) y no
    exponer versiones del servidor: `ServerTokens Prod` y `ServerSignature Off` en Apache,
    `expose_php = Off` en `php.ini`.
+
+Las carpetas `database/`, `tests/`, `cron/`, `logs/`, `App/` y `vendor/` no se sirven por web (`.htaccess`).
+Los cambios de esquema van como migración en `database/migraciones/` (ver su README).
 
 ## Procesos automáticos
 

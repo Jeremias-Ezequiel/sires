@@ -6,5 +6,5 @@ namespace App\Config;
 
 class App
 {
-    public const VERSION = '1.8.0';
+    public const VERSION = '1.8.1';
 }

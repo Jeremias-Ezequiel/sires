@@ -70,7 +70,8 @@ $r->addRoute('GET', '/dashboard/employees', [
 
 ## Base de datos
 
-- Los scripts SQL (migraciones y EVENTs) no se versionan en este repo. Las migraciones aplicadas quedan registradas en la tabla `migraciones`.
+- Todo en `database/` (no se sirve por web; ver su README): `sires-demo.sql.gz` (instalación con datos inventados, usuarios de demo con contraseña `Sires2026`), `scripts/01-04` (triggers, EVENTs, scheduler, verificación) y `migraciones/` (`NNN_nombre.up.sql`/`.down.sql`, aditivas; el `up` termina con `INSERT IGNORE INTO migraciones`).
+- Un cambio de esquema = migración nueva + regenerar el dump de demo. Nunca datos reales en el dump. Cambios de BD: avisar y pedir OK antes.
 - Triggers: `trg_check_solapamiento_*` (Reservas) y `trg_habitacion_limpieza_*` (Habitaciones, migración 011). Este último setea `sucia_desde` al pasar a Sucia y limpia `sucia_desde`/`limpieza_urgente` al salir de Sucia/Limpiando: no setearlos a mano en los Services.
 
 ## Automatismos (EVENTs y cron)

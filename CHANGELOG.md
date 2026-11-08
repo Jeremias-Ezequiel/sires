@@ -3,6 +3,26 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.8.1] - 2026-11-08
+
+### Agregado
+- **Base de datos en el repositorio** (`database/`): dump de instalación con datos de demo inventados
+  (un usuario por rol con contraseña `Sires2026`, habitaciones, clientes, datos del hotel, sin
+  reservas), los scripts de triggers, EVENTs y verificación, y el historial de migraciones. El README
+  explica la instalación completa.
+- El restablecimiento de contraseña por mail queda en la auditoría (`empleado.recupero_password`).
+
+### Corregido
+- El cambio de contraseña de un empleado desde el dashboard fallaba siempre (faltaba el token CSRF).
+- El alta o edición de un cliente sin teléfono terminaba en error 500.
+- Dos pedidos simultáneos de reembolso podían registrarlo dos veces.
+
+### Cambiado
+- Los controllers ya no tienen lógica de negocio: empleados, clientes y recuperación de contraseña
+  pasan a `EmpleadoService`, `ClienteService` y `RecuperacionService`, y la auditoría de empleados se
+  registra dentro de la misma transacción. `ReservaService` se divide en cuatro servicios.
+- `database/` y `tests/` no se sirven por web.
+
 ## [1.8.0] - 2026-11-07
 
 ### Agregado
