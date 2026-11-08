@@ -51,8 +51,16 @@ test('clic en una reserva abre su detalle', async ({ page }) => {
 
 test('clic en un día libre abre una reserva nueva precargada', async ({ page }) => {
   await page.goto(ruta('/dashboard/planning'));
-  const celda = page.locator('.plan-celda--libre').first();
-  test.skip(await celda.count() === 0, 'no hay días libres');
+  // Todas las celdas futuras llevan --libre y las barras de reserva se dibujan encima:
+  // se elige la primera que no esté tapada por una barra.
+  const indice = await page.locator('.plan-celda--libre').evaluateAll((celdas) =>
+    celdas.findIndex((c) => {
+      const r = c.getBoundingClientRect();
+      const encima = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return encima !== null && c.contains(encima);
+    }));
+  test.skip(indice < 0, 'no hay días libres');
+  const celda = page.locator('.plan-celda--libre').nth(indice);
   const href = (await celda.getAttribute('href')) ?? '';
   const params = new URL(href, 'http://x').searchParams;
   await celda.click();
