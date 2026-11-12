@@ -3,6 +3,13 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.8.3] - 2026-11-11
+
+### Seguridad
+- Los archivos y carpetas ocultos (`.git/`, cachés de herramientas) no se sirven por web. La
+  instalación por `git clone` deja `.git` dentro del `DocumentRoot`; si Apache no lo bloquea
+  por su cuenta, el código fuente se podía descargar.
+
 ## [1.8.2] - 2026-11-08
 
 ### Cambiado

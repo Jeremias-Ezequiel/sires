@@ -24,6 +24,8 @@ ErrorDocument 403 /index.php
 # 🛡️ ESCUDO DE SOFTWARE: Si piden el .env, App, o vendor, reescribimos 
 # silenciosamente la URL hacia index.php. PHP se va a encargar de tirar el 404/403.
 RewriteRule \.env$ index.php [QSA,L]
+# Archivos y carpetas ocultos (.git/, .phpstan.cache/, .htaccess, etc.): el deploy por git clone deja .git en el servidor
+RewriteRule (^|/)\. index.php [QSA,L]
 RewriteRule ^(?i)App/.*$ index.php [QSA,L]
 RewriteRule ^(?i)vendor/.*$ index.php [QSA,L]
 RewriteRule ^(?i)composer\.(json|lock)$ index.php [QSA,L]
