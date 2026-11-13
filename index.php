@@ -106,6 +106,12 @@ try {
                 App\Middleware\AuthMiddleware::authorize($routeData['roles']);
             }
 
+            // Procesos automáticos vencidos: corren al terminar la navegación de un usuario
+            // logueado (las rutas /api/* no, salvo el latido, que lo pide en su controller)
+            if ($httpMethod === 'GET' && !str_starts_with($route, '/api/')) {
+                App\Services\EjecucionPorPedidoService::programarAlTerminar();
+            }
+
             $handler = $routeData['action'];
             $controllerClass = $handler[0];
             $method = $handler[1];

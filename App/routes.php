@@ -96,6 +96,13 @@ return function (RouteCollector $r) {
         'roles'       => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA],
     ]);
 
+    // Latido del dashboard: dispara los procesos automáticos vencidos con una pantalla abierta.
+    // Sin verifyLogin: no debe renovar la inactividad de la sesión (el controller la controla).
+    $r->addRoute('POST', '/api/latido', [
+        'action'      => [ApiController::class, 'latido'],
+        'middlewares' => [[CsrfMiddleware::class, 'verify']],
+    ]);
+
     // =====================================================================
     // 🔒 RUTAS PROTEGIDAS (Pasan por la tubería de Middlewares)
     // =====================================================================

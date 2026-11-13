@@ -7,7 +7,8 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
 
 - PHP 8.1 o superior con `pdo_mysql`, `mbstring`, `openssl`, `dom` e `iconv` (las dos últimas, para los PDF con dompdf).
 - Apache con `mod_rewrite` y `AllowOverride All` (usa el `.htaccess` del proyecto).
-- MySQL 8 / MariaDB 10.6 o superior, con `event_scheduler = ON` para los procesos automáticos.
+- MySQL 8 / MariaDB 10.6 o superior. `event_scheduler = ON` es recomendado pero no obligatorio: sin él,
+  los procesos automáticos corren por pedido (ver "Procesos automáticos").
 - Composer.
 
 ## Instalación
@@ -31,8 +32,12 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
    mariadb -u root -p         < database/scripts/03_activar_scheduler.sql
    mariadb -u sires -p -t siresDB < database/scripts/04_verificar.sql
    ```
+   Sin privilegio `EVENT` o sin acceso a root (hosting compartido), el `CREATE EVENT` de los scripts
+   01 y 02 y el script 03 fallan: no es un problema, los procesos corren por pedido. Los triggers del
+   script 01 (se crean antes del EVENT) sí son obligatorios.
 4. Crear `.env` a partir de `.env.example`: base de datos (`DB_*`, el mismo usuario que importó),
-   `APP_URL` y SMTP. Sin SMTP la app funciona; los mails quedan pendientes.
+   `APP_URL` y SMTP. Sin SMTP la app funciona; los mails quedan pendientes. `EJECUCION_POR_PEDIDO=1`
+   (por defecto) deja activa la ejecución por pedido de los procesos automáticos.
 5. Dar permiso de escritura a Apache sobre `logs/`:
    ```bash
    sudo chown -R apache:apache logs     # www-data en Debian/Ubuntu
@@ -40,7 +45,7 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
    En Fedora/RHEL con SELinux, además: `sudo chcon -R -t httpd_sys_rw_content_t logs`,
    `sudo setsebool -P httpd_can_network_connect_db 1` (base por TCP) y
    `sudo setsebool -P httpd_can_network_connect 1` (SMTP).
-6. Crontab de los mails (ver "Procesos automáticos").
+6. Opcional: crontab de los mails (ver "Procesos automáticos").
 7. Entrar a `http://<servidor>/sires` con un usuario de demo (contraseña `Sires2026`):
 
    | Rol | Usuario |
@@ -57,30 +62,45 @@ PHP 8 sin framework (MVC propio) sobre Apache + MySQL/MariaDB.
    exponer versiones del servidor: `ServerTokens Prod` y `ServerSignature Off` en Apache,
    `expose_php = Off` en `php.ini`.
 
-Las carpetas `database/`, `tests/`, `cron/`, `logs/`, `App/` y `vendor/` no se sirven por web (`.htaccess`).
+Las carpetas `database/`, `tests/`, `cron/`, `logs/`, `App/` y `vendor/`, y todo archivo o carpeta oculto
+(`.git/`, `.env`), no se sirven por web (`.htaccess`).
 Los cambios de esquema van como migración en `database/migraciones/` (ver su README).
 
 ## Procesos automáticos
 
-Los realizan EVENTs de la base de datos (requieren `event_scheduler = ON`):
-
-| EVENT | Frecuencia | Qué hace |
+| Proceso | Frecuencia | Qué hace |
 |---|---|---|
 | `corte_pagos` | diario 08:00 | Cancela reservas sin pago total dentro del plazo de corte |
 | `cargo_late_checkout` | cada 15 min | Cobra el late checkout una única vez |
 | `liberacion_no_show` | cada 30 min | Libera habitaciones retenidas por No-Show |
+| `envio_mails` | cada 5 min | Encola los recordatorios y manda los mails pendientes, con reintentos |
 
-`cron/*.php` son un respaldo por CLI que ejecuta la misma lógica (`php cron/payment-cutoff.php`, etc.).
+Los puede disparar cualquiera de tres vías, que conviven:
 
-**Mails al huésped** (confirmación, recordatorio N días antes y comprobante de pago): se encolan en la
-tabla `Cola_Mails` y los manda `cron/mails.php`, que **sí necesita el crontab** (un EVENT no puede
-mandar mails). Usa el SMTP del `.env` (`SMTP_*`; remitente opcional en `MAIL_FROM` y `MAIL_FROM_NAME`):
+1. **EVENTs de la base** (scripts 01 y 02): corren solos con `event_scheduler = ON`. No pueden mandar
+   mails, así que no hay EVENT para `envio_mails`.
+2. **Crontab** del servidor: `cron/*.php` ejecutan la misma lógica de los Services.
+3. **Ejecución por pedido** (`EJECUCION_POR_PEDIDO=1` en `.env`, activa por defecto): al terminar cada
+   página que pide un usuario logueado, la app corre los procesos vencidos. Con una pantalla del
+   dashboard abierta y visible, `public/js/latido.js` hace lo mismo cada 5 minutos (`POST /api/latido`,
+   que no renueva la inactividad de la sesión). Los mails salen de a 3 por corrida.
+
+Cada corrida queda en `Ejecuciones_Automaticas` con su origen (`event`, `cron` o `pedido`). Un proceso
+solo corre si está vencido (según su última corrida) y nunca dos veces a la vez (`GET_LOCK` entre
+pedidos; una corrida en curso del EVENT también se respeta). Con el scheduler activo y el EVENT
+habilitado, la ejecución por pedido solo actúa si el proceso superó su tolerancia: queda como red de
+seguridad. Sin nadie usando el sistema no corre nada por esta vía; corre en cuanto alguien entra.
+
+Con PHP-FPM la respuesta se entrega antes de correr los procesos; con `mod_php`, el usuario que dispara
+la corrida espera lo que tarde (normalmente milisegundos; los mails, hasta el timeout del SMTP).
+
+Crontab sugerido, si el servidor lo permite (los mails usan el SMTP del `.env`):
 
 ```cron
 */5 * * * * php /ruta/a/sires/cron/mails.php >> /ruta/a/sires/logs/mails.log 2>&1
 ```
 
-Si el cron no corre, los mails quedan pendientes y el inicio del administrador lo avisa
+Si un proceso no corre por ninguna vía, el inicio del administrador lo avisa
 (Auditoría > Procesos automáticos).
 
 ## Configuración del negocio
@@ -126,7 +146,8 @@ Requieren las dependencias de desarrollo (`composer install`, sin `--no-dev`) y 
 | `composer test:integracion` | Tests de integración (`tests/Integracion`) contra la base real. |
 
 **Unidad.** La lógica pura (precio por noche y descuentos por ocupación, seña mínima, penalidad de
-cancelación, late fee, retención por No-Show y lectura de políticas versionadas) vive en `App/Dominio`,
+cancelación, late fee, retención por No-Show, lectura de políticas versionadas y cuándo le toca correr
+a cada proceso automático) vive en `App/Dominio`,
 sin PDO. Los Services la usan; los tests le pasan fechas y configuraciones fijas.
 
 **Integración.** Se corre dentro de la VM de testing, con el `.env` que ya tiene el proyecto ahí

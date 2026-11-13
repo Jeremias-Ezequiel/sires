@@ -3,6 +3,23 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [SemVer](https://semver.org/lang/es/).
 
+## [1.9.0] - 2026-11-13
+
+### Agregado
+- **Ejecución por pedido de los procesos automáticos** (corte de pagos, late checkout, liberación de
+  No-Show y envío de mails), para servidores sin `event_scheduler` ni crontab. Al terminar cada página
+  que pide un usuario logueado, y cada 5 minutos con una pantalla del dashboard abierta (latido), la
+  app corre los procesos vencidos con los mismos Services que el cron. Convive con los EVENTs y el
+  cron: solo actúa si el proceso está vencido, respeta las corridas en curso y, con el scheduler
+  activo, queda como red de seguridad. Se apaga con `EJECUCION_POR_PEDIDO=0` en `.env`.
+- Migración 017: origen `pedido` en `Ejecuciones_Automaticas`.
+
+### Cambiado
+- Auditoría > Procesos automáticos muestra si la ejecución por pedido está activa y el origen de cada
+  corrida. Sin scheduler pero con ejecución por pedido, el inicio del administrador ya no avisa que el
+  programador está apagado: solo si un proceso no corre dentro de su tolerancia.
+- `event_scheduler` y el crontab de los mails pasan a ser recomendados, no obligatorios.
+
 ## [1.8.3] - 2026-11-11
 
 ### Seguridad

@@ -5,6 +5,7 @@
  */
 
 use App\Services\AuditoriaService;
+use App\Services\EjecucionPorPedidoService;
 use App\Services\MonitoreoService;
 
 $fechaHora = fn(?string $f): string => $f !== null ? date('d/m/Y H:i', strtotime($f)) : '—';
@@ -111,12 +112,17 @@ $fechaHora = fn(?string $f): string => $f !== null ? date('d/m/Y H:i', strtotime
         <header class="panel__header">
             <h2><i class="fas fa-clock" aria-hidden="true"></i>Estado</h2>
         </header>
-        <p class="aud-scheduler aud-scheduler--<?= $monitoreo['scheduler_ok'] ? 'ok' : 'error' ?>">
-            <i class="fas <?= $monitoreo['scheduler_ok'] ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
+        <?php $porPedido = EjecucionPorPedidoService::habilitado(); ?>
+        <?php $procesosCubiertos = $monitoreo['scheduler_ok'] || $porPedido; ?>
+        <p class="aud-scheduler aud-scheduler--<?= $procesosCubiertos ? 'ok' : 'error' ?>">
+            <i class="fas <?= $procesosCubiertos ? 'fa-circle-check' : 'fa-triangle-exclamation' ?>" aria-hidden="true"></i>
             Programador de tareas de la base (event_scheduler):
             <strong><?= htmlspecialchars($monitoreo['scheduler']) ?></strong>
-            <?php if (!$monitoreo['scheduler_ok']): ?>
-                · Los procesos no corren solos. Correr el script 03 o pedir <code>event_scheduler = ON</code> al administrador del servidor.
+            · Ejecución por pedido: <strong><?= $porPedido ? 'activa' : 'apagada' ?></strong>
+            <?php if (!$monitoreo['scheduler_ok'] && $porPedido): ?>
+                · Los procesos corren cuando se usa el sistema (al navegar o con una pantalla abierta).
+            <?php elseif (!$procesosCubiertos): ?>
+                · Los procesos no corren solos. Correr el script 03, pedir <code>event_scheduler = ON</code> al administrador del servidor o activar <code>EJECUCION_POR_PEDIDO</code> en <code>.env</code>.
             <?php endif; ?>
         </p>
 
@@ -183,7 +189,7 @@ $fechaHora = fn(?string $f): string => $f !== null ? date('d/m/Y H:i', strtotime
                             <tr>
                                 <td class="aud-fecha"><?= htmlspecialchars(date('d/m/Y H:i:s', strtotime((string)$c['inicio']))) ?></td>
                                 <td><?= htmlspecialchars(MonitoreoService::PROCESOS[$c['proceso']]['nombre'] ?? $c['proceso']) ?></td>
-                                <td><?= $c['origen'] === 'cron' ? 'Cron (respaldo)' : 'EVENT' ?></td>
+                                <td><?= match ($c['origen']) { 'cron' => 'Cron', 'pedido' => 'Por pedido', default => 'EVENT' } ?></td>
                                 <td class="cfg-num"><?= $c['filas_afectadas'] !== null ? (int)$c['filas_afectadas'] : '—' ?></td>
                                 <td>
                                     <?php if ($c['ok'] === null): ?>

@@ -9,7 +9,8 @@ use App\Models\ColaMail;
 use Throwable;
 
 /**
- * Monitoreo de los procesos automáticos (EVENTs de la base y su respaldo por cron).
+ * Monitoreo de los procesos automáticos: EVENTs de la base, cron y ejecución por pedido
+ * (EjecucionPorPedidoService, al navegar el sistema).
  * Cada corrida queda en Ejecuciones_Automaticas (migración 012); acá se decide si algo
  * está mal: programador apagado, EVENT ausente o desactivado, corrida con error o
  * proceso que no corre hace más de lo esperado.
@@ -39,10 +40,11 @@ class MonitoreoService
             'frecuencia' => 'Cada 30 minutos',
             'tolerancia' => 90,
         ],
-        // Sin EVENT: un EVENT no puede mandar mails. Lo corre el crontab del servidor.
+        // Sin EVENT: un EVENT no puede mandar mails. Lo corren el crontab (cron/mails.php)
+        // o la ejecución por pedido.
         'envio_mails' => [
             'nombre'     => 'Envío de mails al huésped',
-            'frecuencia' => 'Cada 5 minutos (cron/mails.php)',
+            'frecuencia' => 'Cada 5 minutos',
             'tolerancia' => 30,
             'solo_cron'  => true,
         ],
@@ -68,6 +70,9 @@ class MonitoreoService
         $schedulerOk = $scheduler === 'ON';
         $eventos = $this->modelo->eventos();
         $ahora = time();
+        // Con la ejecución por pedido activa, un EVENT ausente, desactivado o sin scheduler
+        // no es un problema: solo se controla que el proceso corra dentro de su tolerancia.
+        $porPedido = EjecucionPorPedidoService::habilitado();
 
         $procesos = [];
         foreach (self::PROCESOS as $clave => $def) {
@@ -77,23 +82,24 @@ class MonitoreoService
             $minutosDesdeOk = $ultimaOk !== null
                 ? intdiv($ahora - strtotime((string)$ultimaOk['inicio']), 60)
                 : null;
-            $cronAlDia = $ultimaOk !== null && $ultimaOk['origen'] === 'cron'
+            // Corre al día desde PHP (cron o por pedido): el EVENT y el scheduler no hacen falta
+            $phpAlDia = $ultimaOk !== null && $ultimaOk['origen'] !== 'event'
                 && $minutosDesdeOk <= $def['tolerancia'];
 
             $problema = null;
             $porScheduler = false;
             if (!empty($def['solo_cron'])) {
                 $problema = $this->problemaSoloCron($clave, $def, $ultima, $ultimaOk, $minutosDesdeOk, $ahora);
-            } elseif (!isset($eventos[$clave]) && !$cronAlDia) {
+            } elseif (!isset($eventos[$clave]) && !$phpAlDia && !$porPedido) {
                 $problema = 'El EVENT no existe en la base (correr los scripts 01 y 02).';
-            } elseif (isset($eventos[$clave]) && $eventos[$clave]['status'] !== 'ENABLED' && !$cronAlDia) {
+            } elseif (isset($eventos[$clave]) && $eventos[$clave]['status'] !== 'ENABLED' && !$phpAlDia && !$porPedido) {
                 $problema = 'El EVENT está desactivado.';
             } elseif ($ultima !== null && $ultima['ok'] !== null && (int)$ultima['ok'] === 0) {
                 $problema = 'La última corrida falló: ' . mb_substr((string)$ultima['error'], 0, 160);
             } elseif ($ultima !== null && $ultima['ok'] === null
                 && $ahora - strtotime((string)$ultima['inicio']) > self::MINUTOS_CORRIDA_COLGADA * 60) {
                 $problema = 'Una corrida quedó sin terminar.';
-            } elseif (!$schedulerOk && !$cronAlDia) {
+            } elseif (!$schedulerOk && !$phpAlDia && !$porPedido) {
                 // Sin programador los EVENTs no corren, aunque la última corrida haya sido reciente
                 $problema = 'No corre: el programador de tareas de la base está apagado.';
                 $porScheduler = true;
@@ -153,12 +159,13 @@ class MonitoreoService
     }
 
     /**
-     * Ejecuta un proceso desde el cron de respaldo y deja la corrida registrada (origen 'cron').
+     * Ejecuta un proceso desde PHP y deja la corrida registrada.
+     * $origen: 'cron' (scripts de cron/) o 'pedido' (EjecucionPorPedidoService).
      * $fn devuelve el array del Service; 'procesadas' (si viene) se guarda como filas afectadas.
      */
-    public function ejecutarConRegistro(string $proceso, callable $fn): array
+    public function ejecutarConRegistro(string $proceso, callable $fn, string $origen = 'cron'): array
     {
-        $id = $this->modelo->iniciar($proceso, 'cron');
+        $id = $this->modelo->iniciar($proceso, $origen);
         try {
             $resultado = $fn();
             $this->modelo->finalizar($id, true, isset($resultado['procesadas']) ? (int)$resultado['procesadas'] : null);
@@ -170,9 +177,9 @@ class MonitoreoService
     }
 
     /**
-     * Problema de un proceso que corre solo por cron (sin EVENT ni event_scheduler).
-     * Si nunca corrió, solo se avisa cuando hay trabajo esperando: puede que el servidor
-     * todavía no tenga el crontab y eso no es un error mientras no haga falta.
+     * Problema de un proceso sin EVENT (lo corren el cron o la ejecución por pedido).
+     * Si nunca corrió, solo se avisa cuando hay trabajo esperando: mientras no haga falta,
+     * que todavía no haya corrido no es un error.
      */
     private function problemaSoloCron(string $clave, array $def, ?array $ultima, ?array $ultimaOk, ?int $minutosDesdeOk, int $ahora): ?string
     {
@@ -186,7 +193,7 @@ class MonitoreoService
         $esperando = $clave === 'envio_mails' ? $this->mailsDemorados((int)$def['tolerancia']) : 0;
         if ($ultimaOk === null) {
             return $esperando > 0
-                ? 'Nunca corrió y hay ' . $esperando . ' mail(s) esperando: programar cron/mails.php en el crontab del servidor.'
+                ? 'Nunca corrió y hay ' . $esperando . ' mail(s) esperando: revisar EJECUCION_POR_PEDIDO en .env o programar cron/mails.php en el crontab.'
                 : null;
         }
         if ($minutosDesdeOk > $def['tolerancia'] && $esperando > 0) {

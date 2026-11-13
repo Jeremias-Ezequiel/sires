@@ -9,6 +9,19 @@ use App\Models\Usuario;
 
 class AuthMiddleware
 {
+    /** Inactividad máxima de la sesión (segundos). */
+    public const MAX_INACTIVIDAD = 1800;
+
+    /**
+     * Sesión logueada y sin vencer por inactividad, sin renovar la marca de actividad.
+     * La usa el latido del dashboard: una pestaña abierta no debe mantener viva la sesión.
+     */
+    public static function sesionVigente(): bool
+    {
+        return isset($_SESSION['user_id'], $_SESSION['last_activity'])
+            && time() - (int)$_SESSION['last_activity'] <= self::MAX_INACTIVIDAD;
+    }
+
     public static function verifyLogin(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -28,8 +41,7 @@ class AuthMiddleware
         }
 
         // 2. Caso: Expiración por inactividad (30 min)
-        $maxIdleTime = 1800;
-        if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $maxIdleTime)) {
+        if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > self::MAX_INACTIVIDAD)) {
             self::destroySession();
 
             session_start();

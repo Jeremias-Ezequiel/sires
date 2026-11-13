@@ -132,6 +132,12 @@ include __DIR__ . '/../partials/head.phtml';
 
     </div>
 
+<?php if (\App\Services\EjecucionPorPedidoService::habilitado()): ?>
+    <script src="<?= asset_v('js/latido.js') ?>"
+            data-url="<?= htmlspecialchars(url('/api/latido')) ?>"
+            data-token="<?= htmlspecialchars(csrf_token()) ?>"></script>
+<?php endif; ?>
+
 <?php
 // La versión ya se muestra al pie del menú lateral
 $versionEnSidebar = true;

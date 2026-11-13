@@ -2,7 +2,7 @@
 
 | Archivo | Para qué |
 |---|---|
-| `sires-demo.sql.gz` | Base completa para instalar: estructura 1.8.0 (migraciones 000 a 016), catálogos y datos de demo inventados. **Sin EVENTs**: los crean los scripts 01 y 02. |
+| `sires-demo.sql.gz` | Base completa para instalar: estructura 1.9.0 (migraciones 000 a 017), catálogos y datos de demo inventados. **Sin EVENTs**: los crean los scripts 01 y 02. |
 | `scripts/` | Scripts a correr **después** de importar el dump, en orden (01 a 04). |
 | `migraciones/` | Historial de cambios de la base (`up` / `down`). Ya están aplicados en el dump y registrados en la tabla `migraciones`. Sirven para actualizar una base existente o para revertir un cambio. |
 
@@ -65,9 +65,15 @@ Importar el dump **reemplaza** todas las tablas de la base destino. Si ya tiene 
 
    01 y 02 tienen que correrse con el mismo usuario que usa la app: los triggers y EVENTs quedan a su nombre.
 
+   Sin privilegio EVENT o sin root (hosting compartido), el `CREATE EVENT` de 01 y 02 y el script 03
+   fallan: los procesos corren igual por la ejecución por pedido de la app (`EJECUCION_POR_PEDIDO=1`).
+   Los triggers de 01 se crean antes del EVENT y sí son obligatorios.
+
 ## Procesos automáticos
 
 Los EVENTs (corte de pagos, late checkout y liberación de No-Show) solo corren con `event_scheduler = ON`.
+Sin scheduler, la app corre esos procesos (y los mails) al navegar el sistema: ver "Procesos automáticos"
+en el README principal.
 `SET GLOBAL` se pierde al reiniciar MariaDB; para dejarlo fijo, en el `.cnf` del servidor:
 
 ```ini
@@ -88,5 +94,6 @@ existente: correr los `up` que no figuren en `SELECT nombre FROM migraciones` en
 scripts 01, 02 y 04. `migraciones/README.md` y `migraciones/events/` documentan los primeros cambios
 (000 a 006) y los EVENTs originales que reemplazaron.
 
-Si se cambia un EVENT, actualizar el script 01 o 02 y el método PHP equivalente
+Si se cambia un EVENT, actualizar el script 01 o 02 y el método PHP equivalente (lo usan el cron y la
+ejecución por pedido)
 (`PagoService::ejecutarCortePagos()`, `PagoService::aplicarLateCheckout()`, `ReservaService::liberarNoShowConPago()`).

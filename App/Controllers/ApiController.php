@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\AuthMiddleware;
 use App\Models\Provincia;
+use App\Services\EjecucionPorPedidoService;
 use App\Models\Localidad;
 use Exception;
 
@@ -62,6 +64,20 @@ class ApiController extends Controller
         }
 
         echo json_encode($result);
+    }
+
+    /**
+     * Latido del dashboard (public/js/latido.js): responde 204 y, al terminar, corre los
+     * procesos automáticos vencidos. No renueva la inactividad de la sesión.
+     */
+    public function latido(array $vars): void
+    {
+        if (!AuthMiddleware::sesionVigente()) {
+            http_response_code(401);
+            return;
+        }
+        http_response_code(204);
+        EjecucionPorPedidoService::programarAlTerminar();
     }
 
     public function consultarReloj(array $vars): void
