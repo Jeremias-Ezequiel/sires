@@ -24,13 +24,39 @@ class Reserva extends Model
     private string $fecha_alta;
     private ?string $fecha_baja = null;
 
-    public const ESTADO_PENDIENTE = 1;
-    public const ESTADO_CONFIRMADA = 2;
-    public const ESTADO_CANCELADA = 3;
-    public const ESTADO_FINALIZADA = 4;
-    public const ESTADO_EN_CASA = 5;
-    public const ESTADO_NO_SHOW = 6;
-    public const ESTADO_NO_SHOW_CON_PAGO = 7;
+    // Alias: los valores se definen en EstadoReserva (espejo de la tabla catálogo).
+    /**
+     * Separador SQL para sumar un mensaje a `observaciones` (mismo formato que
+     * ReglasReserva::agregarObservacion): "- " en la primera línea, salto + "- " después.
+     * Uso: SET observaciones = CONCAT(COALESCE(observaciones, ''), SQL_SEPARADOR_OBS, 'Mensaje').
+     */
+    public const SQL_SEPARADOR_OBS = "IF(COALESCE(observaciones, '') = '', '- ', CONCAT(CHAR(10), '- '))";
+
+    public const ESTADO_PENDIENTE = EstadoReserva::PENDIENTE;
+
+    /** Estados que ocupan noches de la habitación: control de solapamiento y agenda de disponibilidad. */
+    public const ESTADOS_QUE_OCUPAN = [
+        EstadoReserva::PENDIENTE,
+        EstadoReserva::CONFIRMADA,
+        EstadoReserva::EN_CASA,
+        EstadoReserva::NO_SHOW_CON_PAGO,
+    ];
+    public const ESTADO_CONFIRMADA = EstadoReserva::CONFIRMADA;
+    public const ESTADO_CANCELADA = EstadoReserva::CANCELADA;
+    public const ESTADO_FINALIZADA = EstadoReserva::FINALIZADA_CHECKOUT;
+    public const ESTADO_EN_CASA = EstadoReserva::EN_CASA;
+    public const ESTADO_NO_SHOW = EstadoReserva::NO_SHOW;
+    public const ESTADO_NO_SHOW_CON_PAGO = EstadoReserva::NO_SHOW_CON_PAGO;
+
+    /** Días hacia adelante para avisar de reservas pendientes de pago (alerta del inicio). */
+    public const DIAS_AVISO_SIN_PAGO = 3;
+
+    /** Filtros de alerta del inicio que entiende el listado de reservas (?alerta=...). */
+    public const ALERTAS = [
+        'sin_pago_proximas'  => 'Pendientes de pago que llegan en los próximos ' . self::DIAS_AVISO_SIN_PAGO . ' días',
+        'llegadas_atrasadas' => 'Confirmadas que no hicieron check-in',
+        'salidas_vencidas'   => 'Huéspedes con la salida vencida sin check-out',
+    ];
 
     public function countReservasHoy(?string $fecha = null): int
     {
@@ -52,24 +78,42 @@ class Reserva extends Model
         }
     }
 
+    /**
+     * Reservas que ocupan noches (las mismas que bloquea existeSolapamiento) y que todavía no
+     * terminaron, con el cliente: las usa la agenda de disponibilidad del alta y la edición.
+     */
     public function getReservasActivas(): array
     {
+        [$in, $params] = self::placeholdersEstadosQueOcupan();
         try {
             $stmt = $this->db->prepare(
-                "SELECT id, id_habitacion, fecha_entrada, fecha_salida
-                 FROM Reservas
-                 WHERE id_estado_reserva IN (:pendiente, :confirmada)
-                 ORDER BY fecha_entrada ASC"
+                "SELECT r.id, r.id_habitacion, r.fecha_entrada, r.fecha_salida, r.id_estado_reserva,
+                        c.nombre AS cliente_nombre, c.apellido AS cliente_apellido
+                 FROM Reservas r
+                 LEFT JOIN Clientes c ON c.id = r.id_cliente
+                 WHERE r.id_estado_reserva IN ($in)
+                   AND r.fecha_salida >= CURDATE()
+                 ORDER BY r.fecha_entrada ASC"
             );
-            $stmt->execute([
-                ':pendiente'  => self::ESTADO_PENDIENTE,
-                ':confirmada' => self::ESTADO_CONFIRMADA,
-            ]);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error en Reserva::getReservasActivas: " . $e->getMessage());
             throw new Exception("Error al consultar las reservas activas.");
         }
+    }
+
+    /**
+     * Placeholders y parámetros para "id_estado_reserva IN (...)" con ESTADOS_QUE_OCUPAN.
+     * @return array{0: string, 1: array<string, int>}
+     */
+    private static function placeholdersEstadosQueOcupan(): array
+    {
+        $params = [];
+        foreach (self::ESTADOS_QUE_OCUPAN as $i => $estado) {
+            $params[':ocupa' . $i] = $estado;
+        }
+        return [implode(', ', array_keys($params)), $params];
     }
 
     public function existeSolapamiento(
@@ -78,22 +122,19 @@ class Reserva extends Model
         string $fechaSalida,
         ?int $exceptoId = null
     ): bool {
+        [$in, $estados] = self::placeholdersEstadosQueOcupan();
         try {
             $sql = "SELECT COUNT(*) FROM Reservas
                     WHERE id_habitacion = :id_habitacion
                       AND fecha_entrada < :fecha_salida
                       AND fecha_salida > :fecha_entrada
-                      AND id_estado_reserva IN (:pendiente, :confirmada, :encasa, :noshowpago)";
+                      AND id_estado_reserva IN ($in)";
 
             $params = [
                 ':id_habitacion' => $idHabitacion,
                 ':fecha_entrada' => $fechaEntrada,
                 ':fecha_salida'  => $fechaSalida,
-                ':pendiente'     => self::ESTADO_PENDIENTE,
-                ':confirmada'    => self::ESTADO_CONFIRMADA,
-                ':encasa'        => self::ESTADO_EN_CASA,
-                ':noshowpago'    => self::ESTADO_NO_SHOW_CON_PAGO,
-            ];
+            ] + $estados;
 
             if ($exceptoId !== null) {
                 $sql .= " AND id <> :excepto_id";
@@ -114,10 +155,12 @@ class Reserva extends Model
         ?string $estado,
         ?string $canal,
         int $limit,
-        int $offset
+        int $offset,
+        ?string $alerta = null
     ): array {
         $conditions = [];
         $params = [];
+        $this->aplicarFiltroAlerta($alerta, $conditions, $params);
 
         if ($search !== null && $search !== '') {
             $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
@@ -153,7 +196,7 @@ class Reserva extends Model
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
 
-        $sql .= " ORDER BY r.fecha_alta DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY r.fecha_alta DESC, r.id DESC LIMIT :limit OFFSET :offset";
 
         try {
             $stmt = $this->db->prepare($sql);
@@ -170,10 +213,11 @@ class Reserva extends Model
         }
     }
 
-    public function countAllWithFilters(?string $search, ?string $estado, ?string $canal): int
+    public function countAllWithFilters(?string $search, ?string $estado, ?string $canal, ?string $alerta = null): int
     {
         $conditions = [];
         $params = [];
+        $this->aplicarFiltroAlerta($alerta, $conditions, $params);
 
         if ($search !== null && $search !== '') {
             $conditions[] = "(c.nombre LIKE :search OR c.apellido LIKE :search2 OR h.numero LIKE :search3)";
@@ -208,6 +252,37 @@ class Reserva extends Model
         } catch (PDOException $e) {
             error_log("Error en Reserva::countAllWithFilters: " . $e->getMessage());
             throw new Exception("Error en la base de datos al contar reservas.");
+        }
+    }
+
+    /**
+     * Mismas condiciones que getContadoresAlerta(), para que el listado muestre
+     * exactamente las reservas que cuenta cada alerta del inicio.
+     */
+    private function aplicarFiltroAlerta(?string $alerta, array &$conditions, array &$params): void
+    {
+        if ($alerta === null || !isset(self::ALERTAS[$alerta])) {
+            return;
+        }
+        $hoy = date('Y-m-d');
+        switch ($alerta) {
+            case 'sin_pago_proximas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_entrada BETWEEN :al_hoy AND :al_limite";
+                $params['al_estado'] = self::ESTADO_PENDIENTE;
+                $params['al_hoy'] = $hoy;
+                $params['al_limite'] = date('Y-m-d', strtotime('+' . self::DIAS_AVISO_SIN_PAGO . ' days'));
+                break;
+            case 'llegadas_atrasadas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_entrada < :al_hoy AND r.fecha_salida > :al_hoy2";
+                $params['al_estado'] = self::ESTADO_CONFIRMADA;
+                $params['al_hoy'] = $hoy;
+                $params['al_hoy2'] = $hoy;
+                break;
+            case 'salidas_vencidas':
+                $conditions[] = "r.id_estado_reserva = :al_estado AND r.fecha_salida < :al_hoy";
+                $params['al_estado'] = self::ESTADO_EN_CASA;
+                $params['al_hoy'] = $hoy;
+                break;
         }
     }
 
@@ -330,6 +405,18 @@ class Reserva extends Model
         }
     }
 
+    /** Día real en que el huésped se retiró (check-out o checkout anticipado). fecha_salida sigue siendo la pactada. */
+    public function registrarCheckout(int $id, string $fecha): void
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE Reservas SET fecha_checkout = :fecha WHERE id = :id");
+            $stmt->execute([':fecha' => $fecha, ':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::registrarCheckout: " . $e->getMessage());
+            throw new Exception("Error al registrar la fecha de salida.");
+        }
+    }
+
     public function cambiarEstado(int $id, int $nuevoEstado, ?int $soloSiEstaEn = null): bool
     {
         try {
@@ -347,6 +434,134 @@ class Reserva extends Model
         } catch (PDOException $e) {
             error_log("Error en Reserva::cambiarEstado: " . $e->getMessage());
             throw new Exception("Error interno al cambiar el estado de la reserva.");
+        }
+    }
+
+    /**
+     * Guarda el precio efectivo por noche pactado (con descuento por ocupación).
+     * Lo usa el late checkout para no depender del precio actual de la habitación.
+     */
+    public function actualizarPrecioPactado(int $id, float $precioNoche): void
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "UPDATE Reservas SET precio_noche_pactado = :precio WHERE id = :id"
+            );
+            $stmt->execute([':precio' => round($precioNoche, 2), ':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::actualizarPrecioPactado: " . $e->getMessage());
+            throw new Exception("Error interno al guardar el precio de la reserva.");
+        }
+    }
+
+    // =====================================================================
+    // TABLERO DE INICIO
+    // =====================================================================
+
+    /** Llegadas de una fecha: reservas vigentes que entran ese día, con huésped, habitación y pago. */
+    public function getLlegadasDelDia(string $fecha): array
+    {
+        return $this->movimientosDelDia('r.fecha_entrada', $fecha, [
+            self::ESTADO_PENDIENTE,
+            self::ESTADO_CONFIRMADA,
+            self::ESTADO_EN_CASA,
+            self::ESTADO_NO_SHOW_CON_PAGO,
+        ]);
+    }
+
+    /** Salidas de una fecha: huéspedes en casa que se van ese día y los que ya hicieron check-out. */
+    public function getSalidasDelDia(string $fecha): array
+    {
+        return $this->movimientosDelDia('r.fecha_salida', $fecha, [
+            self::ESTADO_EN_CASA,
+            self::ESTADO_FINALIZADA,
+        ]);
+    }
+
+    /** @param string $columna 'r.fecha_entrada' o 'r.fecha_salida' (valor fijo, nunca del usuario). */
+    private function movimientosDelDia(string $columna, string $fecha, array $estados): array
+    {
+        $placeholders = implode(',', array_fill(0, count($estados), '?'));
+        $sql = "SELECT r.id, r.id_estado_reserva, r.fecha_entrada, r.fecha_salida, r.cantidad_huespedes,
+                       c.nombre AS cliente_nombre, c.apellido AS cliente_apellido,
+                       h.id AS id_habitacion, h.numero AS habitacion_numero,
+                       th.descripcion AS tipo_habitacion,
+                       rp.id_estado_pago, rp.saldo_pendiente
+                FROM Reservas r
+                JOIN Clientes c ON r.id_cliente = c.id
+                JOIN Habitaciones h ON r.id_habitacion = h.id
+                LEFT JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id
+                WHERE $columna = ? AND r.id_estado_reserva IN ($placeholders)
+                ORDER BY h.numero ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_merge([$fecha], $estados));
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::movimientosDelDia: " . $e->getMessage());
+            throw new Exception("Error al consultar las llegadas y salidas del día.");
+        }
+    }
+
+    /**
+     * Estadías que ocupan al menos una noche en [desde, hasta): pendientes, confirmadas y en casa.
+     * @return array<int, array{fecha_entrada: string, fecha_salida: string}>
+     */
+    public function getEstadiasEnRango(string $desde, string $hasta): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT fecha_entrada, fecha_salida FROM Reservas
+                 WHERE fecha_entrada < :hasta AND fecha_salida > :desde
+                   AND id_estado_reserva IN (:pendiente, :confirmada, :en_casa)"
+            );
+            $stmt->execute([
+                ':desde'      => $desde,
+                ':hasta'      => $hasta,
+                ':pendiente'  => self::ESTADO_PENDIENTE,
+                ':confirmada' => self::ESTADO_CONFIRMADA,
+                ':en_casa'    => self::ESTADO_EN_CASA,
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::getEstadiasEnRango: " . $e->getMessage());
+            throw new Exception("Error al consultar la ocupación de los próximos días.");
+        }
+    }
+
+    /**
+     * Contadores de situaciones que requieren atención.
+     * @return array{sin_pago_proximas: int, llegadas_atrasadas: int, salidas_vencidas: int, a_reembolsar: int}
+     */
+    public function getContadoresAlerta(string $hoy, string $limiteSinPago): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT
+                    COALESCE(SUM(r.id_estado_reserva = :pendiente AND r.fecha_entrada BETWEEN :hoy1 AND :limite), 0) AS sin_pago_proximas,
+                    COALESCE(SUM(r.id_estado_reserva = :confirmada AND r.fecha_entrada < :hoy2 AND r.fecha_salida > :hoy3), 0) AS llegadas_atrasadas,
+                    COALESCE(SUM(r.id_estado_reserva = :en_casa AND r.fecha_salida < :hoy4), 0) AS salidas_vencidas,
+                    COALESCE(SUM(rp.id_estado_pago = :a_reembolsar), 0) AS a_reembolsar
+                 FROM Reservas r
+                 LEFT JOIN Resumen_Pago rp ON rp.id_reserva = r.id"
+            );
+            $stmt->execute([
+                ':pendiente'    => self::ESTADO_PENDIENTE,
+                ':confirmada'   => self::ESTADO_CONFIRMADA,
+                ':en_casa'      => self::ESTADO_EN_CASA,
+                ':a_reembolsar' => ResumenPago::ESTADO_A_REEMBOLSAR,
+                ':hoy1' => $hoy, ':hoy2' => $hoy, ':hoy3' => $hoy, ':hoy4' => $hoy,
+                ':limite' => $limiteSinPago,
+            ]);
+            $fila = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            return array_map('intval', $fila + [
+                'sin_pago_proximas' => 0, 'llegadas_atrasadas' => 0, 'salidas_vencidas' => 0, 'a_reembolsar' => 0,
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error en Reserva::getContadoresAlerta: " . $e->getMessage());
+            throw new Exception("Error al consultar las alertas.");
         }
     }
 
@@ -450,7 +665,8 @@ class Reserva extends Model
     public function setObservaciones(?string $observaciones): void
     {
         if ($observaciones !== null && $observaciones !== '') {
-            $this->observaciones = htmlspecialchars(trim($observaciones), ENT_QUOTES, 'UTF-8');
+            // Se guarda el texto tal cual; el escape se hace al mostrarlo en la vista
+            $this->observaciones = trim($observaciones);
         } else {
             $this->observaciones = null;
         }

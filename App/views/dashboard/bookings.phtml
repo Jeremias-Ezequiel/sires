@@ -5,6 +5,9 @@
     </div>
 
     <div class="header-actions-container">
+        <a href="<?= url('/dashboard/planning') ?>" class="btn btn--ghost">
+            <i class="fas fa-calendar-week"></i> Planning
+        </a>
         <a href="<?= url('/dashboard/booking/add') ?>" class="btn btn--primary">
             <i class="fas fa-plus"></i> Nueva Reserva
         </a>
@@ -27,6 +30,9 @@
 
 <section class="details-section filter-section">
     <?= \App\Helpers\UrlHelper::openForm('/dashboard/booking', 'GET', 'filter-form') ?>
+        <?php if ($hasAlerta): ?>
+            <input type="hidden" name="alerta" value="<?= htmlspecialchars($alerta) ?>">
+        <?php endif; ?>
 
         <div class="form-group-search">
             <label class="form__label">Buscar</label>
@@ -63,13 +69,21 @@
         <button type="submit" class="btn btn--primary">
             <i class="fas fa-filter"></i> Filtrar
         </button>
-        <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+        <?php if ($hasSearch || $hasEstado || $hasCanal || $hasAlerta): ?>
             <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
                 <i class="fas fa-undo"></i>Limpiar Filtros
             </a>
         <?php endif; ?>
     </form>
 </section>
+
+<?php if ($hasAlerta): ?>
+    <div class="alert alert--info filtro-alerta">
+        <i class="fas fa-bell" aria-hidden="true"></i>
+        <span>Mostrando: <strong><?= htmlspecialchars($alertaTexto) ?></strong></span>
+        <a href="<?= url('/dashboard/booking') ?>" class="filtro-alerta__quitar">Quitar filtro</a>
+    </div>
+<?php endif; ?>
 
 <?php if (!empty($reservas) && is_array($reservas)): ?>
     <section class="details-section">
@@ -121,7 +135,7 @@
                                     <a href="<?= url('/dashboard/booking/detail?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-pass" title="Ver Detalle">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE): ?>
+                                    <?php if (in_array((int)$res['id_estado_reserva'], [\App\Models\Reserva::ESTADO_PENDIENTE, \App\Models\Reserva::ESTADO_CONFIRMADA], true)): ?>
                                         <a href="<?= url('/dashboard/booking/edit?id=' . $res['id']) ?>" class="btn btn--icon btn--icon-edit" title="Editar Reserva">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -158,15 +172,29 @@
                                             <i class="fas fa-user-slash"></i>
                                         </button>
                                     <?php endif; ?>
-                                    <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_EN_CASA): ?>
+                                    <?php
+                                    // Check-out desde el día de salida; antes, solo checkout anticipado
+                                    $tipoCheckout = \App\Dominio\ReglasReserva::tipoCheckout((int)$res['id_estado_reserva'], (string)$res['fecha_salida'], date('Y-m-d'));
+                                    ?>
+                                    <?php if ($tipoCheckout === \App\Dominio\ReglasReserva::CHECKOUT): ?>
                                         <button type="button"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="finalize"
                                             data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
                                             data-id="<?= $res['id'] ?>"
                                             data-url="<?= url('/dashboard/booking/finalize') ?>"
-                                            title="Finalizar Reserva">
+                                            title="Check-out">
                                             <i class="fas fa-flag-checkered"></i>
+                                        </button>
+                                    <?php elseif ($tipoCheckout === \App\Dominio\ReglasReserva::CHECKOUT_ANTICIPADO): ?>
+                                        <button type="button"
+                                            class="btn btn--icon btn--icon-warning open-sires-modal"
+                                            data-action="early-checkout"
+                                            data-name="Reserva #<?= htmlspecialchars((string)$res['id']) ?>"
+                                            data-id="<?= $res['id'] ?>"
+                                            data-url="<?= url('/dashboard/booking/early-checkout') ?>"
+                                            title="Checkout anticipado">
+                                            <i class="fas fa-door-open"></i>
                                         </button>
                                     <?php endif; ?>
                                     <?php if ((int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_PENDIENTE || (int)$res['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CONFIRMADA): ?>
@@ -188,37 +216,10 @@
             </table>
         </div>
 
-        <?php if ($totalPages > 1): ?>
-            <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px;">
-                <?php if ($currentPage > 1): ?>
-                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage - 1; ?>
-                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </a>
-                <?php endif; ?>
-
-                <div class="pagination-numbers" style="display: flex; gap: 5px;">
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <?php $queryParams = $_GET; $queryParams['page'] = $i; $isActivePage = ($i === $currentPage); ?>
-                        <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>"
-                           style="padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;
-                                  <?= $isActivePage
-                                      ? 'background-color: var(--primary-color, #0056b3); color: #fff; pointer-events: none;'
-                                      : 'background-color: #f1f3f5; color: #333; border: 1px solid #dee2e6;'
-                                  ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
-                </div>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <?php $queryParams = $_GET; $queryParams['page'] = $currentPage + 1; ?>
-                    <a href="<?= url('/dashboard/booking?' . http_build_query($queryParams)) ?>" class="btn btn--ghost" style="padding: 6px 12px; font-size: 14px;">
-                        Siguiente <i class="fas fa-chevron-right"></i>
-                    </a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
+        <?php
+        $paginacionRuta = '/dashboard/booking';
+        include __DIR__ . '/../partials/pagination.phtml';
+        ?>
     </section>
 <?php else: ?>
     <section class="details-section no-results-container">
@@ -229,7 +230,7 @@
             <h3>No se encontraron reservas</h3>
             <p>No existen registros que coincidan con los criterios de búsqueda especificados.</p>
 
-            <?php if ($hasSearch || $hasEstado || $hasCanal): ?>
+            <?php if ($hasSearch || $hasEstado || $hasCanal || $hasAlerta): ?>
                 <a href="<?= url('/dashboard/booking') ?>" class="btn btn--ghost">
                     <i class="fas fa-undo"></i> Limpiar filtros de búsqueda
                 </a>
@@ -281,31 +282,37 @@
 
                 if (actionType === 'cancel') {
                     modalTitle.innerText = 'Cancelar Reserva';
-                    modalText.innerHTML = `¿Está seguro de que desea cancelar la <br><strong>${reservaName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea cancelar la <br><strong>${escHtml(reservaName)}</strong>?`;
                     modalIcon.className = 'fas fa-times';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                 } else if (actionType === 'confirm') {
                     modalTitle.innerText = 'Confirmar Reserva';
-                    modalText.innerHTML = `¿Está seguro de que desea confirmar la <br><strong>${reservaName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea confirmar la <br><strong>${escHtml(reservaName)}</strong>?`;
                     modalIcon.className = 'fas fa-check';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'checkin') {
                     modalTitle.innerText = 'Realizar Check-in';
-                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${reservaName}</strong>?<br><small>Se activará la estadía del huésped.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-in de la <br><strong>${escHtml(reservaName)}</strong>?<br><small>Se activará la estadía del huésped.</small>`;
                     modalIcon.className = 'fas fa-door-open';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                 } else if (actionType === 'finalize') {
-                    modalTitle.innerText = 'Finalizar Reserva';
-                    modalText.innerHTML = `¿Está seguro de que desea finalizar la <br><strong>${reservaName}</strong>? Se liberará la habitación.`;
+                    modalTitle.innerText = 'Realizar Check-out';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el check-out de la <br><strong>${escHtml(reservaName)}</strong>?<br><small>La reserva se finaliza y la habitación pasa a limpieza.</small>`;
                     modalIcon.className = 'fas fa-flag-checkered';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
+                } else if (actionType === 'early-checkout') {
+                    modalTitle.innerText = 'Checkout Anticipado';
+                    modalText.innerHTML = `¿Está seguro de que desea realizar el checkout anticipado de la <br><strong>${escHtml(reservaName)}</strong>?<br><small>Sin reembolso por días no usados.</small>`;
+                    modalIcon.className = 'fas fa-door-open';
+                    modalIconFrame.classList.add('modal__icon--activate');
+                    btnConfirm.classList.add('btn--warning');
                 } else if (actionType === 'noshow') {
                     modalTitle.innerText = 'Marcar como No-Show';
-                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${reservaName}</strong> como No-Show?<br><small>Si tiene pago, el importe NO se reembolsa. La habitación será retenida hasta el día siguiente.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea marcar la <br><strong>${escHtml(reservaName)}</strong> como No-Show?<br><small>Si tiene pago, la habitación queda retenida hasta el checkout del día siguiente; si el huésped no llega, se cobra la 1.ª noche y el resto se reembolsa.</small>`;
                     modalIcon.className = 'fas fa-user-slash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');

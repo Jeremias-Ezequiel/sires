@@ -1,0 +1,48 @@
+<?php
+/**
+ * Cuerpo del resumen de la reserva: tarifa, movimientos y saldo al momento de emitir.
+ * @var array $reserva
+ * @var array $pago
+ * @var array $movimientos lista de id, fecha_hora, monto (negativo = reembolso), metodo
+ * @var callable $e
+ * @var callable $dinero
+ */
+?>
+<h2>Detalle</h2>
+<table class="tabla">
+    <thead><tr><th>Concepto</th><th class="num">Importe</th></tr></thead>
+    <tbody>
+        <tr>
+            <td>Alojamiento: <?= (int)$reserva['noches'] ?> noche(s)<?= $reserva['precio_noche'] !== null ? ' × ' . $e($dinero($reserva['precio_noche'])) : '' ?></td>
+            <td class="num"><?= $e($dinero($pago['total'])) ?></td>
+        </tr>
+        <tr class="total"><td>Total</td><td class="num"><?= $e($dinero($pago['total'])) ?></td></tr>
+    </tbody>
+</table>
+
+<h2>Pagos y reembolsos</h2>
+<?php if (empty($movimientos)): ?>
+    <p class="muted">Sin movimientos registrados.</p>
+<?php else: ?>
+    <table class="tabla">
+        <thead><tr><th>Fecha</th><th>Operación</th><th>Medio</th><th class="num">Importe</th></tr></thead>
+        <tbody>
+            <?php foreach ($movimientos as $m): ?>
+                <tr>
+                    <td><?= $e(date('d/m/Y H:i', strtotime($m['fecha_hora']))) ?></td>
+                    <td><?= $m['monto'] < 0 ? 'Reembolso' : 'Pago' ?> #<?= (int)$m['id'] ?></td>
+                    <td><?= $e($m['metodo']) ?></td>
+                    <td class="num"><?= $e($dinero($m['monto'])) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
+
+<h2>Saldo</h2>
+<table class="tabla">
+    <tr><td>Total cobrado</td><td class="num"><?= $e($dinero($pago['cobrado'])) ?></td></tr>
+    <?php if ($pago['retenido'] > 0): ?><tr><td>Retenido por el hotel</td><td class="num"><?= $e($dinero($pago['retenido'])) ?></td></tr><?php endif; ?>
+    <tr class="total"><td>Saldo pendiente</td><td class="num"><?= $e($dinero($pago['saldo'])) ?></td></tr>
+    <?php if ($pago['estado'] !== ''): ?><tr><td class="muted">Estado del pago</td><td class="num muted"><?= $e($pago['estado']) ?></td></tr><?php endif; ?>
+</table>

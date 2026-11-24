@@ -9,9 +9,14 @@ use App\Controllers\EmployeeController;
 use App\Controllers\ClienteController;
 use App\Controllers\RecoveryController;
 use App\Controllers\RoomController;
+use App\Controllers\HousekeepingController;
+use App\Controllers\PlanningController;
+use App\Controllers\ComprobanteController;
+use App\Controllers\AuditoriaController;
 use App\Controllers\BookingController;
 use App\Controllers\PaymentController;
 use App\Controllers\ApiController;
+use App\Controllers\ConfiguracionController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\SanitizeLoginMiddleware;
@@ -84,8 +89,18 @@ return function (RouteCollector $r) {
         'action' => [ApiController::class, 'getCities']
     ]);
 
+    // Usa las credenciales del servidor contra la API externa: solo personal logueado
     $r->addRoute('GET', '/api/reloj', [
-        'action' => [ApiController::class, 'consultarReloj']
+        'action'      => [ApiController::class, 'consultarReloj'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles'       => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA],
+    ]);
+
+    // Latido del dashboard: dispara los procesos automáticos vencidos con una pantalla abierta.
+    // Sin verifyLogin: no debe renovar la inactividad de la sesión (el controller la controla).
+    $r->addRoute('POST', '/api/latido', [
+        'action'      => [ApiController::class, 'latido'],
+        'middlewares' => [[CsrfMiddleware::class, 'verify']],
     ]);
 
     // =====================================================================
@@ -141,15 +156,15 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/deactivate', [
+    $r->addRoute('POST', '/dashboard/employees/deactivate', [
         'action' => [EmployeeController::class, 'deactivateEmployee'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/employees/activate', [
+    $r->addRoute('POST', '/dashboard/employees/activate', [
         'action' => [EmployeeController::class, 'activateEmployee'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
@@ -199,7 +214,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/add/process', [
         'action' => [RoomController::class, 'addRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE]
     ]);
 
@@ -211,7 +226,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/edit/process', [
         'action' => [RoomController::class, 'editRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
       
     ]);
@@ -224,7 +239,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/rooms/add/batch/process', [
         'action' => [RoomController::class, 'addBatchRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR,Rol::GERENTE,]
     ]);
 
@@ -234,59 +249,78 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/deactivate', [
+    $r->addRoute('POST', '/dashboard/rooms/deactivate', [
         'action' => [RoomController::class, 'deactivateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/activate', [
+    $r->addRoute('POST', '/dashboard/rooms/activate', [
         'action' => [RoomController::class, 'activateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/baja', [
+    $r->addRoute('POST', '/dashboard/rooms/baja', [
         'action' => [RoomController::class, 'bajaLogicaRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/reactivate', [
+    $r->addRoute('POST', '/dashboard/rooms/reactivate', [
         'action' => [RoomController::class, 'reactivateRoom'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR]
     ]);
 
     // Limpieza (Turnaround)
-    $r->addRoute('GET', '/dashboard/rooms/cleaning/start', [
+    $r->addRoute('POST', '/dashboard/rooms/cleaning/start', [
         'action' => [RoomController::class, 'startCleaning'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/cleaning/complete', [
+    $r->addRoute('POST', '/dashboard/rooms/cleaning/complete', [
         'action' => [RoomController::class, 'completeCleaning'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
+    ]);
+
+    // Housekeeping (lista de limpieza; inicio del rol Limpieza)
+    $r->addRoute('GET', '/dashboard/housekeeping', [
+        'action' => [HousekeepingController::class, 'mostrar'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
-        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA, Rol::LIMPIEZA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/housekeeping/urgent', [
+        'action' => [HousekeepingController::class, 'marcarUrgente'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => HousekeepingController::ROLES_MARCAR_URGENTE
     ]);
 
     // Mantenimiento
-    $r->addRoute('GET', '/dashboard/rooms/maintenance/start', [
+    $r->addRoute('POST', '/dashboard/rooms/maintenance/start', [
         'action' => [RoomController::class, 'putInMaintenance'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
-    $r->addRoute('GET', '/dashboard/rooms/maintenance/end', [
+    $r->addRoute('POST', '/dashboard/rooms/maintenance/end', [
         'action' => [RoomController::class, 'outOfMaintenance'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
     ]);
 
     // Reservas
     $r->addRoute('GET', '/dashboard/booking', [
         'action' => [BookingController::class, 'showBooking'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/planning', [
+        'action' => [PlanningController::class, 'mostrar'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
@@ -299,7 +333,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/booking/add/process', [
         'action' => [BookingController::class, 'addBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
@@ -311,7 +345,7 @@ return function (RouteCollector $r) {
 
     $r->addRoute('POST', '/dashboard/booking/edit/process', [
         'action' => [BookingController::class, 'editBooking'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
@@ -380,6 +414,26 @@ return function (RouteCollector $r) {
     ]);
 
     // Pagos
+    // Configuración de políticas (tabla Configuracion, versionada)
+    // Auditoría y procesos automáticos
+    $r->addRoute('GET', '/dashboard/audit', [
+        'action' => [AuditoriaController::class, 'mostrar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
+    $r->addRoute('GET', '/dashboard/settings', [
+        'action' => [ConfiguracionController::class, 'mostrar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/settings/save', [
+        'action' => [ConfiguracionController::class, 'guardar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR]
+    ]);
+
     $r->addRoute('GET', '/dashboard/payments', [
         'action' => [PaymentController::class, 'showPayments'],
         'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
@@ -398,10 +452,29 @@ return function (RouteCollector $r) {
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
-    $r->addRoute('GET', '/dashboard/payments/recalculate', [
+    $r->addRoute('POST', '/dashboard/payments/recalculate', [
         'action' => [PaymentController::class, 'recalculateReservation'],
-        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
         'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE]
+    ]);
+
+    // Comprobantes PDF
+    $r->addRoute('GET', '/dashboard/comprobantes/descargar', [
+        'action' => [ComprobanteController::class, 'descargar'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/comprobantes/transaccion', [
+        'action' => [ComprobanteController::class, 'emitirDeTransaccion'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
+    ]);
+
+    $r->addRoute('POST', '/dashboard/comprobantes/resumen', [
+        'action' => [ComprobanteController::class, 'emitirResumen'],
+        'middlewares' => [[AuthMiddleware::class, 'verifyLogin'], [CsrfMiddleware::class, 'verify']],
+        'roles' => [Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA]
     ]);
 
     $r->addRoute('POST', '/dashboard/payments/refund/process', [

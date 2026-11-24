@@ -1,0 +1,26 @@
+<?php
+/**
+ * Cuerpo del recibo de pago y del comprobante de reembolso.
+ * @var array $comprobante
+ * @var array $transaccion id, monto, fecha_hora, metodo, registrado
+ * @var array $pago        estado del resumen al emitir
+ * @var callable $e
+ * @var callable $dinero
+ */
+$esReembolso = $comprobante['tipo'] === \App\Dominio\Comprobante::REEMBOLSO;
+?>
+<h2><?= $esReembolso ? 'Reembolso' : 'Pago recibido' ?></h2>
+<table class="datos">
+    <tr><td class="etq"><?= $esReembolso ? 'Monto reembolsado' : 'Monto recibido' ?></td><td class="monto"><?= $e($dinero($transaccion['monto'])) ?></td></tr>
+    <tr><td class="etq">Fecha</td><td><?= $e(date('d/m/Y H:i', strtotime($transaccion['fecha_hora']))) ?></td></tr>
+    <?php if ($transaccion['metodo'] !== ''): ?><tr><td class="etq">Medio</td><td><?= $e($transaccion['metodo']) ?></td></tr><?php endif; ?>
+    <tr><td class="etq">Operación</td><td>#<?= (int)$transaccion['id'] ?><?= $transaccion['registrado'] !== '' ? ' · registrada por ' . $e($transaccion['registrado']) : '' ?></td></tr>
+</table>
+
+<h2>Estado de la cuenta después de esta operación</h2>
+<table class="tabla">
+    <tr><td>Total de la estadía</td><td class="num"><?= $e($dinero($pago['total'])) ?></td></tr>
+    <tr><td>Total cobrado</td><td class="num"><?= $e($dinero($pago['cobrado'])) ?></td></tr>
+    <?php if ($pago['retenido'] > 0): ?><tr><td>Retenido por el hotel</td><td class="num"><?= $e($dinero($pago['retenido'])) ?></td></tr><?php endif; ?>
+    <tr class="total"><td>Saldo pendiente</td><td class="num"><?= $e($dinero($pago['saldo'])) ?></td></tr>
+</table>

@@ -4,7 +4,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Rol;
 
 $pageTitle = $pageTitle ?? 'Dashboard | SIRES';
-$pageCss   = $pageCss ?? ['dashboard.min.css?v=1.2'];
+$pageCss   = $pageCss ?? ['dashboard.min.css'];
 include __DIR__ . '/../partials/head.phtml';
 ?>
 
@@ -17,10 +17,18 @@ include __DIR__ . '/../partials/head.phtml';
             </div>
             <nav>
                 <ul class="nav-links">
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                     <li>
                         <!-- Rutas adaptadas con la función global url() -->
                         <a href="<?= url('/dashboard') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'home.phtml')) ? 'active' : '' ?>">
                             <i class="fas fa-home"></i>Inicio
+                        </a>
+                    </li>
+                    <?php endif; ?>
+
+                    <li>
+                        <a href="<?= url('/dashboard/housekeeping') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'housekeeping.phtml')) ? 'active' : '' ?>">
+                            <i class="fas fa-broom"></i>Limpieza
                         </a>
                     </li>
 
@@ -47,11 +55,16 @@ include __DIR__ . '/../partials/head.phtml';
                                 <i class="fas fa-calendar-alt"></i>Reservas
                             </a>
                         </li>
+                        <li>
+                            <a href="<?= url('/dashboard/planning') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'planning.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-calendar-week"></i>Planning
+                            </a>
+                        </li>
                     <?php endif; ?>
 
                     <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
                         <li>
-                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'habitaciones.phtml')) ? 'active' : '' ?>">
+                            <a href="<?= url('/dashboard/rooms') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'rooms.phtml')) ? 'active' : '' ?>">
                                 <i class="fas fa-bed"></i>Habitaciones
                             </a>
                         </li>
@@ -65,21 +78,47 @@ include __DIR__ . '/../partials/head.phtml';
                         </li>
                     <?php endif; ?>
 
-                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE])): ?>
                         <li>
-                            <a href="<?= url('/api/reloj') ?>" class="nav-link">
-                                <i class="fas fa-clock"></i>Reloj Oficial
+                            <a href="<?= url('/dashboard/audit') ?>" class="nav-link <?= (isset($contentView) && str_contains($contentView, 'auditoria.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-clipboard-list"></i>Auditoría
                             </a>
                         </li>
                     <?php endif; ?>
 
-                    <li>
-                        <a href="<?= url('/logout') ?>" class="nav-link" style="color: #ef4444;">
-                            <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
-                        </a>
-                    </li>
                 </ul>
             </nav>
+
+            <!-- Pie del menú: herramientas, cierre de sesión, tema y versión, separados de la navegación -->
+            <div class="sidebar__pie">
+                <ul class="nav-links">
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR])): ?>
+                        <li>
+                            <a href="<?= url('/dashboard/settings') ?>" class="nav-link nav-link--pie <?= (isset($contentView) && str_contains($contentView, 'configuracion.phtml')) ? 'active' : '' ?>">
+                                <i class="fas fa-sliders"></i>Configuración
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (AuthMiddleware::hasRole([Rol::ADMINISTRADOR, Rol::GERENTE, Rol::RECEPCIONISTA])): ?>
+                        <li>
+                            <a href="<?= url('/api/reloj') ?>" class="nav-link nav-link--pie">
+                                <i class="fas fa-clock"></i>Reloj Oficial
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+
+                <a href="<?= url('/logout') ?>" class="nav-link nav-link--pie nav-link--danger">
+                    <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+                </a>
+
+                <?php include __DIR__ . '/../partials/theme-switcher.phtml'; ?>
+
+                <div class="sidebar__version">
+                    SIRES <span class="system-version">v<?= \App\Config\App::VERSION ?></span>
+                </div>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -93,4 +132,14 @@ include __DIR__ . '/../partials/head.phtml';
 
     </div>
 
-<?php include __DIR__ . '/../partials/footer.phtml'; ?>
+<?php if (\App\Services\EjecucionPorPedidoService::habilitado()): ?>
+    <script src="<?= asset_v('js/latido.js') ?>"
+            data-url="<?= htmlspecialchars(url('/api/latido')) ?>"
+            data-token="<?= htmlspecialchars(csrf_token()) ?>"></script>
+<?php endif; ?>
+
+<?php
+// La versión ya se muestra al pie del menú lateral
+$versionEnSidebar = true;
+include __DIR__ . '/../partials/footer.phtml';
+?>

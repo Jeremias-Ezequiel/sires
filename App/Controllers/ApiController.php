@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\AuthMiddleware;
 use App\Models\Provincia;
+use App\Services\EjecucionPorPedidoService;
 use App\Models\Localidad;
+use Exception;
 
-class ApiController
+class ApiController extends Controller
 {
     public function getProvinces(array $vars): void
     {
@@ -63,6 +66,20 @@ class ApiController
         echo json_encode($result);
     }
 
+    /**
+     * Latido del dashboard (public/js/latido.js): responde 204 y, al terminar, corre los
+     * procesos automáticos vencidos. No renueva la inactividad de la sesión.
+     */
+    public function latido(array $vars): void
+    {
+        if (!AuthMiddleware::sesionVigente()) {
+            http_response_code(401);
+            return;
+        }
+        http_response_code(204);
+        EjecucionPorPedidoService::programarAlTerminar();
+    }
+
     public function consultarReloj(array $vars): void
     {
         header('Content-Type: text/html; charset=utf-8');
@@ -80,13 +97,16 @@ class ApiController
 
         try {
             $credentials = base64_encode($user . ':' . $pass);
-            $opts = stream_context_create();
-            stream_context_set_option($opts, 'http', 'method', 'GET');
-            stream_context_set_option($opts, 'http', 'header', 'Authorization: Basic ' . $credentials . "\r\nAccept: application/json");
+            // Timeout corto: si la API no responde, no se queda colgado el worker de Apache
+            $opts = stream_context_create(['http' => [
+                'method'  => 'GET',
+                'header'  => 'Authorization: Basic ' . $credentials . "\r\nAccept: application/json",
+                'timeout' => 5,
+            ]]);
 
             $response = file_get_contents($endpoint, false, $opts);
 
-            if ($response === false || $response === null || $response === '') {
+            if ($response === false || $response === '') {
                 echo $this->renderError('No se recibió respuesta de la API.');
                 return;
             }
@@ -100,7 +120,9 @@ class ApiController
 
             echo $this->renderSuccess($data);
         } catch (Exception $e) {
-            echo $this->renderError('Error al conectar con la API: ' . $e->getMessage());
+            // El detalle (URL, host, error de red) va al log, no a la pantalla
+            error_log('[SIRES API RELOJ] ' . $e->getMessage());
+            echo $this->renderError('No se pudo conectar con la API del reloj. Intente nuevamente.');
         }
     }
 

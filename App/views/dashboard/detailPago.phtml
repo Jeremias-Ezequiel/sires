@@ -7,16 +7,21 @@
         <a href="<?= url('/dashboard/payments') ?>" class="btn btn--ghost">
             <i class="fas fa-arrow-left"></i> Volver a Pagos
         </a>
-<?php if ($resumen !== null && $resumen->getMontoPagado() <= 0): ?>
+<?php if ($resumen !== null && $resumen->getMontoPagado() <= 0
+                    && \App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])): ?>
                     <button type="button"
                         class="btn btn--warning open-sires-modal"
                         data-action="recalculate"
-                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
-                        data-url="<?= url('/dashboard/payments/recalculate?id=' . $reserva['id']) ?>">
+                        data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>">
                         <i class="fas fa-calculator"></i> Recalcular Precio
                     </button>
+                    <form id="recalculate-form" action="<?= url('/dashboard/payments/recalculate') ?>" method="POST" hidden>
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int)$reserva['id'] ?>">
+                    </form>
                 <?php endif; ?>
-                <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB): ?>
+                <?php if ($resumen !== null && $resumen->getIdEstadoPago() === \App\Models\EstadoPago::A_REEMBOLSAB
+                    && \App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR])): ?>
                     <button type="button"
                         class="btn btn--danger open-sires-modal"
                         data-action="refund"
@@ -97,7 +102,7 @@ endif;
                 <?php if ($resumen !== null && $noches > 0): ?>
                     <tr>
                         <td class="detail-label">Precio Efectivo por Noche</td>
-                        <td class="detail-value">$<?= number_format($precioEfectivo, 2, ',', '.') ?> <small style="color: var(--text-muted, #6b7280);">(Total / <?= $noches ?> noches)</small></td>
+                        <td class="detail-value">$<?= number_format($precioEfectivo, 2, ',', '.') ?> <small class="text-muted">(Total / <?= $noches ?> noches)</small></td>
                     </tr>
                 <?php endif; ?>
                 <tr>
@@ -123,6 +128,7 @@ endif;
                             if (strpos($estadoPagoLower, 'pendient') !== false) $pagoStatusClass = 'badge--pendiente';
                             elseif (strpos($estadoPagoLower, 'parcial') !== false) $pagoStatusClass = 'badge--reservada';
                             elseif (strpos($estadoPagoLower, 'pagad') !== false) $pagoStatusClass = 'badge--disponible';
+                            elseif (strpos($estadoPagoLower, 'retenid') !== false) $pagoStatusClass = 'badge--warning';
                             elseif (strpos($estadoPagoLower, 'reembols') !== false) $pagoStatusClass = 'badge--ocupada';
                             elseif (strpos($estadoPagoLower, 'a reembolsar') !== false) $pagoStatusClass = 'badge--warning';
                             ?>
@@ -165,6 +171,7 @@ endif;
                             <th>Método de Pago</th>
                             <th>Monto Abonado</th>
                             <th>Registrado Por</th>
+                            <th>Comprobante</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -175,13 +182,29 @@ endif;
                                 <td><?= htmlspecialchars($tx['metodo_pago_descripcion']) ?></td>
                                 <td>$<?= number_format((float)$tx['monto_abonado'], 2, ',', '.') ?></td>
                                 <td><?= htmlspecialchars(($tx['usuario_nombre'] ?? '') . ' ' . ($tx['usuario_apellido'] ?? '')) ?></td>
+                                <td>
+                                    <?php if (isset($comprobantesPorTx[(int)$tx['id']])):
+                                        $cTx = $comprobantesPorTx[(int)$tx['id']]; ?>
+                                        <a class="btn-mov" href="<?= url('/dashboard/comprobantes/descargar?id=' . (int)$cTx['id']) ?>"
+                                           title="Descargar PDF">
+                                            <i class="fas fa-file-pdf" aria-hidden="true"></i><?= htmlspecialchars(\App\Dominio\Comprobante::numeroFormateado((int)$cTx['punto_venta'], (int)$cTx['numero'])) ?>
+                                        </a>
+                                    <?php elseif ((float)$tx['monto_abonado'] != 0): ?>
+                                        <form method="POST" action="<?= url('/dashboard/comprobantes/transaccion') ?>">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="id_transaccion" value="<?= (int)$tx['id'] ?>">
+                                            <input type="hidden" name="id_reserva" value="<?= (int)$reserva['id'] ?>">
+                                            <button type="submit" class="btn-mov"><i class="fas fa-file-circle-plus" aria-hidden="true"></i>Emitir</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
         <?php else: ?>
-            <div class="no-results-content" style="padding: 20px;">
+            <div class="no-results-content p-20">
                 <p>No se registraron transacciones de pago para esta reserva.</p>
             </div>
         <?php endif; ?>
@@ -193,10 +216,13 @@ endif;
         <div class="form__section-title">
             <i class="fas fa-undo-alt"></i> Reembolso Pendiente
         </div>
-        <div class="alert alert--warning">
+        <div class="alert alert--warning alert--fija">
             <i class="fa-solid fa-triangle-exclamation"></i>
             Esta reserva tiene un pago pendiente de reembolso por
-            <strong>$<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?></strong>.
+            <strong>$<?= number_format($resumen->getMontoAReembolsar(), 2, ',', '.') ?></strong>.
+            <?php if ($resumen->getMontoAReembolsar() < $resumen->getMontoPagado()): ?>
+                El hotel retiene $<?= number_format($resumen->getMontoPagado() - $resumen->getMontoAReembolsar(), 2, ',', '.') ?> por la política de cancelación.
+            <?php endif; ?>
         </div>
         <div class="form__actions">
             <form id="refund-form" action="<?= url('/dashboard/payments/refund/process') ?>" method="POST">
@@ -206,7 +232,7 @@ endif;
                     data-action="refund"
                     data-name="Reserva #<?= htmlspecialchars((string)$reserva['id']) ?>"
                     data-reserva-id="<?= (int)$reserva['id'] ?>"
-                    data-monto="<?= number_format($resumen->getMontoPagado(), 2, ',', '.') ?>">
+                    data-monto="<?= number_format($resumen->getMontoAReembolsar(), 2, ',', '.') ?>">
                     <i class="fas fa-undo-alt"></i> Procesar Reembolso
                 </button>
             </form>
@@ -247,7 +273,7 @@ endif;
                     <input type="number" step="0.01" min="0.01" max="<?= $resumen->getSaldoPendiente() ?>" id="monto_abonado" name="monto_abonado"
                         placeholder="Ej: 125.00" required class="form__input" autocomplete="off"
                         value="<?= htmlspecialchars((string)($_POST['monto_abonado'] ?? $old['monto_abonado'] ?? '')) ?>">
-                    <small style="color: var(--text-muted, #6b7280);">Saldo pendiente: $<?= number_format($resumen->getSaldoPendiente(), 2, ',', '.') ?></small>
+                    <small class="text-muted">Saldo pendiente: $<?= number_format($resumen->getSaldoPendiente(), 2, ',', '.') ?></small>
                 </div>
             </div>
 
@@ -263,14 +289,14 @@ endif;
     </section>
 <?php elseif ($resumen !== null && (int)$reserva['id_estado_reserva'] === \App\Models\Reserva::ESTADO_CANCELADA): ?>
     <section class="details-section">
-        <div class="alert alert--error">
+        <div class="alert alert--error alert--fija">
             <i class="fa-solid fa-triangle-exclamation"></i>
             No se pueden registrar pagos sobre una reserva cancelada.
         </div>
     </section>
 <?php elseif ($resumen !== null && $resumen->getSaldoPendiente() <= 0): ?>
     <section class="details-section">
-        <div class="alert alert--success">
+        <div class="alert alert--success alert--fija">
             <i class="fa-solid fa-circle-check"></i>
             La reserva se encuentra totalmente pagada.
         </div>
@@ -331,6 +357,7 @@ endif;
             const btnConfirm = document.getElementById('btn-modal-confirm');
             const btnCancel = document.getElementById('btn-modal-cancel');
             const refundForm = document.getElementById('refund-form');
+            const recalculateForm = document.getElementById('recalculate-form');
 
             if (!modal) return;
 
@@ -339,16 +366,19 @@ endif;
 
             if (actionType === 'recalculate') {
                 modalTitle.innerText = 'Recalcular Precio';
-                modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${reservaName}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
+                modalText.innerHTML = `¿Está seguro de que desea recalcular el precio de <br><strong>${escHtml(reservaName)}</strong>?<br><small>El monto total se actualizará al precio actual de la habitación.</small>`;
                 modalIcon.className = 'fas fa-calculator';
                 modalIconFrame.classList.add('modal__icon--warning');
                 btnConfirm.classList.add('btn--warning');
-                btnConfirm.setAttribute('href', targetUrl);
-                btnConfirm.onclick = null;
+                btnConfirm.setAttribute('href', '#');
+                btnConfirm.onclick = function(e) {
+                    e.preventDefault();
+                    if (recalculateForm) recalculateForm.submit();
+                };
             } else if (actionType === 'refund') {
                 const monto = this.getAttribute('data-monto') ?? '0,00';
                 modalTitle.innerText = 'Procesar Reembolso';
-                modalText.innerHTML = `¿Está seguro de que desea reembolsar <strong>$${monto}</strong> a<br><strong>${reservaName}</strong>?<br><small>Se registrará una transacción de egreso y el resumen se dará de baja.</small>`;
+                modalText.innerHTML = `¿Está seguro de que desea reembolsar <strong>$${escHtml(monto)}</strong> a<br><strong>${escHtml(reservaName)}</strong>?<br><small>Se registrará una transacción de egreso y el resumen se dará de baja.</small>`;
                 modalIcon.className = 'fas fa-undo-alt';
                 modalIconFrame.classList.add('modal__icon--danger');
                 btnConfirm.classList.add('btn--danger');

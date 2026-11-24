@@ -1,0 +1,77 @@
+<?php
+/**
+ * Layout de los comprobantes PDF (App\Services\ComprobanteService::pdf(), dompdf).
+ * Igual que los mails, va con estilos y colores literales: dompdf no resuelve variables CSS.
+ * Todo sale de la copia de datos guardada al emitir (Comprobantes.datos).
+ *
+ * @var array $hotel
+ * @var array $reserva
+ * @var array $comprobante  tipo, titulo, numero, fecha, monto
+ * @var string $contenido
+ * @var callable $e
+ */
+$lineaHotel = array_filter([
+    $hotel['cuit'] !== '' ? 'CUIT ' . $hotel['cuit'] : '',
+    $hotel['condicion_iva'],
+]);
+$contacto = array_filter([$hotel['domicilio'], $hotel['telefono'], $hotel['email']]);
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title><?= $e($comprobante['titulo'] . ' ' . $comprobante['numero']) ?></title>
+<style>
+    @page { margin: 28px 32px; }
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #1b2433; }
+    h1 { font-size: 16px; margin: 0; }
+    h2 { font-size: 12px; margin: 18px 0 6px; color: #14396e; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; }
+    .cabecera td { vertical-align: top; }
+    .hotel-nombre { font-size: 18px; font-weight: bold; color: #14396e; }
+    .muted { color: #5b6779; }
+    .caja { border: 1px solid #d5dde8; padding: 8px 10px; }
+    .titulo-doc { text-align: right; }
+    .numero { font-size: 14px; font-weight: bold; }
+    .datos td { padding: 3px 0; }
+    .datos td.etq { color: #5b6779; width: 32%; }
+    .tabla th { background: #eaf0f7; text-align: left; padding: 5px 6px; font-size: 10px; }
+    .tabla td { border-bottom: 1px solid #d5dde8; padding: 5px 6px; }
+    .num { text-align: right; white-space: nowrap; }
+    .total td { font-weight: bold; border-top: 2px solid #1b2433; border-bottom: 0; }
+    .monto { font-size: 22px; font-weight: bold; }
+    .pie { position: fixed; bottom: 0; left: 0; right: 0; font-size: 9px; color: #5b6779; border-top: 1px solid #d5dde8; padding-top: 4px; }
+</style>
+</head>
+<body>
+<table class="cabecera">
+    <tr>
+        <td>
+            <div class="hotel-nombre"><?= $e($hotel['nombre']) ?></div>
+            <?php if ($hotel['razon_social'] !== ''): ?><div><?= $e($hotel['razon_social']) ?></div><?php endif; ?>
+            <?php if ($lineaHotel): ?><div class="muted"><?= $e(implode(' · ', $lineaHotel)) ?></div><?php endif; ?>
+            <?php if ($contacto): ?><div class="muted"><?= $e(implode(' · ', $contacto)) ?></div><?php endif; ?>
+        </td>
+        <td class="titulo-doc">
+            <div class="caja">
+                <h1><?= $e($comprobante['titulo']) ?></h1>
+                <div class="numero">N° <?= $e($comprobante['numero']) ?></div>
+                <div class="muted">Emitido el <?= $e(date('d/m/Y H:i', strtotime($comprobante['fecha']))) ?></div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<h2>Huésped y reserva</h2>
+<table class="datos">
+    <tr><td class="etq">Huésped</td><td><?= $e($reserva['cliente']) ?><?= $reserva['documento'] !== '' ? ' · Doc. ' . $e($reserva['documento']) : '' ?></td></tr>
+    <tr><td class="etq">Reserva</td><td>#<?= (int)$reserva['id'] ?> · <?= $e($reserva['estado']) ?></td></tr>
+    <tr><td class="etq">Habitación</td><td><?= $e($reserva['habitacion']) ?></td></tr>
+    <tr><td class="etq">Estadía</td><td><?= $e(date('d/m/Y', strtotime($reserva['entrada']))) ?> al <?= $e(date('d/m/Y', strtotime($reserva['salida']))) ?> · <?= (int)$reserva['noches'] ?> noche(s) · <?= (int)$reserva['huespedes'] ?> huésped(es)</td></tr>
+</table>
+
+<?= $contenido ?>
+
+<div class="pie"><?= $e(\App\Dominio\Comprobante::LEYENDA) ?> Comprobante interno de <?= $e($hotel['nombre']) ?>.</div>
+</body>
+</html>

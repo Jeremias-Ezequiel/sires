@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use Exception;
+
 class CsrfHelper
 {
     public static function getToken(): string

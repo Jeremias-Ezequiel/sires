@@ -5,9 +5,23 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Helpers\UrlHelper;
+use App\Models\Usuario;
 
 class AuthMiddleware
 {
+    /** Inactividad máxima de la sesión (segundos). */
+    public const MAX_INACTIVIDAD = 1800;
+
+    /**
+     * Sesión logueada y sin vencer por inactividad, sin renovar la marca de actividad.
+     * La usa el latido del dashboard: una pestaña abierta no debe mantener viva la sesión.
+     */
+    public static function sesionVigente(): bool
+    {
+        return isset($_SESSION['user_id'], $_SESSION['last_activity'])
+            && time() - (int)$_SESSION['last_activity'] <= self::MAX_INACTIVIDAD;
+    }
+
     public static function verifyLogin(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -27,8 +41,7 @@ class AuthMiddleware
         }
 
         // 2. Caso: Expiración por inactividad (30 min)
-        $maxIdleTime = 1800;
-        if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $maxIdleTime)) {
+        if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > self::MAX_INACTIVIDAD)) {
             self::destroySession();
 
             session_start();
@@ -38,7 +51,22 @@ class AuthMiddleware
             exit;
         }
 
-        // Si pasó ambos filtros, actualizamos la marca de tiempo activa
+        // 3. Caso: el usuario fue dado de baja o le cambiaron el rol con la sesión abierta.
+        // Se relee en cada petición para que la baja y el cambio de rol rijan al instante.
+        $usuario = (new Usuario())->findById((int)$_SESSION['user_id']);
+        if ($usuario === null || !$usuario->getIsActive()) {
+            self::destroySession();
+
+            session_start();
+            $_SESSION['auth_error'] = "Su cuenta se encuentra desactivada. Contacte a un administrador.";
+
+            header('Location:' . UrlHelper::to('/login'));
+            exit;
+        }
+        $_SESSION['user_role'] = $usuario->getIdRol();
+        $_SESSION['user_name'] = $usuario->getNombre();
+
+        // Si pasó todos los filtros, actualizamos la marca de tiempo activa
         $_SESSION['last_activity'] = time();
     }
 

@@ -12,12 +12,15 @@
             <i class="fas fa-edit"></i> Editar
         </a>
         <?php if (!isset($habitacion['is_active']) || (int)($habitacion['is_active'] ?? 1) === 0): ?>
-            <a href="<?= url('/dashboard/rooms/reactivate?id=' . $habitacion['id']) ?>" class="btn btn--success open-sires-modal"
-               data-action="reactivate"
-               data-name="Habitación #<?= htmlspecialchars((string)($habitacion['numero'] ?? '')) ?>"
-               data-url="<?= url('/dashboard/rooms/reactivate?id=' . $habitacion['id']) ?>">
-                <i class="fas fa-undo"></i> Reactivar Habitación
-            </a>
+            <form method="POST" action="<?= url('/dashboard/rooms/reactivate') ?>"
+                  data-confirmar="¿Reactivar la habitación #<?= htmlspecialchars((string)($habitacion['numero'] ?? '')) ?>? Volverá a estar disponible para la venta."
+                  data-confirmar-boton="Sí, reactivar">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= (int)$habitacion['id'] ?>">
+                <button type="submit" class="btn btn--success">
+                    <i class="fas fa-undo"></i> Reactivar Habitación
+                </button>
+            </form>
         <?php endif; ?>
     </div>
 </header>
@@ -51,7 +54,7 @@
                         <?php
                         $capacidad = \App\Models\Habitacion::capacidadParaTipo((int)($habitacion['id_tipo_habitacion'] ?? 0));
                         ?>
-                        <span style="margin-left: 8px; font-size: 0.85em; color: var(--text-muted, #666);">
+                        <span class="text-muted text-sm room-meta">
                             (<?= $capacidad ?> personas)
                         </span>
                     </td>
@@ -68,12 +71,13 @@
                             \App\Models\Habitacion::ESTADO_BLOQUEADA      => 'badge--bloqueada',
                             \App\Models\Habitacion::ESTADO_SUCIA          => 'badge--sucia',
                             \App\Models\Habitacion::ESTADO_LIMPIANDO      => 'badge--limpiando',
+                            \App\Models\Habitacion::ESTADO_RETENIDA       => 'badge--reservada',
                             default                                       => 'badge--disponible'
                         };
                         ?>
                         <span class="badge <?= $statusClass ?>"><?= htmlspecialchars($habitacion['estado']) ?></span>
                         <?php if (!empty($habitacion['motivo_descripcion'])): ?>
-                            <span style="margin-left: 8px; font-size: 0.9em;">
+                            <span class="room-meta">
                                 <i class="fas fa-tools"></i> <?= htmlspecialchars($habitacion['motivo_descripcion']) ?>
                             </span>
                         <?php endif; ?>
@@ -87,3 +91,27 @@
         </table>
     </div>
 </section>
+
+<?php if (isset($historial) && $historial !== null): ?>
+    <section class="details-section aud-historial" aria-labelledby="aud-historial-titulo">
+        <h2 id="aud-historial-titulo" class="aud-historial__titulo">
+            <i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Historial
+        </h2>
+        <?php if (empty($historial)): ?>
+            <p class="text-muted">Sin acciones registradas todavía.</p>
+        <?php else: ?>
+            <?php
+            $historialFilas = $historial;
+            $historialConEntidad = false;
+            include __DIR__ . '/../partials/historial-auditoria.phtml';
+            ?>
+            <?php if (count($historial) >= \App\Services\AuditoriaService::HISTORIAL_LIMITE): ?>
+                <a href="<?= url('/dashboard/audit?' . http_build_query(['entidad' => 'habitacion', 'id_entidad' => (int)$habitacion['id']])) ?>" class="aud-historial__ver-todo">
+                    Se muestran las últimas <?= \App\Services\AuditoriaService::HISTORIAL_LIMITE ?> acciones. Ver el historial completo en Auditoría <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            <?php endif; ?>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
+
+<script src="<?= asset_v('js/confirmar.js') ?>"></script>

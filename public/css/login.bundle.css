@@ -1,101 +1,330 @@
 /* ==========================================================================
-   SIRES DESIGN TOKENS
-   Fuente única de verdad para colores, radios, sombras y espaciados.
+   SIRES - DESIGN TOKENS
+   Fuente única de verdad para colores, radios y sombras.
+
+   Capas:
+   1. PALETA: los únicos valores de color "crudos". Un tema (themes.css)
+      solo redefine estas variables.
+   2. DERIVADOS: fondos y bordes translúcidos calculados con color-mix() a
+      partir de la paleta. Se recalculan solos al cambiar de tema.
+   3. ESTADOS: color de cada estado de habitación/reserva/pago. Apuntan a la
+      paleta; se pueden sobreescribir por tema si hace falta.
+
+   Regla: ningún otro archivo CSS ni vista usa colores literales (hex/rgba);
+   siempre var(--...).
    ========================================================================== */
 
 :root {
   /* ======================================================================
-     PALETA BASE
+     1. PALETA
      ====================================================================== */
-  --color-bg-primary: #0a192f;
-  --color-bg-panel: #112240;
-  --color-bg-input: #151f32;
-  --color-bg-input-focus: #1a263d;
-  --color-bg-modal: #0d1527;
-  --color-bg-date: #1e293b;
 
-  --color-accent: #fbbf24;
-  --color-accent-hover: #e5b83b;
+  /* Marca (escala del azul del logo) */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-500: #6aaaf7;
+  --color-primary-600: #4a97f5;
+  --color-primary-700: #6aaaf7;
+  --color-primary-900: #14396e;
 
-  --color-text-primary: #e6f1ff;
-  --color-text-muted: #8892b0;
-  --color-text-inverse: #0a192f;
+  /* Fondos (nunca blanco puro de fondo general) */
+  --color-bg: #0f1623;              /* fondo de la página */
+  --color-bg-deep: #0b111c;         /* detrás del carrusel del login */
+  --color-surface: #172033;         /* paneles, tarjetas, tablas, modales */
+  --color-surface-alt: #1d2940;     /* filas alternas, headers de tabla */
+  --color-surface-modal: #172033;   /* caja de los modales */
+  --color-input: #131b2b;
+  --color-input-focus: #172033;
 
-  --color-border: #233554;
-  --color-border-light: #334155;
+  /* Bordes */
+  --color-border: #2a3a55;
+  --color-border-strong: #34476a;
 
-  --color-success: #22c55e;
-  --color-success-bg: rgba(34, 197, 94, 0.1);
-  --color-success-border: rgba(34, 197, 94, 0.2);
+  /* Texto (nunca negro puro) */
+  --color-text: #e6ebf3;            /* texto principal */
+  --color-text-strong: #f4f7fb;     /* títulos de modal, fecha */
+  --color-text-muted: #9aa7bb;      /* etiquetas, texto secundario */
+  --color-text-soft: #9aa7bb;       /* descripciones de modal, íconos de select */
 
-  --color-danger: #ef4444;
-  --color-danger-bg: rgba(239, 68, 68, 0.1);
-  --color-danger-border: rgba(239, 68, 68, 0.2);
+  /* Acento de marca = azul primario (botones, links, activo del menú, foco) */
+  --color-accent: var(--color-primary-600);
+  --color-accent-hover: var(--color-primary-700);
+  --color-on-accent: #0f1623;       /* texto sobre el acento */
 
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-warning-border: rgba(245, 158, 11, 0.2);
+  /* Acción secundaria (botón azul de login/recuperación) */
+  --color-primary: var(--color-primary-600);
+  --color-primary-hover: var(--color-primary-700);
 
+  /* Feedback general (no confundir con estados de habitación) */
   --color-info: #38bdf8;
+  --color-info-hover: #7dd3fc;
+  --color-success: #4ade80;
+  --color-success-strong: #16a34a;
+  --color-success-strong-hover: #15803d;
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-warning: #fbbf24;
+  --color-warning-hover: #f59e0b;
+  --color-orange: #fb923c;
+  --color-highlight: #facc15;
   --color-purple: #c084fc;
-  --color-green: #10b981;
-  --color-green-hover: #059669;
-  --color-white: #ffffff;
+  --color-neutral: #9ca3af;
+
+  /* Texto sobre colores sólidos (badges, botones de estado) */
+  --color-on-solid: #0f1623;
+  --color-on-highlight: #0f1623;
+
+  /* Base de los "tintes": superposiciones sutiles sobre el fondo.
+     Negro azulado en temas claros, blanco en temas oscuros. */
+  --color-tint-base: #ffffff;
+
+  /* Base de sombras y overlay de modales */
+  --color-shadow: #000000;
+  --color-overlay-base: #05080e;
+
+  /* Sidebar (en el tema claro usa el azul oscuro de marca, --color-primary-900) */
+  --sidebar-bg: #111b2d;
+  --sidebar-text: #9aa7bb;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-hover-bg: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-active-bg: var(--color-primary-600);
+  --sidebar-active-text: #0f1623;
+  --sidebar-border: var(--color-border);
+  --sidebar-danger: #fca5a5;        /* "Cerrar sesión" sobre el fondo oscuro */
+  --sidebar-danger-bg: color-mix(in srgb, #f87171 14%, transparent);
+
+  /* Estados de habitación: significado fijo (DESIGN.md §4). No reasignar. */
+  --room-available: #16a34a;
+  --room-occupied: #d6336c;
+  --room-reserved: #0ea5e9;
+  --room-checkout: #ea580c;
+  --room-cleaning: #ca8a04;
+  --room-maintenance: #6b7280;
+
+  /* Con qué se mezcla el color de estado para que su texto sea legible
+     (oscuro en temas claros, claro en temas oscuros). */
+  --room-text-base: var(--color-text);
+
+  /* ======================================================================
+     2. DERIVADOS (no hace falta tocarlos en los temas)
+     ====================================================================== */
+
+  --color-tint-1: color-mix(in srgb, var(--color-tint-base) 2%, transparent);
+  --color-tint-2: color-mix(in srgb, var(--color-tint-base) 4%, transparent);
+  --color-tint-3: color-mix(in srgb, var(--color-tint-base) 9%, transparent);
+  --color-tint-4: color-mix(in srgb, var(--color-tint-base) 15%, transparent);
+  --color-tint-strong: color-mix(in srgb, var(--color-tint-base) 60%, transparent);
+
+  --color-overlay: color-mix(in srgb, var(--color-overlay-base) 85%, transparent);
+
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 4%, transparent);
+  --color-accent-bg: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --color-accent-border: color-mix(in srgb, var(--color-accent) 22%, transparent);
+
+  --color-info-bg: color-mix(in srgb, var(--color-info) 9%, transparent);
+  --color-info-border: color-mix(in srgb, var(--color-info) 20%, transparent);
+
+  --color-success-soft: color-mix(in srgb, var(--color-success) 5%, transparent);
+  --color-success-bg: color-mix(in srgb, var(--color-success) 10%, transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) 22%, transparent);
+
+  --color-danger-bg: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  --color-danger-border: color-mix(in srgb, var(--color-danger) 20%, transparent);
+
+  --color-warning-bg: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  --color-warning-border: color-mix(in srgb, var(--color-warning) 22%, transparent);
+  --color-warning-text: color-mix(in srgb, var(--color-warning) 80%, var(--color-text));
+  /* Texto de chips sobre su fondo suave (AA en claro y oscuro) */
+  --color-success-text: color-mix(in srgb, var(--color-success) 80%, var(--color-text));
+  --color-danger-text: color-mix(in srgb, var(--color-danger) 85%, var(--color-text));
+  --color-accent-text: color-mix(in srgb, var(--color-accent) 80%, var(--color-text));
+
+  --color-purple-bg: color-mix(in srgb, var(--color-purple) 10%, transparent);
+  --color-purple-border: color-mix(in srgb, var(--color-purple) 25%, transparent);
+
+  --color-neutral-bg: color-mix(in srgb, var(--color-text-soft) 10%, transparent);
+  --color-neutral-border: color-mix(in srgb, var(--color-text-soft) 20%, transparent);
+
+  /* Estados de habitación: fondo suave y texto legible (AA) */
+  --room-available-bg: color-mix(in srgb, var(--room-available) 12%, transparent);
+  --room-occupied-bg: color-mix(in srgb, var(--room-occupied) 12%, transparent);
+  --room-reserved-bg: color-mix(in srgb, var(--room-reserved) 12%, transparent);
+  --room-checkout-bg: color-mix(in srgb, var(--room-checkout) 12%, transparent);
+  --room-cleaning-bg: color-mix(in srgb, var(--room-cleaning) 14%, transparent);
+  --room-maintenance-bg: color-mix(in srgb, var(--room-maintenance) 14%, transparent);
+
+  --room-available-text: color-mix(in srgb, var(--room-available) 60%, var(--room-text-base));
+  --room-occupied-text: color-mix(in srgb, var(--room-occupied) 60%, var(--room-text-base));
+  --room-reserved-text: color-mix(in srgb, var(--room-reserved) 55%, var(--room-text-base));
+  --room-checkout-text: color-mix(in srgb, var(--room-checkout) 60%, var(--room-text-base));
+  --room-cleaning-text: color-mix(in srgb, var(--room-cleaning) 55%, var(--room-text-base));
+  --room-maintenance-text: color-mix(in srgb, var(--room-maintenance) 60%, var(--room-text-base));
+
+  /* ======================================================================
+     3. ESTADOS (habitaciones, reservas, timeline)
+     ====================================================================== */
+
+  --estado-disponible: var(--room-available);
+  --estado-ocupada: var(--room-occupied);
+  --estado-reservada: var(--room-reserved);
+  --estado-checkout: var(--room-checkout);
+  --estado-sucia: var(--room-cleaning);
+  --estado-limpiando: var(--room-cleaning);
+  --estado-mantenimiento: var(--room-maintenance);
+  --estado-bloqueada: var(--room-maintenance);
+  --estado-pendiente: var(--color-warning);
+
+  /* Reservas en el planning (borde + ícono fuerte, fondo suave, texto AA) */
+  --reserva-pendiente: var(--color-warning);
+  --reserva-pendiente-bg: var(--color-warning-bg);
+  --reserva-pendiente-text: var(--color-warning-text);
+  --reserva-confirmada: var(--room-reserved);
+  --reserva-confirmada-bg: var(--room-reserved-bg);
+  --reserva-confirmada-text: var(--room-reserved-text);
+  --reserva-en-casa: var(--room-occupied);
+  --reserva-en-casa-bg: var(--room-occupied-bg);
+  --reserva-en-casa-text: var(--room-occupied-text);
+  --reserva-sale-hoy: var(--room-checkout);
+  --reserva-sale-hoy-bg: var(--room-checkout-bg);
+  --reserva-sale-hoy-text: var(--room-checkout-text);
+  --reserva-no-show: var(--color-danger);
+  --reserva-no-show-bg: var(--color-danger-bg);
+  --reserva-no-show-text: var(--color-danger-text);
+  --reserva-finalizada: var(--color-text-soft);
+  --reserva-finalizada-bg: var(--color-neutral-bg);
+  --reserva-finalizada-text: var(--color-text-muted);
 
   /* ======================================================================
      RADIOS
      ====================================================================== */
-  --radius-sm: 6px;
+  --radius-xs: 4px;
+  --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 30px;
 
   /* ======================================================================
      SOMBRAS
      ====================================================================== */
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-shadow) 8%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-shadow) 12%, transparent);
+  --shadow-lg: 0 6px 16px color-mix(in srgb, var(--color-shadow) 16%, transparent);
+  --shadow-xl: 0 12px 32px color-mix(in srgb, var(--color-shadow) 22%, transparent);
+  --shadow-accent: 0 2px 6px var(--color-accent-border);
+  --shadow-primary: 0 2px 6px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, #6aaaf7 50%, transparent);
+
+  /* Transiciones funcionales (máx. 150-200 ms, DESIGN.md §10) */
+  --transition-fast: 150ms ease;
+
+  /* Tipografía */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 14px;
+
+  /* Escala tipográfica única (DESIGN.md §5). Todo el dashboard usa estos tamaños. */
+  --fs-xs: 12px;    /* secundario mínimo, encabezados de tabla, badges */
+  --fs-sm: 13px;    /* labels, ayudas, detalles */
+  --fs-base: 14px;  /* texto base, tablas, botones, inputs */
+  --fs-md: 15px;    /* texto destacado */
+  --fs-lg: 18px;    /* títulos de sección / panel / modal */
+  --fs-xl: 24px;    /* título de página */
+  --fs-kpi: 28px;   /* cifras de KPI */
+
+  /* Flecha de los <select> (sigue el color del tema) */
+  --select-arrow:
+    linear-gradient(45deg, transparent 50%, var(--color-text-soft) 50%) right 18px center / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--color-text-soft) 50%, transparent 50%) right 13px center / 5px 5px no-repeat;
 
   /* ======================================================================
      LAYOUT
      ====================================================================== */
   --sidebar-width: 250px;
-
-  /* ======================================================================
-     ALIAS RETROCOMPATIBLES
-     ====================================================================== */
-  --fondo-oscuro: var(--color-bg-primary);
-  --fondo-principal: var(--color-bg-primary);
-  --tarjeta-azul: var(--color-bg-panel);
-  --fondo-panel: var(--color-bg-panel);
-  --dorado-sires: var(--color-accent);
-  --dorado-sires-hover: var(--color-accent-hover);
-  --texto-gris: var(--color-text-muted);
-  --texto-blanco: var(--color-text-primary);
-  --borde-input: var(--color-border);
-  --estado-disponible: var(--color-success);
-  --estado-ocupada: var(--color-danger);
-  --estado-reservada: var(--color-accent);
 }
-
 /* ==========================================================================
-   BASE
+   SIRES - TEMAS DE COLOR
+   Cada tema redefine solo la PALETA de variables.css; los fondos/bordes
+   translúcidos y los colores de estado se recalculan solos.
+
+   Se activa con <html data-theme="nombre">. El selector "Tema" del menú
+   lateral lo guarda por navegador (localStorage 'sires-tema').
+   Sin data-theme se usa la paleta por defecto (oscuro, gris azulado; nunca negro puro).
+
+   Los colores de estado de habitación (--room-*) NO se redefinen en los
+   temas: su significado es fijo. Solo cambia --room-text-base para que el
+   texto de los badges siga siendo legible.
+
+   Para probar un tema nuevo: copiar un bloque, cambiar el nombre y los
+   valores, y agregarlo a la lista TEMAS de App/views/partials/theme-switcher.phtml.
    ========================================================================== */
+
+/* --- Claro: fondo gris azulado claro + azul de marca -------------------- */
+:root[data-theme="claro"] {
+  --color-primary-500: #2f80ed;
+  --color-primary-600: #1f6fd9;
+  --color-primary-700: #1a5bb5;
+
+  --color-bg: #f3f6fa;
+  --color-bg-deep: #14396e;
+  --color-surface: #ffffff;
+  --color-surface-alt: #eaf0f7;
+  --color-surface-modal: #ffffff;
+  --color-input: #ffffff;
+  --color-input-focus: #ffffff;
+  --color-border: #d5dde8;
+  --color-border-strong: #c2ccda;
+  --color-text: #1b2433;
+  --color-text-strong: #111827;
+  --color-text-muted: #5b6779;
+  --color-text-soft: #5b6779;
+  --color-on-accent: #ffffff;
+
+  --color-info: #0369a1;
+  --color-info-hover: #075985;
+  --color-success: #15803d;
+  --color-success-strong: #15803d;
+  --color-success-strong-hover: #166534;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-warning: #b45309;
+  --color-warning-hover: #92400e;
+  --color-orange: #c2410c;
+  --color-highlight: #a16207;
+  --color-purple: #7e22ce;
+  --color-neutral: #6b7280;
+  --color-on-highlight: #ffffff;
+  --color-on-solid: #ffffff;
+
+  --color-tint-base: #14396e;
+  --color-shadow: #14396e;
+  --color-overlay-base: #0f1623;
+
+  --sidebar-bg: var(--color-primary-900);
+  --sidebar-text: #c9d6ea;
+  --sidebar-active-text: #ffffff;
+  --sidebar-border: color-mix(in srgb, #ffffff 8%, transparent);
+
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+}
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    font-family: 'Montserrat', sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.45;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 .system-footer {
     text-align: center;
     padding: 8px 0;
-    font-size: 9pt;
-    color: var(--texto-gris, #888);
-    border-top: 1px solid var(--color-border, #eee);
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
     margin-top: 20px;
 }
 
@@ -103,9 +332,25 @@ body {
     font-weight: 600;
 }
 
-/* ==========================================================================
-   COMPONENTES: ALERTS
-   ========================================================================== */
+/* Números alineados en tablas y montos */
+table,
+.monto,
+.kpi-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible en todo elemento interactivo (navegación por teclado) */
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Ocultar el botón nativo de "mostrar contraseña" de Edge: los formularios ya
+   tienen su propio ojo y se veían dos al escribir. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
 .alert {
   padding: 15px 20px;
   margin-bottom: 25px;
@@ -113,13 +358,14 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 500;
   box-sizing: border-box;
   box-shadow: var(--shadow-sm);
 }
 
-.alert i, .alert svg {
+.alert i,
+.alert svg {
   font-size: 16px;
   width: 16px;
   height: 16px;
@@ -144,9 +390,11 @@ body {
   border: 1px solid var(--color-warning-border);
 }
 
-/* ==========================================================================
-   COMPONENTES: BUTTONS
-   ========================================================================== */
+.alert--info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -156,7 +404,7 @@ body {
   cursor: pointer;
   border: none;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   white-space: nowrap;
@@ -164,17 +412,17 @@ body {
 }
 
 .btn--primary {
-  background-color: var(--dorado-sires);
-  color: var(--fondo-principal);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
   border-radius: 30px;
   padding: 0 24px;
   height: 46px;
 }
 
 .btn--primary:hover {
-  background-color: var(--dorado-sires-hover, #e5b83b);
+  background-color: var(--color-accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(205, 164, 52, 0.2);
+  box-shadow: var(--shadow-accent);
 }
 
 .btn--primary:active {
@@ -182,36 +430,36 @@ body {
 }
 
 .btn--ghost {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--borde-input);
-  color: var(--texto-blanco);
+  background-color: var(--color-tint-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   border-radius: 30px;
   padding: 10px 20px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
 .btn--ghost:hover {
-  background-color: rgba(205, 164, 52, 0.08);
-  border-color: var(--dorado-sires);
-  color: var(--dorado-sires);
+  background-color: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
   transform: translateY(-1px);
 }
 
 .btn--accent {
-  background-color: #1d4ed8;
-  color: #ffffff;
+  background-color: var(--color-primary);
+  color: var(--color-on-solid);
   border-radius: 8px;
-  font-size: 15px;
+  font-size: var(--fs-base);
   padding: 0 24px;
   height: 48px;
   margin-top: 10px;
 }
 
 .btn--accent:hover {
-  background-color: #2563eb;
+  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 .btn--accent:active {
@@ -219,36 +467,36 @@ body {
 }
 
 .btn--danger {
-  background-color: #ef4444;
-  color: #ffffff;
+  background-color: var(--color-danger);
+  color: var(--color-on-solid);
   border-radius: 6px;
   padding: 10px 20px;
 }
 
 .btn--danger:hover {
-  background-color: #dc2626;
+  background-color: var(--color-danger-hover);
 }
 
 .btn--success {
-  background-color: #10b981;
-  color: #ffffff;
+  background-color: var(--color-success-strong);
+  color: var(--color-on-solid);
   border-radius: 6px;
   padding: 10px 20px;
 }
 
 .btn--success:hover {
-  background-color: #059669;
+  background-color: var(--color-success-strong-hover);
 }
 
 .btn--warning {
   background-color: var(--color-warning);
-  color: #ffffff;
+  color: var(--color-on-solid);
   border-radius: 6px;
   padding: 10px 20px;
 }
 
 .btn--warning:hover {
-  background-color: #d97706;
+  background-color: var(--color-warning-hover);
 }
 
 .btn--outline {
@@ -256,17 +504,17 @@ body {
   align-items: center;
   gap: 10px;
   background-color: transparent;
-  color: var(--dorado-sires);
-  border: 2px solid var(--dorado-sires);
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
   padding: 12px 28px;
   border-radius: 4px;
-  font-size: 10pt;
+  font-size: var(--fs-base);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .btn--outline:hover {
-  background-color: rgba(251, 191, 36, 0.1);
+  background-color: var(--color-accent-bg);
   transform: translateY(-2px);
 }
 
@@ -281,9 +529,9 @@ body {
   width: 34px;
   height: 34px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--borde-input);
-  font-size: 13px;
+  background: var(--color-tint-1);
+  border: 1px solid var(--color-border);
+  font-size: var(--fs-sm); /* ícono */
   transition: all 0.2s ease-in-out;
 }
 
@@ -292,73 +540,69 @@ body {
 }
 
 .btn--icon-edit {
-  color: var(--dorado-sires);
+  color: var(--color-accent);
 }
 
 .btn--icon-edit:hover {
-  background: rgba(205, 164, 52, 0.1);
-  border-color: var(--dorado-sires);
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
 }
 
 .btn--icon-pass {
-  color: var(--texto-blanco);
+  color: var(--color-text);
 }
 
 .btn--icon-pass:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--texto-blanco);
+  background: var(--color-tint-3);
+  border-color: var(--color-text);
 }
 
 .btn--icon-danger {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
 }
 
 .btn--icon-danger:hover {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: #ef4444;
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
 }
 
 .btn--icon-success {
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
 }
 
 .btn--icon-success:hover {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: #22c55e;
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
 }
 
 .btn--icon-warning {
   color: var(--color-warning);
-  border-color: rgba(245, 158, 11, 0.2);
+  border-color: var(--color-warning-border);
 }
 
 .btn--icon-warning:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--color-warning-bg);
   border-color: var(--color-warning);
 }
 
 .btn--icon-info {
   color: var(--color-info);
-  border-color: rgba(56, 189, 248, 0.2);
+  border-color: var(--color-info-border);
 }
 
 .btn--icon-info:hover {
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--color-info-bg);
   border-color: var(--color-info);
 }
-
-/* ==========================================================================
-   COMPONENTES: FORMS
-   ========================================================================== */
 .form__label {
   display: block;
-  color: var(--dorado-sires);
-  font-size: 11px;
-  font-weight: bold;
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
   margin-top: 18px;
 }
@@ -368,36 +612,33 @@ body {
   width: 100%;
   height: 46px;
   padding: 0 16px;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--borde-input);
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--texto-blanco);
-  font-size: 14px;
+  color: var(--color-text);
+  font-size: var(--fs-base);
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__input:focus,
 .form__select:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .form__select {
   padding: 0 36px 0 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
+  background: var(--select-arrow), var(--color-input);
   appearance: none;
   cursor: pointer;
 }
 
 .form__select option {
-  background-color: var(--color-bg-input);
-  color: var(--texto-blanco);
+  background-color: var(--color-input);
+  color: var(--color-text);
 }
 
 .form__group {
@@ -415,6 +656,7 @@ body {
 
 .form__row .form__group {
   flex: 1;
+  min-width: 0; /* que un contenido largo no ensanche la columna */
 }
 
 .form__grid {
@@ -428,11 +670,11 @@ body {
 }
 
 .form__section-title {
-  font-size: 1.1rem;
-  color: var(--dorado-sires);
+  font-size: var(--fs-lg);
+  color: var(--color-accent);
   font-weight: 600;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--color-tint-2);
   padding-bottom: 10px;
   display: flex;
   align-items: center;
@@ -454,24 +696,24 @@ body {
 .form__password svg {
   position: absolute;
   right: 16px;
-  color: var(--texto-gris);
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 14px;
-  transition: color 0.2s ease-in-out;
-  user-select: none;
   width: 14px;
   height: 14px;
+  transition: color 0.2s ease-in-out;
+  user-select: none;
 }
 
 .form__password i:hover,
 .form__password svg:hover {
-  color: var(--dorado-sires);
+  color: var(--color-accent);
 }
 
 .form__actions {
   display: flex;
   justify-content: flex-end;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--color-tint-2);
   padding-top: 20px;
   margin-top: 10px;
 }
@@ -487,46 +729,42 @@ body {
   width: 100%;
   height: 46px;
   padding: 0 16px 0 44px;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--borde-input);
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 30px;
-  color: var(--texto-blanco);
-  font-size: 14px;
+  color: var(--color-text);
+  font-size: var(--fs-base);
   box-sizing: border-box;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__search-input:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .form__select-filter {
   width: 100%;
   height: 46px;
   padding: 0 36px 0 16px;
-  background-color: var(--color-bg-input);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
-  border: 1px solid var(--borde-input);
+  background: var(--select-arrow), var(--color-input);
+  border: 1px solid var(--color-border);
   border-radius: 30px;
-  color: var(--texto-blanco);
-  font-size: 14px;
+  color: var(--color-text);
+  font-size: var(--fs-base);
   cursor: pointer;
   box-sizing: border-box;
   appearance: none;
-  transition: all 0.25s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 .form__select-filter:focus {
   outline: none;
-  background-color: var(--color-bg-input-focus);
-  border-color: var(--dorado-sires);
-  box-shadow: 0 0 0 3px rgba(205, 164, 52, 0.1);
+  background-color: var(--color-input-focus);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 @media (max-width: 768px) {
@@ -541,79 +779,114 @@ body {
     gap: 0;
   }
 }
-
-/* ==========================================================================
-   COMPONENTES: BADGES
-   ========================================================================== */
 .badge {
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  display: inline-block;
-  color: #fff;
+  padding: 3px 10px;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--color-on-solid);
+  border: 1px solid transparent;
 }
 
-.badge--disponible { background-color: var(--estado-disponible); }
-.badge--ocupada { background-color: var(--estado-ocupada); }
-.badge--reservada { background-color: var(--estado-reservada); color: #000; }
-.badge--sucia { background-color: var(--color-warning); }
-.badge--limpiando { background-color: var(--color-info); }
-.badge--mantenimiento { background-color: #f97316; }
-.badge--bloqueada { background-color: #6b7280; }
-.badge--pendiente { background-color: var(--color-warning); }
+/* Estados: fondo suave + texto/borde fuerte + ícono (DESIGN.md §4).
+   El ícono se agrega por CSS (Font Awesome) para no tocar el HTML. */
+.badge--disponible,
+.badge--ocupada,
+.badge--reservada,
+.badge--sucia,
+.badge--limpiando,
+.badge--mantenimiento,
+.badge--bloqueada,
+.badge--pendiente,
+.badge--warning {
+  border-left-width: 3px;
+}
+
+.badge--disponible::before,
+.badge--ocupada::before,
+.badge--reservada::before,
+.badge--sucia::before,
+.badge--limpiando::before,
+.badge--mantenimiento::before,
+.badge--bloqueada::before,
+.badge--pendiente::before,
+.badge--warning::before {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.9em;
+}
+
+.badge--disponible { background-color: var(--room-available-bg); color: var(--room-available-text); border-color: var(--room-available); }
+.badge--disponible::before { content: '\f00c'; }       /* check */
+.badge--ocupada { background-color: var(--room-occupied-bg); color: var(--room-occupied-text); border-color: var(--room-occupied); }
+.badge--ocupada::before { content: '\f007'; }          /* persona */
+.badge--reservada { background-color: var(--room-reserved-bg); color: var(--room-reserved-text); border-color: var(--room-reserved); }
+.badge--reservada::before { content: '\f133'; }        /* calendario */
+.badge--sucia { background-color: var(--room-cleaning-bg); color: var(--room-cleaning-text); border-color: var(--room-cleaning); }
+.badge--sucia::before { content: '\f51a'; }            /* escoba */
+.badge--limpiando { background-color: var(--room-cleaning-bg); color: var(--room-cleaning-text); border-color: var(--room-cleaning); }
+.badge--limpiando::before { content: '\f5c3'; }        /* aerosol: limpieza en curso */
+.badge--mantenimiento { background-color: var(--room-maintenance-bg); color: var(--room-maintenance-text); border-color: var(--room-maintenance); }
+.badge--mantenimiento::before { content: '\f0ad'; }    /* llave */
+.badge--bloqueada { background-color: var(--room-maintenance-bg); color: var(--room-maintenance-text); border-color: var(--room-maintenance); }
+.badge--bloqueada::before { content: '\f023'; }        /* candado */
+.badge--pendiente { background-color: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning); }
+.badge--pendiente::before { content: '\f017'; }        /* reloj */
+.badge--warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning); }
+.badge--warning::before { content: '\f071'; }          /* alerta */
 
 .badge--recepcionista {
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
 }
 
 .badge--gerente {
-  background: rgba(168, 85, 247, 0.1);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: var(--color-purple-bg);
+  color: var(--color-purple);
+  border: 1px solid var(--color-purple-border);
 }
 
 .badge--auditor {
-  background: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: var(--color-warning-bg);
+  color: var(--color-accent);
+  border: 1px solid var(--color-warning-border);
 }
 
 .badge--desconocido {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-soft);
+  border: 1px solid var(--color-neutral-border);
 }
 
 .badge--administrador {
-  background: rgba(205, 164, 52, 0.1);
-  color: var(--dorado-sires);
-  border: 1px solid rgba(205, 164, 52, 0.25);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
 }
 
 .badge--503 {
   display: inline-block;
-  background-color: rgba(205, 164, 52, 0.1);
-  color: var(--dorado-sires);
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
   padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
-  border: 1px solid rgba(205, 164, 52, 0.2);
+  border: 1px solid var(--color-accent-border);
 }
-
-/* ==========================================================================
-   COMPONENTES: MODAL
-   ========================================================================== */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(9, 15, 29, 0.85);
+  background-color: var(--color-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -621,7 +894,7 @@ body {
   opacity: 0;
   pointer-events: none;
   z-index: 9999;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
 }
 
 .modal.is-active {
@@ -630,16 +903,16 @@ body {
 }
 
 .modal__box {
-  background-color: var(--color-bg-modal);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background-color: var(--color-surface-modal);
+  border: 1px solid var(--color-tint-2);
+  border-radius: var(--radius-lg);
   padding: 35px 30px;
   width: 100%;
   max-width: 420px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
   transform: scale(0.9);
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease;
 }
 
 .modal.is-active .modal__box {
@@ -658,24 +931,24 @@ body {
 }
 
 .modal__icon--deactivate {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .modal__icon--activate {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-strong);
 }
 
 .modal__title {
-  color: #ffffff;
-  font-size: 1.3rem;
+  color: var(--color-text-strong);
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
 }
 
 .modal__desc {
-  color: #94a3b8;
-  font-size: 0.95rem;
+  color: var(--color-text-soft);
+  font-size: var(--fs-base);
   line-height: 1.5;
   margin-bottom: 25px;
 }
@@ -685,52 +958,305 @@ body {
   gap: 12px;
   justify-content: center;
 }
-
 /* ==========================================================================
-   ESTILOS EXCLUSIVOS LOGIN
+   SIRES - UTILIDADES Y PIEZAS CHICAS
+   Reemplazan los style="..." que se repetían en las vistas. Solo tokens.
    ========================================================================== */
 
-/* CARRUSEL INFINITO */
+/* --- Texto ---------------------------------------------------------------- */
+.text-muted   { color: var(--color-text-muted); }
+.text-info    { color: var(--color-info); }
+.text-danger  { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+.text-success { color: var(--color-success); }
+.text-accent  { color: var(--color-accent); }
+
+.text-lg  { font-size: var(--fs-md); }
+.text-sm  { font-size: var(--fs-sm); }
+.text-xs  { font-size: var(--fs-xs); }
+.text-bold { font-weight: 600; }
+.text-nowrap { white-space: nowrap; }
+.text-right  { text-align: right; }
+.tabular     { font-variant-numeric: tabular-nums; }
+
+/* Ayuda debajo de un campo de formulario */
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Espaciado ------------------------------------------------------------ */
+.m-0   { margin: 0; }
+.mt-2  { margin-top: 2px; }
+.mt-12 { margin-top: 12px; }
+.mt-15 { margin-top: 15px; }
+.mb-8  { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.p-20  { padding: 20px; }
+
+/* --- Layout --------------------------------------------------------------- */
+.d-block      { display: block; }
+.flex-row     { display: flex; gap: 8px; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-wrap    { flex-wrap: wrap; gap: 8px; }
+.flex-1       { flex: 1; }
+.stack-xs     { display: flex; flex-direction: column; gap: 2px; }
+
+/* Fila de tabla de un registro dado de baja */
+.row-inactive { opacity: 0.6; }
+
+/* Dato secundario al lado de un valor (capacidad, motivo, etc.) */
+.room-meta { margin-left: 8px; font-size: var(--fs-sm); }
+
+/* Etiqueta de un campo dentro de un modal */
+.modal-field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Ojo de mostrar/ocultar contraseña dentro de un input */
+.input-icon-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+/* --- Chips (pisos, números de habitación) -------------------------------- */
+.chip-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-list--preview { gap: 4px; margin-top: 8px; line-height: 2.2; }
+
+.badge--lg   { padding: 6px 14px; font-size: var(--fs-sm); }
+.badge--sm   { font-size: var(--fs-xs); padding: 1px 8px; }
+.badge--chip { margin: 2px; padding: 4px 10px; }
+
+/* Pantallas de autenticación centradas (recuperar/restablecer clave) */
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* --- Menú lateral --------------------------------------------------------- */
+/* Doble clase: dashboard.css (que carga después) define .nav-link */
+.nav-link.nav-link--danger,
+.nav-link.nav-link--danger:hover {
+  color: var(--sidebar-danger);
+}
+
+.nav-link.nav-link--danger:hover {
+  background-color: var(--sidebar-danger-bg);
+}
+
+/* Respeta los saltos de línea del texto (observaciones de la reserva) */
+.text-multilinea {
+  white-space: pre-line;
+}
+
+/* --- Paginación ----------------------------------------------------------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 8px;
+}
+
+.pagination__pages {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination__nav {
+  padding: 6px 12px;
+  font-size: var(--fs-base);
+}
+
+.pagination__page {
+  padding: 6px 12px;
+  border-radius: var(--radius-xs);
+  text-decoration: none;
+  font-size: var(--fs-base);
+  font-weight: bold;
+  background-color: var(--color-tint-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.pagination__page:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Salto entre páginas no consecutivas ("1 … 7 8 9 … 40") */
+.pagination__gap {
+  align-self: center;
+  padding: 0 2px;
+  color: var(--color-text-muted);
+}
+
+.pagination__page--active,
+.pagination__page--active:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  pointer-events: none;
+}
+
+/* Tarjeta de confirmación de la habitación seleccionada (variante info) */
+.room-confirm-card {
+  margin-top: 8px;
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.room-confirm-card .confirm-card-header {
+  background-color: var(--color-info-bg);
+  border-bottom-color: var(--color-info-border);
+}
+
+.room-confirm-card .confirm-icon,
+.room-confirm-card .confirm-label {
+  color: var(--color-info);
+}
+
+/* --- Opción de habitación (mover reserva) -------------------------------- */
+.room-option-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.room-option-list__intro { margin: 0 0 8px 0; }
+
+.room-option__radio { margin-right: 10px; }
+
+.room-option__price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.room-option {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.room-option--sugerida {
+  border-color: var(--color-info);
+  background-color: var(--color-info-bg);
+}
+
+/* --- Selector de tema (pruebas de paleta) -------------------------------- */
+/* Vive en el pie del menú lateral (.sidebar__pie), que pone la separación */
+.theme-switcher {
+  padding: 4px 8px;
+}
+
+.theme-switcher label {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sidebar-text);
+  margin-bottom: 6px;
+}
+
+.theme-switcher select {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  background: var(--select-arrow), var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  appearance: none;
+  cursor: pointer;
+}
+
+.theme-switcher select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.theme-switcher option {
+  background-color: var(--color-input);
+  color: var(--color-text);
+}
+/* --- ESTILOS EXCLUSIVOS LOGIN --- */
+
+/* 🎡 CARRUSEL INFINITO AUTOMÁTICO (Optimizado y más chico) */
 .encabezado-fotos {
     width: 100%;
-    background: #000;
-    border-bottom: 1px solid var(--borde-input);
+    background: var(--color-bg-deep);
+    border-bottom: 1px solid var(--color-border);
     overflow: hidden;
 }
 
 .carrusel-container {
     width: 100%;
-    height: 230px;
+    height: 230px; /* ⬅️ Achicado a un tamaño intermedio perfecto */
     position: relative;
     overflow: hidden;
 }
 
 .carrusel-track {
     display: flex;
-    width: calc(280px * 12);
+    /* 12 imágenes totales en el HTML (8 originales + 4 duplicadas) por 280px de ancho cada una */
+    width: calc(280px * 12); 
     height: 100%;
-    animation: deslizar-infinito 20s linear infinite;
+    animation: deslizar-infinito 20s linear infinite; /* Un toque más rápido para compensar el tamaño */
 }
 
 .carrusel-track img {
-    width: 280px;
+    width: 280px; /* ⬅️ Ancho individual más chico */
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* Recorta la imagen de forma limpia */
     filter: brightness(0.5);
-    border-right: 2px solid var(--fondo-principal);
     flex-shrink: 0;
+    border-right: 2px solid var(--color-bg);
 }
 
 @keyframes deslizar-infinito {
-    0% {
-        transform: translateX(0);
+    0% { 
+        transform: translateX(0); 
     }
-    100% {
-        transform: translateX(-2240px);
+    100% { 
+        /* Se desplaza exactamente el ancho de las 8 imágenes originales (280px * 8 = 2240px) */
+        transform: translateX(-2240px); 
     }
 }
 
-/* Contenedor principal */
+/* Contenedor principal: Centrado y adaptado a la nueva altura del carrusel */
 .main-container {
     display: flex;
     justify-content: center;
@@ -741,10 +1267,11 @@ body {
     max-width: 100vw;
     box-sizing: border-box;
     overflow: hidden;
-    min-height: calc(100vh - 280px);
+    /* Ajustado dinámicamente para la nueva altura de 280px */
+    min-height: calc(100vh - 280px); 
 }
 
-/* Logo */
+/* Logo con tus medidas */
 .logo-side {
     flex-shrink: 1;
 }
@@ -753,23 +1280,23 @@ body {
     width: 400px;
     max-width: 35vw;
     height: auto;
-    filter: drop-shadow(0 0 15px rgba(135, 206, 250, 0.2));
+    filter: drop-shadow(0 0 15px var(--color-info-border));
 }
 
-/* Formulario */
+/* Formulario con tus medidas */
 .login-container {
-    background: var(--tarjeta-azul);
+    background: var(--color-surface);
     padding: 30px 40px;
     border-radius: 15px;
     width: 500px;
     max-width: 90%;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-lg);
     box-sizing: border-box;
     flex-shrink: 0;
 }
 
 .link-yellow {
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     text-decoration: none;
     font-size: 13px;
 }
@@ -778,8 +1305,12 @@ body {
     text-decoration: underline;
 }
 
+/* ==========================================================================
+   ✨ NUEVAS CLASES (ABSTRAÍDAS DE LOS ESTILOS INLINE DEL HTML)
+   ========================================================================== */
+
 .login-subtitle {
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     margin-bottom: 20px;
     font-size: 14px;
 }
@@ -794,11 +1325,11 @@ body {
     text-align: center;
     margin-top: 20px;
     font-size: 14px;
-    color: var(--texto-blanco);
+    color: var(--color-text);
 }
 
 .link-yellow-bold {
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     text-decoration: none;
     font-weight: bold;
 }
@@ -806,3 +1337,5 @@ body {
 .link-yellow-bold:hover {
     text-decoration: underline;
 }
+
+

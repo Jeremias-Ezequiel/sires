@@ -1,0 +1,19 @@
+<?php
+/**
+ * Enlace para restablecer la contraseña de un empleado (RecuperacionService::solicitar()).
+ * Se manda en el momento, sin pasar por Cola_Mails: el enlace vence en pocos minutos.
+ * @var string $nombre
+ * @var string $enlace
+ * @var int $minutos
+ * @var callable $e
+ */
+?>
+<h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">Restablecer tu contraseña</h1>
+<p style="margin:0 0 8px;">Hola, <strong><?= $e($nombre) ?></strong>.</p>
+<p style="margin:0 0 8px;">Recibimos una solicitud para cambiar la clave de acceso a tu cuenta en el sistema SIRES.</p>
+<p style="margin:0 0 8px;">Para proceder con el cambio, hacé clic en el siguiente botón:</p>
+<p style="margin:24px 0;text-align:center;">
+    <a href="<?= $e($enlace) ?>" style="background-color:#14396e;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600;display:inline-block;">Cambiar contraseña</a>
+</p>
+<p style="margin:0 0 8px;color:#5b6678;font-size:13px;">Este enlace es válido por <?= (int)$minutos ?> minutos y vencerá de forma automática.</p>
+<p style="margin:0;color:#5b6678;font-size:13px;">Si vos no solicitaste este cambio, podés ignorar este correo de forma segura.</p>

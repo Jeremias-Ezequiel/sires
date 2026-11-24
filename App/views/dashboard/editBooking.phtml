@@ -48,67 +48,75 @@ if (!empty($habitaciones)) {
 }
 ?>
 
-<section class="details-section">
+<section class="details-section form-container-section">
     <form action="<?= url('/dashboard/booking/edit/process') ?>" method="POST" class="form" id="form-reserva">
+        <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= $reserva['id'] ?>">
 
         <div class="form__section">
             <h2 class="form__section-title">Información de la Reserva</h2>
 
-            <div class="form__group">
-                <label class="form__label" for="cliente-search">Cliente *</label>
-                <div class="autocomplete-wrapper">
-                    <input type="text" name="cliente_text" id="cliente-search" class="form__input" placeholder="Buscar cliente por DNI o Pasaporte..." value="<?= htmlspecialchars($old['cliente_text'] ?? $clienteActualDni) ?>" autocomplete="off" required>
-                    <input type="hidden" name="id_cliente" id="id_cliente" value="<?= $clienteActualId ?>">
-                    <div class="autocomplete-dropdown" id="cliente-dropdown"></div>
-                    <div class="cliente-confirm-card" id="cliente-confirm-card" style="display: none;"></div>
+            <!-- Cliente y habitación lado a lado; la agenda va debajo a todo el ancho -->
+            <div class="form__row">
+                <div class="form__group">
+                    <label class="form__label" for="cliente-search">Cliente *</label>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" name="cliente_text" id="cliente-search" class="form__input" placeholder="Buscar cliente por DNI o Pasaporte..." value="<?= htmlspecialchars($old['cliente_text'] ?? $clienteActualDni) ?>" autocomplete="off" required>
+                        <input type="hidden" name="id_cliente" id="id_cliente" value="<?= $clienteActualId ?>">
+                        <div class="autocomplete-dropdown" id="cliente-dropdown"></div>
+                        <div class="cliente-confirm-card" id="cliente-confirm-card" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="habitacion-search">Habitación *</label>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" name="habitacion_text" id="habitacion-search" class="form__input" placeholder="Buscar por número, piso o tipo..." value="<?= htmlspecialchars($old['habitacion_text'] ?? $habitacionActualTexto) ?>" autocomplete="off" required>
+                        <input type="hidden" name="id_habitacion" id="id_habitacion" value="<?= (int)($old['id_habitacion'] ?? $reserva['id_habitacion']) ?>">
+                        <div class="autocomplete-dropdown" id="habitacion-dropdown"></div>
+                        <div class="room-confirm-card" id="habitacion-confirm-card" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form__group">
-                <label class="form__label" for="habitacion-search">Habitación *</label>
-                <div class="autocomplete-wrapper">
-                    <input type="text" name="habitacion_text" id="habitacion-search" class="form__input" placeholder="Buscar por número, piso o tipo..." value="<?= htmlspecialchars($old['habitacion_text'] ?? $habitacionActualTexto) ?>" autocomplete="off" required>
-                    <input type="hidden" name="id_habitacion" id="id_habitacion" value="<?= (int)($old['id_habitacion'] ?? $reserva['id_habitacion']) ?>">
-                    <div class="autocomplete-dropdown" id="habitacion-dropdown"></div>
-                    <div class="room-confirm-card" id="habitacion-confirm-card" style="display: none;"></div>
-                    <div class="timeline-container" id="timeline-container" style="display: none;"></div>
-                </div>
-            </div>
+            <div class="calendario-disp" id="timeline-container" style="display: none;"></div>
 
-            <div class="form__group">
-                <label class="form__label" for="id_canal_origen">Canal de Origen *</label>
-                <select name="id_canal_origen" id="id_canal_origen" class="form__input" required>
-                    <option value="">Seleccione un Canal</option>
-                    <?php if (!empty($canales)): ?>
-                        <?php foreach ($canales as $can): ?>
-                            <option value="<?= $can->getId() ?>" <?= ((int)($old['id_canal_origen'] ?? $reserva['id_canal_origen']) === $can->getId()) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($can->getDescripcion()) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </div>
-        </div>
-
-        <div class="form__section">
-            <h2 class="form__section-title">Fechas y Huéspedes</h2>
-
-            <div class="form-row">
+            <!-- Fechas justo debajo de la agenda de disponibilidad -->
+            <div class="form__row">
                 <div class="form__group">
                     <label class="form__label" for="fecha_entrada">Fecha de Entrada *</label>
-                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" value="<?= htmlspecialchars($old['fecha_entrada'] ?? $reserva['fecha_entrada']) ?>" required>
+                    <input type="date" name="fecha_entrada" id="fecha_entrada" class="form__input" min="<?= htmlspecialchars(min(date('Y-m-d'), (string)$reserva['fecha_entrada'])) ?>" value="<?= htmlspecialchars($old['fecha_entrada'] ?? $reserva['fecha_entrada']) ?>" required>
                 </div>
 
                 <div class="form__group">
                     <label class="form__label" for="fecha_salida">Fecha de Salida *</label>
                     <input type="date" name="fecha_salida" id="fecha_salida" class="form__input" value="<?= htmlspecialchars($old['fecha_salida'] ?? $reserva['fecha_salida']) ?>" required>
                 </div>
+            </div>
+        </div>
 
+        <div class="form__section">
+            <h2 class="form__section-title">Huéspedes y Canal</h2>
+
+            <div class="form__row">
                 <div class="form__group">
                     <label class="form__label" for="cantidad_huespedes">Cantidad de Huéspedes *</label>
                     <input type="number" name="cantidad_huespedes" id="cantidad_huespedes" class="form__input" value="<?= htmlspecialchars((string)($old['cantidad_huespedes'] ?? $reserva['cantidad_huespedes'])) ?>" min="1" max="10" required>
-                    <small id="precio-ocupacion-ayuda" style="display:block; margin-top:6px; color:#6b7280;">Seleccione una habitación para ver el precio.</small>
+                    <small id="precio-ocupacion-ayuda" class="field-hint">Seleccione una habitación para ver el precio.</small>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="id_canal_origen">Canal de Origen *</label>
+                    <select name="id_canal_origen" id="id_canal_origen" class="form__input" required>
+                        <option value="">Seleccione un Canal</option>
+                        <?php if (!empty($canales)): ?>
+                            <?php foreach ($canales as $can): ?>
+                                <option value="<?= $can->getId() ?>" <?= ((int)($old['id_canal_origen'] ?? $reserva['id_canal_origen']) === $can->getId()) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($can->getDescripcion()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
                 </div>
             </div>
         </div>
@@ -117,7 +125,7 @@ if (!empty($habitaciones)) {
             <h2 class="form__section-title">Observaciones</h2>
 
             <div class="form__group">
-                <textarea name="observaciones" id="observaciones" class="form__input form__textarea" rows="3" placeholder="Notas adicionales..."><?= htmlspecialchars($old['observaciones'] ?? $reserva['observaciones'] ?? '') ?></textarea>
+                <textarea name="observaciones" id="observaciones" class="form__input form__textarea" rows="3" placeholder="Notas adicionales..."><?= htmlspecialchars($old['observaciones'] ?? \App\Dominio\ReglasReserva::observacionesLegibles($reserva['observaciones'] ?? null)) ?></textarea>
             </div>
         </div>
 
@@ -132,6 +140,8 @@ if (!empty($habitaciones)) {
     </form>
 </section>
 
+<script src="<?= asset('js/reserva-precio.js') ?>"></script>
+<script src="<?= asset_v('js/calendario-disponibilidad.js') ?>"></script>
 <script>
     var CLIENTES = <?= json_encode(array_map(function ($c) {
         return [
@@ -156,14 +166,19 @@ if (!empty($habitaciones)) {
         ];
     }, array_values($habitaciones ?? []))) ?>;
 
+    // Reservas que ocupan noches, con estado (mismos colores que el Planning) y cliente para la agenda
     var RESERVAS = <?= json_encode(array_map(function (array $r) {
         return [
             'id'         => (int)$r['id'],
             'habitacion' => (int)$r['id_habitacion'],
             'entrada'    => $r['fecha_entrada'],
             'salida'     => $r['fecha_salida'],
+            'estilo'     => \App\Dominio\Planning::estilo((int)$r['id_estado_reserva'], (string)$r['fecha_salida'], date('Y-m-d')),
+            'cliente'    => trim(($r['cliente_apellido'] ?? '') . ', ' . ($r['cliente_nombre'] ?? ''), ', '),
         ];
-    }, $reservasActivas ?? [])) ?>;
+    }, $reservasActivas ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var PLANNING_ESTILOS = <?= json_encode(\App\Dominio\Planning::ESTILOS, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var URL_DETALLE_RESERVA = <?= json_encode(url('/dashboard/booking/detail'), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 
     var RESERVA_ID_A_IGNORAR = <?= (int)($reserva['id'] ?? 0) ?>;
 
@@ -258,12 +273,6 @@ if (!empty($habitaciones)) {
                 '</div>';
             confirmCard.style.display = 'block';
             dropdown.classList.remove('open');
-        }
-
-        function escHtml(str) {
-            var d = document.createElement('div');
-            d.appendChild(document.createTextNode(str));
-            return d.innerHTML;
         }
 
         function highlightMatch(text, query) {
@@ -376,13 +385,19 @@ if (!empty($habitaciones)) {
             return false;
         }
 
-        var DESCUENTOS_TABLA = { 4: {1: 30, 2: 20, 3: 10, 4: 0}, 3: {1: 25, 2: 10, 3: 0}, 2: {1: 15, 2: 0} };
+        // Fuente única: tabla Configuracion (ConfiguracionService::descuentoOcupacion)
+        var DESCUENTOS_TABLA = <?= json_encode(\App\Services\ConfiguracionService::descuentoOcupacion()) ?>;
 
         function descuentoOcupacion(capacidad, huespedes) {
-            var cap = DESCUENTOS_TABLA[capacidad];
-            if (!cap) return 0;
-            return (huespedes in cap) ? cap[huespedes] : 0;
+            return SiresPrecio.descuentoOcupacion(DESCUENTOS_TABLA, capacidad, huespedes);
         }
+
+        // Precio pactado de la reserva: el servidor lo mantiene si no cambian habitación ni huéspedes
+        var PACTADO = <?= json_encode([
+            'habitacion' => (int)$reserva['id_habitacion'],
+            'huespedes'  => (int)$reserva['cantidad_huespedes'],
+            'precio'     => isset($reserva['precio_noche_pactado']) ? (float)$reserva['precio_noche_pactado'] : null,
+        ]) ?>;
 
         function actualizarPrecioOcupacion() {
             if (!guestInput || !roomConfirmedId) return;
@@ -392,26 +407,23 @@ if (!empty($habitaciones)) {
             var precioTotalEl = document.getElementById('room-precio-total');
             if (!r) return;
             var huespedes = parseInt(guestInput.value, 10) || 1;
-            var dsc = descuentoOcupacion(r.capacidad, huespedes);
-            var precio = r.precio * (1 - dsc / 100);
+            var pactado = PACTADO.precio !== null && r.id === PACTADO.habitacion && huespedes === PACTADO.huespedes;
+            var dsc = pactado ? 0 : descuentoOcupacion(r.capacidad, huespedes);
+            var precio = pactado ? PACTADO.precio : SiresPrecio.precioNoche(r.precio, dsc);
 
-            var e = entrada && entrada.value;
-            var s = salida && salida.value;
-            var noches = 0;
-            if (e && s && s > e) {
-                var diff = (new Date(s) - new Date(e)) / (1000 * 60 * 60 * 24);
-                noches = Math.max(1, Math.round(diff));
-            }
+            var noches = SiresPrecio.calcularNoches(entrada && entrada.value, salida && salida.value);
             var total = precio * noches;
 
             if (ayuda) {
-                ayuda.textContent = 'Descuento por ocupación: ' + dsc + '% — Precio/noche: $' + precio.toFixed(2);
+                ayuda.textContent = pactado
+                    ? 'Se mantiene el precio pactado por noche: ' + SiresPrecio.formatearMoneda(precio) + '. Si cambia la habitación o los huéspedes, se usa el precio actual.'
+                    : 'Descuento por ocupación: ' + dsc + '% — Precio/noche: ' + SiresPrecio.formatearMoneda(precio);
             }
             if (precioNocheEl) {
-                precioNocheEl.textContent = '$' + precio.toFixed(2) + (dsc > 0 ? ' (-' + dsc + '%)' : '');
+                precioNocheEl.textContent = SiresPrecio.formatearMoneda(precio) + (pactado ? ' (pactado)' : (dsc > 0 ? ' (-' + dsc + '%)' : ''));
             }
             if (precioTotalEl) {
-                precioTotalEl.textContent = '$' + total.toFixed(2) + ' (' + noches + (noches === 1 ? ' noche' : ' noches') + ' x $' + precio.toFixed(2) + ')';
+                precioTotalEl.textContent = SiresPrecio.formatearMoneda(total) + ' (' + noches + (noches === 1 ? ' noche' : ' noches') + ' x ' + SiresPrecio.formatearMoneda(precio) + ')';
             }
         }
 
@@ -426,82 +438,21 @@ if (!empty($habitaciones)) {
         }
 
         var timelineContainer = document.getElementById('timeline-container');
+        var calendario = SiresCalendario.crear({
+            contenedor: timelineContainer,
+            entrada: entrada,
+            salida: salida,
+            ignorarId: RESERVA_ID_A_IGNORAR,
+            estilos: PLANNING_ESTILOS,
+            urlDetalle: URL_DETALLE_RESERVA
+        });
 
         function renderizarTimelineOcupacion(roomId) {
             if (!roomId) {
-                timelineContainer.style.display = 'none';
+                calendario.ocultar();
                 return;
             }
-            var hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            var minDate = new Date(hoy);
-            var maxDate = new Date(hoy);
-            maxDate.setDate(maxDate.getDate() + 60);
-
-            var e = document.getElementById('fecha_entrada');
-            var s = document.getElementById('fecha_salida');
-            var entradaVal = e && e.value ? e.value : null;
-            var salidaVal = s && s.value ? s.value : null;
-            var entradaDate = entradaVal ? new Date(entradaVal + 'T00:00:00') : null;
-            var salidaDate = salidaVal ? new Date(salidaVal + 'T00:00:00') : null;
-
-            if (entradaDate && entradaDate < minDate) {
-                minDate = new Date(entradaDate);
-                minDate.setDate(minDate.getDate() - 3);
-            }
-            if (salidaDate && salidaDate > maxDate) {
-                maxDate = new Date(salidaDate);
-                maxDate.setDate(maxDate.getDate() + 7);
-            }
-            var minSpan = new Date(minDate);
-            minSpan.setDate(minSpan.getDate() + 60);
-            if (maxDate < minSpan) maxDate = minSpan;
-
-            var reservas = RESERVAS_POR_HABITACION[roomId] || [];
-            var meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            var labelsHtml = '', cellsHtml = '';
-            var current = new Date(minDate);
-
-            while (current <= maxDate) {
-                var dateStr = current.getFullYear() + '-' +
-                    String(current.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(current.getDate()).padStart(2, '0');
-                var isToday = current.toDateString() === hoy.toDateString();
-
-                var isOccupied = false;
-                for (var i = 0; i < reservas.length; i++) {
-                    if (reservas[i].id === RESERVA_ID_A_IGNORAR) continue;
-                    if (dateStr >= reservas[i].entrada && dateStr < reservas[i].salida) {
-                        isOccupied = true;
-                        break;
-                    }
-                }
-
-                var isSelected = entradaVal && salidaVal && dateStr >= entradaVal && dateStr < salidaVal;
-                var cellClass = isOccupied ? 'occupied' : (isSelected ? 'selected' : 'free');
-                if (isOccupied && isSelected) cellClass = 'occupied';
-
-                var dayNum = current.getDate();
-                var showLabel = dayNum === 1 || dayNum % 5 === 1 || dayNum === 31;
-                var label = showLabel ? (dayNum === 1 ? meses[current.getMonth()] + ' ' + dayNum : String(dayNum)) : '';
-
-                labelsHtml += '<div class="timeline-label">' + escHtml(label) + '</div>';
-                cellsHtml += '<div class="timeline-day timeline-day--' + cellClass + (isToday ? ' timeline-day--today' : '') + '" title="' + dateStr + ': ' + (isOccupied ? 'Ocupada' : (isSelected ? 'Tu reserva' : 'Libre')) + '"></div>';
-
-                current.setDate(current.getDate() + 1);
-            }
-
-            timelineContainer.innerHTML =
-                '<div class="timeline-legend">' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#22c55e"></span>Libre</span>' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#ef4444"></span>Ocupada</span>' +
-                    '<span class="timeline-legend-item"><span class="timeline-legend-dot" style="background:#eab308"></span>Tu reserva</span>' +
-                '</div>' +
-                '<div class="timeline-scroll">' +
-                    '<div class="timeline-labels">' + labelsHtml + '</div>' +
-                    '<div class="timeline-bar">' + cellsHtml + '</div>' +
-                '</div>';
-            timelineContainer.style.display = 'block';
+            calendario.mostrar(RESERVAS_POR_HABITACION[roomId] || []);
         }
 
         if (guestInput) {
@@ -524,7 +475,6 @@ if (!empty($habitaciones)) {
             var exact = [];
             var partial = [];
             ROOMS.forEach(function(r) {
-                if (habitacionOcupadaEnFechas(r)) return;
                 var num = String(r.numero);
                 var label = '#' + r.numero + ' - piso ' + r.piso + ' (' + r.tipo.toLowerCase() + ')';
                 if (num === q || '#' + num === q) {
@@ -533,6 +483,8 @@ if (!empty($habitaciones)) {
                     partial.push(r);
                 }
             });
+            // Las ocupadas en las fechas cargadas también se listan, en su orden (las fechas
+            // del formulario son un valor por defecto): solo llevan la marca "Ocupada en esas fechas"
             if (exact.length > 0) return { type: 'exact', results: exact };
             if (partial.length > 0) return { type: 'partial', results: partial };
             return { type: 'none', results: [] };
@@ -541,7 +493,7 @@ if (!empty($habitaciones)) {
         function renderRoomResults(filtered) {
             roomDropdown.innerHTML = '';
             roomConfirmCard.style.display = 'none';
-            timelineContainer.style.display = 'none';
+            calendario.ocultar();
 
             if (filtered.type === 'none') {
                 roomDropdown.innerHTML = '<div class="autocomplete-no-results">No se encontraron habitaciones</div>';
@@ -575,7 +527,8 @@ if (!empty($habitaciones)) {
                 item.dataset.precio = r.precio;
                 item.dataset.capacidad = r.capacidad;
                 var label = '#' + r.numero + ' - Piso ' + r.piso;
-                item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>';
+                item.innerHTML = highlightMatch(label, q) + ' <small>' + escHtml(r.tipo) + '</small>' +
+                    (habitacionOcupadaEnFechas(r) ? ' <span class="autocomplete-item__aviso">Ocupada en esas fechas</span>' : '');
                 item.addEventListener('click', function() {
                     confirmRoom(r);
                 });
@@ -597,21 +550,37 @@ if (!empty($habitaciones)) {
 
         function showRoomConfirmCard(r) {
             roomConfirmCard.innerHTML =
-                '<div class="confirm-card-header" style="border-color: rgba(56, 189, 248, 0.15); background-color: rgba(56, 189, 248, 0.08);">' +
-                    '<i class="fas fa-door-open confirm-icon" style="color: #38bdf8;"></i>' +
-                    '<span class="confirm-label" style="color: #38bdf8;">Habitación seleccionada</span>' +
+                '<div class="confirm-card-header">' +
+                    '<i class="fas fa-door-open confirm-icon"></i>' +
+                    '<span class="confirm-label">Habitación seleccionada</span>' +
                 '</div>' +
                 '<div class="confirm-card-body">' +
                     '<div class="confirm-field"><span class="confirm-field-label">Habitación</span><span class="confirm-field-value">#' + escHtml(String(r.numero)) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Piso</span><span class="confirm-field-value">' + escHtml(String(r.piso)) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Tipo</span><span class="confirm-field-value">' + escHtml(r.tipo) + '</span></div>' +
                     '<div class="confirm-field"><span class="confirm-field-label">Capacidad</span><span class="confirm-field-value">' + escHtml(String(r.capacidad)) + ' personas</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value">' + escHtml('Disponible para las fechas ingresadas') + '</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0.00</span></div>' +
-                    '<div class="confirm-field"><span class="confirm-field-label">Total estimado</span><span class="confirm-field-value" id="room-precio-total">$0.00</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Disponibilidad</span><span class="confirm-field-value" id="room-disponibilidad"></span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Precio/noche</span><span class="confirm-field-value" id="room-precio-noche">$0,00</span></div>' +
+                    '<div class="confirm-field"><span class="confirm-field-label">Total estimado</span><span class="confirm-field-value" id="room-precio-total">$0,00</span></div>' +
                 '</div>';
             roomConfirmCard.style.display = 'block';
             roomDropdown.classList.remove('open');
+            marcarDisponibilidad(r);
+        }
+
+        /**
+         * Texto de disponibilidad de la tarjeta y validación del formulario: una habitación
+         * ocupada en esas fechas se puede elegir (para ver su agenda y buscar días libres),
+         * pero no se puede guardar la reserva hasta elegir fechas libres. El servidor vuelve a validar.
+         */
+        function marcarDisponibilidad(r) {
+            var ocupada = habitacionOcupadaEnFechas(r);
+            var el = document.getElementById('room-disponibilidad');
+            if (el) {
+                el.textContent = ocupada ? 'Ocupada en esas fechas: elegí días libres en la agenda' : 'Disponible para las fechas ingresadas';
+                el.classList.toggle('text-danger', ocupada);
+            }
+            entrada.setCustomValidity(ocupada ? 'La habitación está ocupada en esas fechas. Elegí días libres en la agenda.' : '');
         }
 
         roomSearch.addEventListener('input', function() {
@@ -619,10 +588,11 @@ if (!empty($habitaciones)) {
             if (!val) {
                 roomHidden.value = '';
                 roomConfirmedId = null;
+                entrada.setCustomValidity(''); // sin habitación elegida no hay choque que marcar
                 roomDropdown.innerHTML = '';
                 roomDropdown.classList.remove('open');
                 roomConfirmCard.style.display = 'none';
-                timelineContainer.style.display = 'none';
+                calendario.ocultar();
                 this.setCustomValidity('');
                 return;
             }
@@ -637,9 +607,10 @@ if (!empty($habitaciones)) {
                 }
             }
             roomConfirmedId = null;
+            entrada.setCustomValidity(''); // sin habitación elegida no hay choque que marcar
             roomHidden.value = '';
             roomConfirmCard.style.display = 'none';
-            timelineContainer.style.display = 'none';
+            calendario.ocultar();
             var filtered = filterRooms(val);
             roomHighlightIdx = -1
             renderRoomResults(filtered);
@@ -731,16 +702,10 @@ if (!empty($habitaciones)) {
         function actualizarDisponibilidadHabitaciones() {
             if (roomConfirmedId !== null) {
                 var match = ROOMS.find(function(r) { return r.id === roomConfirmedId; });
-                if (match && habitacionOcupadaEnFechas(match)) {
-                    roomConfirmedId = null;
-                    roomHidden.value = '';
-                    roomSearch.value = '';
-                    roomConfirmCard.style.display = 'none';
-                    timelineContainer.style.display = 'none';
-                    alert('La habitación seleccionada ya no está disponible para las fechas ingresadas.');
-                } else {
-                    renderizarTimelineOcupacion(roomConfirmedId);
-                }
+                // Ya no se descarta la habitación si las fechas chocan: la agenda muestra el
+                // choque y el formulario no se envía hasta que las fechas queden libres.
+                if (match) marcarDisponibilidad(match);
+                renderizarTimelineOcupacion(roomConfirmedId);
             }
         }
 

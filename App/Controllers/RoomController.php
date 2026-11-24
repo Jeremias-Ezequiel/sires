@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Exception;
@@ -7,10 +9,11 @@ use App\Models\Habitacion;
 use App\Models\MotivoBloqueo;
 use App\Services\HabitacionService;
 use App\Services\LimpiezaService;
-use App\Helpers\UrlHelper;
 
-class RoomController
+class RoomController extends Controller
 {
+    private const ID_INVALIDO = 'ID de habitación inválido.';
+
     private HabitacionService $habitacionService;
     private LimpiezaService $limpiezaService;
 
@@ -22,18 +25,9 @@ class RoomController
 
     public function showRooms(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
-
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -50,9 +44,18 @@ class RoomController
         $hasFloor  = isset($vars['floor_filter']) && $vars['floor_filter'] !== '';
 
         $roomModel = new Habitacion();
+        $soloInactivas = $showInactive === 'inactive' ? '1' : null;
+
+        $currentPage = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 20;
+
+        $totalHabitaciones = $roomModel->countWithFilters($search, $status, $type, $floor, $soloInactivas);
+        $totalPages = max(1, (int)ceil($totalHabitaciones / $limit));
+        $currentPage = min($currentPage, $totalPages);
+
         $habitaciones = $roomModel->getAllWithFilters(
-            $search, $status, $type, $floor,
-            $showInactive === 'inactive' ? '1' : null
+            $search, $status, $type, $floor, $soloInactivas,
+            $limit, ($currentPage - 1) * $limit
         );
         $tipos = $roomModel->getTiposHabitacion();
         $estados = $roomModel->getEstadosHabitacion();
@@ -66,21 +69,11 @@ class RoomController
 
     public function showNewRoomForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -98,62 +91,32 @@ class RoomController
 
     public function addRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $piso        = (int)($_POST['piso'] ?? -1);
-            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
-            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
-
-            $resultado = $this->habitacionService->altaIndividual($piso, $idTipo, $precioNoche);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms/add'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->altaIndividual(
+                (int)($_POST['piso'] ?? -1),
+                (int)($_POST['id_tipo_habitacion'] ?? 0),
+                (float)($_POST['precio_noche_base'] ?? 0)
+            ),
+            '/dashboard/rooms', '/dashboard/rooms/add', true
+        );
     }
 
     public function showEditRoomForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
             $roomModel = new Habitacion();
-            $habitacion = $roomModel->findById((int)$id);
+            $habitacion = $roomModel->findById($id);
 
             if (!$habitacion) {
                 throw new Exception("La habitación no existe.");
@@ -166,62 +129,33 @@ class RoomController
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
+            $this->flash($e->getMessage(), 'error');
+            $this->redirect('/dashboard/rooms');
         }
     }
 
     public function editRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id          = (int)($_POST['id'] ?? 0);
-            $numero      = (int)($_POST['numero'] ?? 0);
-            $piso        = (int)($_POST['piso'] ?? -1);
-            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
-            $idEstado    = (int)($_POST['id_estado_habitacion'] ?? 0);
-            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
-
-            $resultado = $this->habitacionService->editar($id, $numero, $piso, $idTipo, $idEstado, $precioNoche);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms/edit?id=' . ($_POST['id'] ?? 0)));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->editar(
+                (int)($_POST['id'] ?? 0),
+                (int)($_POST['numero'] ?? 0),
+                (int)($_POST['piso'] ?? -1),
+                (int)($_POST['id_tipo_habitacion'] ?? 0),
+                (int)($_POST['id_estado_habitacion'] ?? 0),
+                (float)($_POST['precio_noche_base'] ?? 0)
+            ),
+            '/dashboard/rooms', '/dashboard/rooms/edit?id=' . (int)($_POST['id'] ?? 0), true
+        );
     }
 
     public function showBatchRoomForm(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -238,303 +172,127 @@ class RoomController
 
     public function addBatchRoom(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $piso        = (int)($_POST['piso'] ?? -1);
-            $idTipo      = (int)($_POST['id_tipo_habitacion'] ?? 0);
-            $precioNoche = (float)($_POST['precio_noche_base'] ?? 0);
-            $numeroDesde = (int)($_POST['numero_desde'] ?? 0);
-            $numeroHasta = (int)($_POST['numero_hasta'] ?? 0);
-
-            $resultado = $this->habitacionService->altaMasiva($piso, $idTipo, $precioNoche, $numeroDesde, $numeroHasta);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms/add/batch'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->altaMasiva(
+                (int)($_POST['piso'] ?? -1),
+                (int)($_POST['id_tipo_habitacion'] ?? 0),
+                (float)($_POST['precio_noche_base'] ?? 0),
+                (int)($_POST['numero_desde'] ?? 0),
+                (int)($_POST['numero_hasta'] ?? 0)
+            ),
+            '/dashboard/rooms', '/dashboard/rooms/add/batch', true
+        );
     }
 
     public function showRoomDetail(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
             $roomModel = new Habitacion();
-            $habitacion = $roomModel->findById((int)$id);
+            $habitacion = $roomModel->findById($id);
 
             if (!$habitacion) {
                 throw new Exception("La habitación no existe.");
+            }
+
+            // Historial de auditoría: solo administrador y gerente
+            $historial = null;
+            if (\App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])) {
+                try {
+                    $historial = (new \App\Services\AuditoriaService())->historial('habitacion', $id);
+                } catch (Exception $e) {
+                    error_log("[SIRES AUDITORIA] " . $e->getMessage());
+                }
             }
 
             $contentView = __DIR__ . '/../views/dashboard/detailRoom.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
+            $this->flash($e->getMessage(), 'error');
+            $this->redirect('/dashboard/rooms');
         }
     }
 
     public function deactivateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-            $idMotivoBloqueo = $vars['motivo'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $motivoParam = !empty($idMotivoBloqueo) ? (int)$idMotivoBloqueo : null;
-            $resultado = $this->habitacionService->bloquear((int)$id, $motivoParam);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(function (): array {
+            $motivo = filter_var($_POST['motivo'] ?? '', FILTER_VALIDATE_INT);
+            return $this->habitacionService->bloquear(
+                $this->idDe('id', self::ID_INVALIDO),
+                $motivo !== false ? $motivo : null
+            );
+        }, '/dashboard/rooms');
     }
 
     public function activateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->habitacionService->desbloquear((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->desbloquear($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/rooms'
+        );
     }
 
     public function bajaLogicaRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->habitacionService->darDeBaja((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->darDeBaja($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/rooms'
+        );
     }
 
     public function reactivateRoom(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->habitacionService->reactivar((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->reactivar($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/rooms'
+        );
     }
 
     public function startCleaning(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->limpiezaService->iniciarLimpieza((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->limpiezaService->iniciarLimpieza($this->idDe('id', self::ID_INVALIDO)),
+            $this->rutaVueltaLimpieza()
+        );
     }
 
     public function completeCleaning(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->limpiezaService->completarLimpieza((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->limpiezaService->completarLimpieza($this->idDe('id', self::ID_INVALIDO)),
+            $this->rutaVueltaLimpieza()
+        );
     }
 
     public function putInMaintenance(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->habitacionService->ponerEnMantenimiento((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->ponerEnMantenimiento($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/rooms'
+        );
     }
 
     public function outOfMaintenance(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $this->ejecutarAccion(
+            fn() => $this->habitacionService->salirDeMantenimiento($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/rooms'
+        );
+    }
 
-        try {
-            $id = $vars['id'] ?? '';
-
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de habitación inválido.");
-            }
-
-            $resultado = $this->habitacionService->salirDeMantenimiento((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            header('Location: ' . UrlHelper::to('/dashboard/rooms'));
-            exit;
-        }
+    /**
+     * Las acciones de limpieza se disparan desde Habitaciones o desde Housekeeping:
+     * se vuelve a la pantalla de origen (valor de una lista fija, nunca una URL del usuario).
+     */
+    private function rutaVueltaLimpieza(): string
+    {
+        return ($_POST['volver'] ?? '') === 'housekeeping' ? '/dashboard/housekeeping' : '/dashboard/rooms';
     }
 }

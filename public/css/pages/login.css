@@ -3,8 +3,8 @@
 /* 🎡 CARRUSEL INFINITO AUTOMÁTICO (Optimizado y más chico) */
 .encabezado-fotos {
     width: 100%;
-    background: #000;
-    border-bottom: 1px solid var(--borde-input);
+    background: var(--color-bg-deep);
+    border-bottom: 1px solid var(--color-border);
     overflow: hidden;
 }
 
@@ -28,7 +28,8 @@
     height: 100%;
     object-fit: cover; /* Recorta la imagen de forma limpia */
     filter: brightness(0.5);
-    border-right: 2px solid var(--fondo-principal);
+    flex-shrink: 0;
+    border-right: 2px solid var(--color-bg);
 }
 
 @keyframes deslizar-infinito {
@@ -65,23 +66,23 @@
     width: 400px;
     max-width: 35vw;
     height: auto;
-    filter: drop-shadow(0 0 15px rgba(135, 206, 250, 0.2));
+    filter: drop-shadow(0 0 15px var(--color-info-border));
 }
 
 /* Formulario con tus medidas */
 .login-container {
-    background: var(--tarjeta-azul);
+    background: var(--color-surface);
     padding: 30px 40px;
     border-radius: 15px;
     width: 500px;
     max-width: 90%;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-lg);
     box-sizing: border-box;
     flex-shrink: 0;
 }
 
 .link-yellow {
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     text-decoration: none;
     font-size: 13px;
 }
@@ -95,7 +96,7 @@
    ========================================================================== */
 
 .login-subtitle {
-    color: var(--texto-gris);
+    color: var(--color-text-muted);
     margin-bottom: 20px;
     font-size: 14px;
 }
@@ -110,11 +111,11 @@
     text-align: center;
     margin-top: 20px;
     font-size: 14px;
-    color: var(--texto-blanco);
+    color: var(--color-text);
 }
 
 .link-yellow-bold {
-    color: var(--dorado-sires);
+    color: var(--color-accent);
     text-decoration: none;
     font-weight: bold;
 }

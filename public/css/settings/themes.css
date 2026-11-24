@@ -1,0 +1,65 @@
+/* ==========================================================================
+   SIRES - TEMAS DE COLOR
+   Cada tema redefine solo la PALETA de variables.css; los fondos/bordes
+   translúcidos y los colores de estado se recalculan solos.
+
+   Se activa con <html data-theme="nombre">. El selector "Tema" del menú
+   lateral lo guarda por navegador (localStorage 'sires-tema').
+   Sin data-theme se usa la paleta por defecto (oscuro, gris azulado; nunca negro puro).
+
+   Los colores de estado de habitación (--room-*) NO se redefinen en los
+   temas: su significado es fijo. Solo cambia --room-text-base para que el
+   texto de los badges siga siendo legible.
+
+   Para probar un tema nuevo: copiar un bloque, cambiar el nombre y los
+   valores, y agregarlo a la lista TEMAS de App/views/partials/theme-switcher.phtml.
+   ========================================================================== */
+
+/* --- Claro: fondo gris azulado claro + azul de marca -------------------- */
+:root[data-theme="claro"] {
+  --color-primary-500: #2f80ed;
+  --color-primary-600: #1f6fd9;
+  --color-primary-700: #1a5bb5;
+
+  --color-bg: #f3f6fa;
+  --color-bg-deep: #14396e;
+  --color-surface: #ffffff;
+  --color-surface-alt: #eaf0f7;
+  --color-surface-modal: #ffffff;
+  --color-input: #ffffff;
+  --color-input-focus: #ffffff;
+  --color-border: #d5dde8;
+  --color-border-strong: #c2ccda;
+  --color-text: #1b2433;
+  --color-text-strong: #111827;
+  --color-text-muted: #5b6779;
+  --color-text-soft: #5b6779;
+  --color-on-accent: #ffffff;
+
+  --color-info: #0369a1;
+  --color-info-hover: #075985;
+  --color-success: #15803d;
+  --color-success-strong: #15803d;
+  --color-success-strong-hover: #166534;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-warning: #b45309;
+  --color-warning-hover: #92400e;
+  --color-orange: #c2410c;
+  --color-highlight: #a16207;
+  --color-purple: #7e22ce;
+  --color-neutral: #6b7280;
+  --color-on-highlight: #ffffff;
+  --color-on-solid: #ffffff;
+
+  --color-tint-base: #14396e;
+  --color-shadow: #14396e;
+  --color-overlay-base: #0f1623;
+
+  --sidebar-bg: var(--color-primary-900);
+  --sidebar-text: #c9d6ea;
+  --sidebar-active-text: #ffffff;
+  --sidebar-border: color-mix(in srgb, #ffffff 8%, transparent);
+
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+}

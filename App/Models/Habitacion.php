@@ -7,6 +7,8 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use Exception;
+use App\Services\ConfiguracionService;
+use App\Dominio\Tarifa;
 
 class Habitacion extends Model
 {
@@ -21,12 +23,14 @@ class Habitacion extends Model
     private ?string $fecha_baja = null;
 
     // Estados de habitación según Estados_Habitacion
-    public const ESTADO_DISPONIBLE = 1;
-    public const ESTADO_OCUPADA = 2;
-    public const ESTADO_MANTENIMIENTO = 3;
-    public const ESTADO_BLOQUEADA = 4;
-    public const ESTADO_SUCIA = 5;
-    public const ESTADO_LIMPIANDO = 6;
+    // Alias: los valores se definen en EstadoHabitacion (espejo de la tabla catálogo).
+    public const ESTADO_DISPONIBLE = EstadoHabitacion::DISPONIBLE;
+    public const ESTADO_OCUPADA = EstadoHabitacion::OCUPADA;
+    public const ESTADO_MANTENIMIENTO = EstadoHabitacion::MANTENIMIENTO;
+    public const ESTADO_BLOQUEADA = EstadoHabitacion::BLOQUEADA;
+    public const ESTADO_SUCIA = EstadoHabitacion::SUCIA;
+    public const ESTADO_LIMPIANDO = EstadoHabitacion::LIMPIANDO;
+    public const ESTADO_RETENIDA = EstadoHabitacion::RETENIDA;
 
     // Capacidad de personas según tipo de habitación
     public const TIPOS_POR_CAPACIDAD = [
@@ -43,24 +47,74 @@ class Habitacion extends Model
     // Jerarquía de precios: Simple ≤ Matrimonial ≤ Doble ≤ Suite
     public const PRICE_HIERARCHY_ORDER = [1, 4, 2, 3];
 
-    // Descuento por ocupación: [capacidad => [huespedes => descuento%]]
-    public const DESCUENTO_OCUPACION = [
-        3 => [1 => 25, 2 => 10, 3 => 0],
-        2 => [1 => 15, 2 => 0],
-    ];
+    // Descuento por ocupación: [capacidad => [huespedes => descuento%]].
+    // Fuente: tabla Configuracion (clave descuento_ocupacion), ver ConfiguracionService::descuentoOcupacion().
 
-    public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): array
+    /**
+     * Listado con filtros. Sin $limit devuelve todas (formularios de reserva, limpieza);
+     * con $limit pagina el listado de Habitaciones.
+     */
+    public function getAllWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null, ?int $limit = null, int $offset = 0): array
     {
-        $conditions = [];
-        $params = [];
+        [$where, $params] = $this->condicionesFiltro($search, $status, $type, $floor, $showInactive);
 
-        if ($showInactive !== null && $showInactive === '1') {
-            $conditions[] = "h.is_active = :is_active";
-            $params['is_active'] = self::INACTIVE;
-        } else {
-            $conditions[] = "h.is_active = :is_active";
-            $params['is_active'] = self::ACTIVE;
+        $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
+                       th.descripcion AS tipo, eh.descripcion AS estado,
+                       h.id_tipo_habitacion, h.id_estado_habitacion,
+                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion,
+                       h.is_active, h.fecha_baja
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
+                WHERE $where
+                ORDER BY h.numero ASC";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit OFFSET :offset";
         }
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $clave => $valor) {
+                $stmt->bindValue($clave, $valor, is_int($valor) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            if ($limit !== null) {
+                $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+            }
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getAllWithFilters: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al buscar habitaciones.");
+        }
+    }
+
+    /** Total de habitaciones que cumplen los mismos filtros que getAllWithFilters() (para paginar). */
+    public function countWithFilters(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive = null): int
+    {
+        [$where, $params] = $this->condicionesFiltro($search, $status, $type, $floor, $showInactive);
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM Habitaciones h WHERE $where");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::countWithFilters: " . $e->getMessage());
+            throw new Exception("Error en la base de datos al contar habitaciones.");
+        }
+    }
+
+    /**
+     * WHERE y parámetros compartidos por el listado y el conteo.
+     * @return array{0: string, 1: array<string, int|string>}
+     */
+    private function condicionesFiltro(?string $search, ?string $status, ?string $type, ?string $floor, ?string $showInactive): array
+    {
+        // Siempre hay al menos el filtro de is_active.
+        $conditions = ["h.is_active = :is_active"];
+        $params = ['is_active' => $showInactive === '1' ? self::INACTIVE : self::ACTIVE];
 
         if ($search !== null && $search !== '') {
             $conditions[] = "h.numero LIKE :search";
@@ -82,30 +136,7 @@ class Habitacion extends Model
             $params['floor'] = (int)$floor;
         }
 
-        $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
-                       th.descripcion AS tipo, eh.descripcion AS estado,
-                       h.id_tipo_habitacion, h.id_estado_habitacion,
-                       h.id_motivo_bloqueo, mb.descripcion AS motivo_descripcion,
-                       h.is_active, h.fecha_baja
-                FROM Habitaciones h
-                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
-                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
-                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id";
-
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-
-        $sql .= " ORDER BY h.numero ASC";
-
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (PDOException $e) {
-            error_log("Error en Habitacion::getAllWithFilters: " . $e->getMessage());
-            throw new Exception("Error en la base de datos al buscar habitaciones.");
-        }
+        return [implode(" AND ", $conditions), $params];
     }
 
     public function getTiposHabitacion(): array
@@ -498,6 +529,64 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
         }
     }
 
+    /**
+     * Todas las habitaciones activas con su estado y, si está ocupada, el huésped en casa.
+     * Para el tablero de inicio.
+     */
+    public function getTablero(): array
+    {
+        $sql = "SELECT h.id, h.numero, h.piso, h.id_estado_habitacion,
+                       th.descripcion AS tipo, eh.descripcion AS estado, mb.descripcion AS motivo,
+                       r.fecha_salida AS huesped_salida,
+                       c.nombre AS huesped_nombre, c.apellido AS huesped_apellido
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                LEFT JOIN Motivos_Bloqueo mb ON h.id_motivo_bloqueo = mb.id
+                LEFT JOIN Reservas r ON r.id_habitacion = h.id AND r.id_estado_reserva = :en_casa
+                LEFT JOIN Clientes c ON r.id_cliente = c.id
+                WHERE h.is_active = :activa
+                ORDER BY h.piso ASC, h.numero ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':en_casa' => EstadoReserva::EN_CASA, ':activa' => self::ACTIVE]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getTablero: " . $e->getMessage());
+            throw new Exception("Error al obtener el estado de las habitaciones.");
+        }
+    }
+
+    /**
+     * Habitaciones activas sucias o en limpieza, con lo necesario para ordenar la lista
+     * de housekeeping (sucia_desde y limpieza_urgente, migración 011).
+     */
+    public function getParaLimpieza(): array
+    {
+        $sql = "SELECT h.id, h.numero, h.piso, h.id_estado_habitacion,
+                       h.sucia_desde, h.limpieza_urgente,
+                       th.descripcion AS tipo, eh.descripcion AS estado
+                FROM Habitaciones h
+                JOIN Tipos_Habitacion th ON h.id_tipo_habitacion = th.id
+                JOIN Estados_Habitacion eh ON h.id_estado_habitacion = eh.id
+                WHERE h.is_active = :activa
+                  AND h.id_estado_habitacion IN (:sucia, :limpiando)";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':activa'    => self::ACTIVE,
+                ':sucia'     => self::ESTADO_SUCIA,
+                ':limpiando' => self::ESTADO_LIMPIANDO,
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            error_log("Error en Habitacion::getParaLimpieza: " . $e->getMessage());
+            throw new Exception("Error al obtener las habitaciones para limpiar.");
+        }
+    }
+
     private function tiposPorCapacidad(int $capacidad): array
     {
         return self::TIPOS_POR_CAPACIDAD[$capacidad] ?? self::TIPOS_POR_CAPACIDAD[2];
@@ -556,16 +645,17 @@ $sql = "SELECT h.id, h.numero, h.piso, h.precio_noche_base,
 
     public static function descuentoOcupacion(int $capacidad, int $huespedes): float
     {
-        $tabla = self::DESCUENTO_OCUPACION[$capacidad] ?? null;
-        if ($tabla === null) return 0.0;
-        return (float)($tabla[$huespedes] ?? 0);
+        return Tarifa::descuentoOcupacion(ConfiguracionService::descuentoOcupacion(), $capacidad, $huespedes);
     }
 
     public static function precioEfectivoNoche(float $precioBase, int $idTipo, int $huespedes): float
     {
-        $capacidad = self::capacidadParaTipo($idTipo);
-        $dsc = self::descuentoOcupacion($capacidad, $huespedes);
-        return $precioBase * (1 - $dsc / 100);
+        return Tarifa::precioEfectivoNoche(
+            $precioBase,
+            self::capacidadParaTipo($idTipo),
+            $huespedes,
+            ConfiguracionService::descuentoOcupacion()
+        );
     }
 
     // =====================================================================

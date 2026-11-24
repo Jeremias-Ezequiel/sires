@@ -1,0 +1,27 @@
+<?php
+/**
+ * Mail de confirmación al crear la reserva.
+ * @var array $reserva
+ * @var \App\Dominio\PoliticaReserva $politica  condiciones vigentes a la fecha_alta
+ * @var callable $e
+ * @var callable $dinero
+ */
+$sena = \App\Dominio\ReglasPago::senaMinima((float)($reserva['monto_total'] ?? 0), $politica->senaMinimaPct);
+?>
+<h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">¡Hola, <?= $e($reserva['cliente_nombre']) ?>!</h1>
+<p style="margin:0 0 8px;">Registramos tu reserva. Estos son los datos:</p>
+
+<?php require __DIR__ . '/_detalle-reserva.phtml'; ?>
+
+<h2 style="margin:16px 0 8px;font-size:16px;font-weight:600;">Condiciones</h2>
+<ul style="margin:0;padding-left:20px;font-size:14px;color:#1b2433;">
+    <?php if ($politica->senaMinimaPct > 0): ?>
+        <li style="margin-bottom:4px;">Para confirmarla se necesita una seña del <?= $e(rtrim(rtrim(number_format($politica->senaMinimaPct, 2, ',', ''), '0'), ',')) ?> % (<?= $e($dinero($sena)) ?>).</li>
+    <?php endif; ?>
+    <li style="margin-bottom:4px;">Podés cancelar sin cargo hasta <?= (int)$politica->cancelacionGratisHoras ?> horas antes del día de entrada.
+        <?php if ($politica->cancelacionPenalidadNoches > 0): ?>
+            Después se retiene<?= $politica->cancelacionPenalidadNoches === 1 ? ' 1 noche' : 'n ' . (int)$politica->cancelacionPenalidadNoches . ' noches' ?> de lo pagado.
+        <?php endif; ?>
+    </li>
+    <li>Si no llegás el día de entrada y la reserva tiene pagos, se cobra<?= $politica->noShowNochesRetenidas === 1 ? ' 1 noche' : 'n ' . (int)$politica->noShowNochesRetenidas . ' noches' ?> como penalidad.</li>
+</ul>

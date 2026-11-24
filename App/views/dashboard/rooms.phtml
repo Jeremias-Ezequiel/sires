@@ -10,8 +10,8 @@
     </div>
 
     <div class="header-actions-container">
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-            <small style="color: var(--texto-gris); font-size: 0.75em;">Inicializar un piso nuevo</small>
+        <div class="stack-xs">
+            <small class="text-muted text-xs">Inicializar un piso nuevo</small>
             <a href="<?= url('/dashboard/rooms/add/batch') ?>" class="btn btn--ghost">
                 <i class="fas fa-layer-group"></i> Nuevo Piso
             </a>
@@ -82,7 +82,7 @@
                 <option value="">Todos los Pisos</option>
                 <?php if (!empty($pisos)): ?>
                     <?php foreach ($pisos as $piso): ?>
-                        <option value="<?= $piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= $piso ?></option>
+                        <option value="<?= (int)$piso ?>" <?= ($floor ?? '') === (string)$piso ? 'selected' : '' ?>>Piso <?= (int)$piso ?></option>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -131,22 +131,23 @@
                                 \App\Models\Habitacion::ESTADO_BLOQUEADA      => 'badge--bloqueada',
                                 \App\Models\Habitacion::ESTADO_SUCIA          => 'badge--sucia',
                                 \App\Models\Habitacion::ESTADO_LIMPIANDO      => 'badge--limpiando',
+                                \App\Models\Habitacion::ESTADO_RETENIDA       => 'badge--reservada',
                                 default                                       => 'badge--disponible'
                             };
                         endif;
                     ?>
-                        <tr<?= $roomInactiva ? ' style="opacity: 0.6;"' : '' ?>>
+                        <tr<?= $roomInactiva ? ' class="row-inactive"' : '' ?>>
                             <td><strong>#<?= htmlspecialchars((string)$room['numero']) ?></strong></td>
                             <td><?= htmlspecialchars((string)$room['piso']) ?></td>
                             <td><?= htmlspecialchars($room['tipo']) ?>
                                 <?php
                                 $cap = \App\Models\Habitacion::capacidadParaTipo((int)($room['id_tipo_habitacion'] ?? 0));
                                 ?>
-                                <span style="font-size: 0.8em; color: var(--text-muted, #666);">(<?= $cap ?>p)</span>
+                                <span class="text-muted text-xs">(<?= $cap ?>p)</span>
                             </td>
                             <td><span class="badge <?= $statusClass ?>"><?= $roomInactiva ? 'Inactiva' : htmlspecialchars($room['estado']) ?></span>
                                 <?php if (!empty($room['motivo_descripcion'])): ?>
-                                    <span style="display: block; font-size: 0.8em; color: var(--text-muted, #666); margin-top: 2px;">
+                                    <span class="text-muted text-xs d-block">
                                         <i class="fas fa-tools"></i> <?= htmlspecialchars($room['motivo_descripcion']) ?>
                                     </span>
                                 <?php endif; ?>
@@ -166,7 +167,8 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="deactivate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/deactivate?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/deactivate') ?>"
                                             title="Bloquear Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
@@ -175,7 +177,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="activate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/activate?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/activate') ?>"
                                             title="Reactivar Habitación">
                                             <i class="fas fa-bed"></i>
                                         </button>
@@ -184,7 +187,8 @@
                                             class="btn btn--icon btn--icon-warning open-sires-modal"
                                             data-action="cleaning"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/cleaning/start?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/cleaning/start') ?>"
                                             title="Iniciar Limpieza">
                                             <i class="fas fa-broom"></i>
                                         </button>
@@ -193,7 +197,8 @@
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="complete-cleaning"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/cleaning/complete?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/cleaning/complete') ?>"
                                             title="Completar Limpieza">
                                             <i class="fas fa-check-circle"></i>
                                         </button>
@@ -205,21 +210,23 @@
                                             class="btn btn--icon btn--icon-danger open-sires-modal"
                                             data-action="delete"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/baja?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/baja') ?>"
                                             title="Dar de Baja">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     <?php endif; ?>
                                     <?php endif; ?>
                                     <?php if ($roomInactiva): ?>
-                                        <a href="<?= url('/dashboard/rooms/reactivate?id=' . $room['id']) ?>"
+                                        <button type="button"
                                             class="btn btn--icon btn--icon-success open-sires-modal"
                                             data-action="reactivate"
                                             data-name="Habitación #<?= htmlspecialchars((string)$room['numero']) ?>"
-                                            data-url="<?= url('/dashboard/rooms/reactivate?id=' . $room['id']) ?>"
+                                            data-id="<?= $room['id'] ?>"
+                                            data-url="<?= url('/dashboard/rooms/reactivate') ?>"
                                             title="Reactivar Habitación">
                                             <i class="fas fa-undo"></i>
-                                        </a>
+                                        </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -228,6 +235,11 @@
                 </tbody>
             </table>
         </div>
+
+        <?php
+        $paginacionRuta = '/dashboard/rooms';
+        include __DIR__ . '/../partials/pagination.phtml';
+        ?>
     </section>
 <?php else: ?>
     <section class="details-section no-results-container">
@@ -255,9 +267,12 @@
         </div>
         <h3 id="modal-title-text" class="modal__title">Confirmar Acción</h3>
         <p id="modal-description-text" class="modal__desc">¿Estás seguro de que deseas continuar?</p>
-        <div id="motivo-select-wrapper" style="display: none; margin-top: 12px;">
-            <label for="modal-motivo-select" style="display: block; font-weight: 600; margin-bottom: 4px;">Motivo del bloqueo:</label>
-            <select id="modal-motivo-select" class="form__select" style="width: 100%;">
+        <form id="csrf-form" method="POST" action="">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="modal-action-id">
+        <div id="motivo-select-wrapper" class="mt-12" style="display: none;">
+            <label for="modal-motivo-select" class="modal-field-label">Motivo del bloqueo:</label>
+            <select id="modal-motivo-select" name="motivo" class="form__select">
                 <option value="">Sin motivo específico</option>
                 <?php if (!empty($motivos)): ?>
                     <?php foreach ($motivos as $motivo): ?>
@@ -268,8 +283,9 @@
         </div>
         <div class="modal__actions">
             <button type="button" id="btn-modal-cancel" class="btn btn--ghost">Cancelar</button>
-            <a href="#" id="btn-modal-confirm" class="btn">Confirmar</a>
+            <button type="submit" id="btn-modal-confirm" class="btn">Confirmar</button>
         </div>
+        </form>
     </div>
 </div>
 
@@ -284,6 +300,8 @@
         const btnCancel = document.getElementById('btn-modal-cancel');
         const motivoWrapper = document.getElementById('motivo-select-wrapper');
         const motivoSelect = document.getElementById('modal-motivo-select');
+        const csrfForm = document.getElementById('csrf-form');
+        const actionId = document.getElementById('modal-action-id');
 
         const buttons = document.querySelectorAll('.open-sires-modal');
         buttons.forEach(button => {
@@ -291,62 +309,62 @@
                 const actionType = this.getAttribute('data-action');
                 const targetUrl = this.getAttribute('data-url');
                 const roomName = this.getAttribute('data-name');
+                const roomId = this.getAttribute('data-id');
 
                 modalIconFrame.className = 'modal__icon';
                 btnConfirm.className = 'btn';
 
                 if (actionType === 'deactivate') {
                     modalTitle.innerText = 'Bloquear Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea bloquear la <br><strong>${roomName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea bloquear la <br><strong>${escHtml(roomName)}</strong>?`;
                     modalIcon.className = 'fas fa-bed';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                     motivoWrapper.style.display = 'block';
                 } else if (actionType === 'activate') {
                     modalTitle.innerText = 'Reactivar Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?`;
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${escHtml(roomName)}</strong>?`;
                     modalIcon.className = 'fas fa-bed';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'delete') {
                     modalTitle.innerText = 'Dar de Baja';
-                    modalText.innerHTML = `¿Dar de baja la <br><strong>${roomName}</strong>? Se liberará su número para ser reutilizado.`;
+                    modalText.innerHTML = `¿Dar de baja la <br><strong>${escHtml(roomName)}</strong>? Se liberará su número para ser reutilizado.`;
                     modalIcon.className = 'fas fa-trash';
                     modalIconFrame.classList.add('modal__icon--deactivate');
                     btnConfirm.classList.add('btn--danger');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'reactivate') {
                     modalTitle.innerText = 'Reactivar Habitación';
-                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea reactivar la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
                     modalIcon.className = 'fas fa-undo';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'cleaning') {
                     modalTitle.innerText = 'Iniciar Limpieza';
-                    modalText.innerHTML = `¿Está seguro de que desea iniciar la limpieza de la <br><strong>${roomName}</strong>?<br><small>La habitación pasará a estado "Limpiando".</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea iniciar la limpieza de la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación pasará a estado "Limpiando".</small>`;
                     modalIcon.className = 'fas fa-broom';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--warning');
                     motivoWrapper.style.display = 'none';
                 } else if (actionType === 'complete-cleaning') {
                     modalTitle.innerText = 'Completar Limpieza';
-                    modalText.innerHTML = `¿Está seguro de que desea marcar como limpia la <br><strong>${roomName}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
+                    modalText.innerHTML = `¿Está seguro de que desea marcar como limpia la <br><strong>${escHtml(roomName)}</strong>?<br><small>La habitación volverá a estar disponible para la venta.</small>`;
                     modalIcon.className = 'fas fa-check-circle';
                     modalIconFrame.classList.add('modal__icon--activate');
                     btnConfirm.classList.add('btn--success');
                     motivoWrapper.style.display = 'none';
                 }
 
-                let finalUrl = targetUrl;
-                if (actionType === 'deactivate' && motivoSelect) {
-                    const motivoVal = motivoSelect.value;
-                    if (motivoVal !== '') {
-                        finalUrl = targetUrl + '&motivo=' + encodeURIComponent(motivoVal);
-                    }
+                // El motivo solo viaja al bloquear; el resto de las acciones no lo envía
+                if (motivoSelect) {
+                    motivoSelect.value = '';
+                    motivoSelect.disabled = actionType !== 'deactivate';
                 }
-                btnConfirm.setAttribute('href', finalUrl);
+                csrfForm.action = targetUrl;
+                actionId.value = roomId;
 
                 modal.classList.add('is-active');
             });

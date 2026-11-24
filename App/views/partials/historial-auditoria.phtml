@@ -1,0 +1,65 @@
+<?php
+/**
+ * Tabla de registros de auditoría (pantalla de Auditoría y pestaña Historial de los detalles).
+ *
+ * Variables esperadas:
+ *   $historialFilas        array  filas de AuditoriaService::listar()/historial()
+ *   $historialConEntidad   bool   mostrar la columna "Sobre" (en los detalles no hace falta)
+ */
+$historialConEntidad = $historialConEntidad ?? true;
+?>
+<div class="details-table-wrapper">
+    <table class="details-table aud-tabla">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <?php if ($historialConEntidad): ?><th>Sobre</th><?php endif; ?>
+                <th>Cambios</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($historialFilas as $r): ?>
+                <tr>
+                    <td class="aud-fecha"><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string)$r['fecha']))) ?></td>
+                    <td>
+                        <?php if ($r['id_usuario'] === null): ?>
+                            <span class="aud-sistema"><i class="fas fa-gears" aria-hidden="true"></i> Sistema</span>
+                        <?php else: ?>
+                            <span title="<?= htmlspecialchars('IP: ' . ($r['ip'] ?? '—')) ?>"><?= htmlspecialchars($r['usuario']) ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= htmlspecialchars($r['descripcion']) ?></td>
+                    <?php if ($historialConEntidad): ?>
+                        <td>
+                            <?php if ($r['entidad_ruta'] !== null): ?>
+                                <a href="<?= url($r['entidad_ruta']) ?>"><?= htmlspecialchars($r['entidad_texto']) ?></a>
+                            <?php else: ?>
+                                <?= htmlspecialchars($r['entidad_texto']) ?>
+                            <?php endif; ?>
+                        </td>
+                    <?php endif; ?>
+                    <td>
+                        <?php if (empty($r['cambios'])): ?>
+                            <span class="text-muted">—</span>
+                        <?php else: ?>
+                            <ul class="aud-cambios">
+                                <?php foreach ($r['cambios'] as [$campo, $antes, $despues]): ?>
+                                    <li>
+                                        <span class="aud-campo"><?= htmlspecialchars($campo) ?>:</span>
+                                        <?php if ($antes !== null): ?>
+                                            <span class="aud-antes"><?= htmlspecialchars($antes) ?></span>
+                                            <i class="fas fa-arrow-right aud-flecha" aria-label="pasa a"></i>
+                                        <?php endif; ?>
+                                        <span class="aud-despues"><?= htmlspecialchars($despues ?? '—') ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>

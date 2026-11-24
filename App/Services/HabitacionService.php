@@ -14,8 +14,11 @@ class HabitacionService
 {
     private Habitacion $habitacionModel;
 
+    private AuditoriaService $auditoria;
+
     public function __construct()
     {
+        $this->auditoria = new AuditoriaService();
         $this->habitacionModel = new Habitacion();
     }
 
@@ -69,10 +72,13 @@ class HabitacionService
                 ':precio' => $precioNoche
             ]);
 
+            $this->auditoria->registrar('habitacion.alta', 'habitacion', (int)$db->lastInsertId(), 'Alta de habitación N° ' . $numero);
             $db->commit();
             return ['success' => true, 'message' => 'Habitación N° ' . $numero . ' registrada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -135,13 +141,21 @@ class HabitacionService
                 ]);
             }
 
+            $this->auditoria->registrar('habitacion.alta_masiva', 'habitacion', null,
+                'Alta de ' . $total . ' habitaciones en el piso ' . $piso, null, [
+                    'piso'     => $piso,
+                    'cantidad' => $total,
+                    'numero'   => $numerosGenerar[0] . ' al ' . $numerosGenerar[count($numerosGenerar) - 1],
+                ]);
             $db->commit();
             return [
                 'success' => true,
                 'message' => $total . ' habitaciones generadas exitosamente (N° ' . $numerosGenerar[0] . ' al ' . $numerosGenerar[count($numerosGenerar) - 1] . ').'
             ];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -150,6 +164,7 @@ class HabitacionService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $id);
 
         try {
             $lock = $db->prepare(
@@ -181,11 +196,14 @@ class HabitacionService
                 throw new Exception("No se pudo bloquear la habitación.");
             }
 
+            $this->auditoria->registrar('habitacion.bloquear', 'habitacion', $id, 'Bloqueo', $antes);
             $db->commit();
             $msg = $idMotivoBloqueo !== null ? 'bloqueada por motivo de mantenimiento' : 'bloqueada';
             return ['success' => true, 'message' => 'Habitación ' . $msg . ' exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -194,6 +212,7 @@ class HabitacionService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $id);
 
         try {
             $lock = $db->prepare(
@@ -223,10 +242,13 @@ class HabitacionService
                 throw new Exception("No se pudo desbloquear la habitación.");
             }
 
+            $this->auditoria->registrar('habitacion.desbloquear', 'habitacion', $id, 'Desbloqueo', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Habitación desbloqueada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -235,6 +257,7 @@ class HabitacionService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $id);
 
         try {
             $lock = $db->prepare(
@@ -263,10 +286,13 @@ class HabitacionService
                 throw new Exception("No se pudo poner la habitación en mantenimiento.");
             }
 
+            $this->auditoria->registrar('habitacion.mantenimiento_inicio', 'habitacion', $id, 'Pasa a mantenimiento', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Habitación puesta en mantenimiento.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -275,6 +301,7 @@ class HabitacionService
     {
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $id);
 
         try {
             $stmt = $db->prepare(
@@ -292,10 +319,13 @@ class HabitacionService
                 throw new Exception("La habitación no está en mantenimiento.");
             }
 
+            $this->auditoria->registrar('habitacion.mantenimiento_fin', 'habitacion', $id, 'Sale de mantenimiento', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Habitación disponible nuevamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -311,6 +341,7 @@ class HabitacionService
 
         $db = $this->habitacionModel->getConnection();
         $db->beginTransaction();
+        $antes = $this->auditoria->foto('habitacion', $id);
 
         try {
             Habitacion::validarJerarquiaPrecio($db, $idTipo, $precioNoche);
@@ -359,10 +390,13 @@ class HabitacionService
                 ':id'     => $id
             ]);
 
+            $this->auditoria->registrar('habitacion.editar', 'habitacion', $id, 'Edición de habitación', $antes);
             $db->commit();
             return ['success' => true, 'message' => 'Habitación actualizada exitosamente.'];
         } catch (Exception $e) {
-            $db->rollBack();
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -373,10 +407,13 @@ class HabitacionService
             throw new Exception("ID de habitación inválido.");
         }
 
+        $antes = $this->auditoria->foto('habitacion', $id);
         $ok = $this->habitacionModel->bajaLogica($id);
         if (!$ok) {
             throw new Exception("No se pudo dar de baja la habitación.");
         }
+
+        $this->auditoria->registrar('habitacion.baja', 'habitacion', $id, 'Baja', $antes);
 
         return ['success' => true, 'message' => 'Habitación dada de baja exitosamente.'];
     }
@@ -387,10 +424,13 @@ class HabitacionService
             throw new Exception("ID de habitación inválido.");
         }
 
+        $antes = $this->auditoria->foto('habitacion', $id);
         $ok = $this->habitacionModel->reactivar($id);
         if (!$ok) {
             throw new Exception("No se pudo reactivar la habitación.");
         }
+
+        $this->auditoria->registrar('habitacion.reactivar', 'habitacion', $id, 'Reactivación', $antes);
 
         return ['success' => true, 'message' => 'Habitación reactivada exitosamente.'];
     }

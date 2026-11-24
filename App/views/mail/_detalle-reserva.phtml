@@ -1,0 +1,32 @@
+<?php
+/**
+ * Tabla con los datos de la reserva, compartida por las plantillas de mail.
+ * @var array $reserva  fila de Reserva::findById()
+ * @var int $noches
+ * @var string $horaCheckout
+ * @var callable $e
+ * @var callable $dinero
+ * @var callable $fecha
+ */
+$fila = function (string $etiqueta, string $valor) use ($e): void { ?>
+    <tr>
+        <td style="padding:6px 0;color:#5b6779;font-size:14px;width:45%;"><?= $e($etiqueta) ?></td>
+        <td style="padding:6px 0;font-size:14px;font-weight:600;"><?= $e($valor) ?></td>
+    </tr>
+<?php };
+?>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-top:1px solid #d5dde8;border-bottom:1px solid #d5dde8;">
+    <?php
+    $fila('Reserva', '#' . $reserva['id']);
+    $fila('Habitación', '#' . $reserva['habitacion_numero'] . ' · ' . ($reserva['tipo_habitacion_descripcion'] ?? ''));
+    $fila('Entrada', $fecha((string)$reserva['fecha_entrada']));
+    $fila('Salida', $fecha((string)$reserva['fecha_salida']) . ' (hasta las ' . $horaCheckout . ' hs)');
+    $fila('Noches', (string)$noches);
+    $fila('Huéspedes', (string)$reserva['cantidad_huespedes']);
+    if (isset($reserva['monto_total'])) {
+        $fila('Total', $dinero($reserva['monto_total']));
+        $fila('Pagado', $dinero($reserva['monto_cobrado']));
+        $fila('Saldo pendiente', $dinero($reserva['saldo_pendiente']));
+    }
+    ?>
+</table>

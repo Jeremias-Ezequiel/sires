@@ -1,48 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
+use App\Dominio\ReglasReserva;
 use Exception;
 use App\Models\Reserva;
 use App\Models\Habitacion;
 use App\Models\Clientes;
 use App\Models\CanalOrigen;
-use App\Models\ResumenPago;
 use App\Services\ReservaService;
-use App\Services\PagoService;
-use App\Helpers\UrlHelper;
+use App\Dominio\Planning;
 
-class BookingController
+class BookingController extends Controller
 {
+    private const ID_INVALIDO = 'ID de reserva inválido.';
+
     private ReservaService $reservaService;
-    private PagoService $pagoService;
 
     public function __construct()
     {
         $this->reservaService = new ReservaService();
-        $this->pagoService    = new PagoService();
-    }
-
-    private function redirect(string $url): void
-    {
-        header('Location: ' . UrlHelper::to($url));
-        exit;
     }
 
     public function showBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
-
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -61,14 +47,20 @@ class BookingController
         $hasEstado = isset($vars['estado_filter']) && $vars['estado_filter'] !== '';
         $hasCanal  = isset($vars['canal_filter']) && $vars['canal_filter'] !== '';
 
+        // Filtro que llega desde una alerta del inicio (solo valores conocidos)
+        $alerta = (string)($vars['alerta'] ?? '');
+        if (!isset(Reserva::ALERTAS[$alerta])) { $alerta = ''; }
+        $hasAlerta = $alerta !== '';
+        $alertaTexto = $hasAlerta ? Reserva::ALERTAS[$alerta] : '';
+
         $reservaModel = new Reserva();
 
-        $totalReservas = $reservaModel->countAllWithFilters($search, $estado, $canal);
+        $totalReservas = $reservaModel->countAllWithFilters($search, $estado, $canal, $alerta);
         $totalPages = (int)ceil($totalReservas / $limit);
         if ($totalPages < 1) { $totalPages = 1; }
         if ($currentPage > $totalPages) { $currentPage = $totalPages; $offset = ($currentPage - 1) * $limit; }
 
-        $reservas = $reservaModel->getAllWithFilters($search, $estado, $canal, $limit, $offset);
+        $reservas = $reservaModel->getAllWithFilters($search, $estado, $canal, $limit, $offset, $alerta);
         $estadosReserva = $reservaModel->getEstadosReserva();
         $canalesOrigen  = $reservaModel->getCanalesOrigen();
 
@@ -76,23 +68,26 @@ class BookingController
         require_once __DIR__ . '/../views/dashboard/layout.phtml';
     }
 
-    public function showNewBookingForm(): void
+    public function showNewBookingForm(array $vars = []): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        $errorMessage = $this->tomarDeSesion('auth_error');
+
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
+
+        $old = $this->tomarInputs();
+
+        // Desde el planning: habitación y fecha de entrada precargadas (salida = entrada + 1)
+        if ($old === [] && isset($vars['id_habitacion'], $vars['fecha_entrada'])) {
+            $hoy = date('Y-m-d');
+            $entrada = Planning::normalizarDesde($vars['fecha_entrada'], $hoy);
+            if (filter_var($vars['id_habitacion'], FILTER_VALIDATE_INT) !== false && $entrada >= $hoy) {
+                $old = [
+                    'id_habitacion' => (int)$vars['id_habitacion'],
+                    'fecha_entrada' => $entrada,
+                    'fecha_salida'  => Planning::desplazar($entrada, 1),
+                ];
+            }
         }
-
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
-
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
@@ -100,13 +95,7 @@ class BookingController
         $clientes     = (new Clientes())->getAll();
         $habitaciones = array_filter(
             (new Habitacion())->getAllWithFilters(null, null, null, null),
-            function (array $h): bool {
-                return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_SUCIA
-                    && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_LIMPIANDO;
-            }
+            fn (array $h): bool => ReglasReserva::habitacionReservable((int)$h['id_estado_habitacion'])
         );
         $reservasActivas = (new Reserva())->getReservasActivas();
         $canales      = (new CanalOrigen())->getAll();
@@ -117,10 +106,6 @@ class BookingController
 
     public function addBooking(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $datos = [
                 'id_cliente'         => (int)($_POST['id_cliente'] ?? 0),
@@ -135,14 +120,12 @@ class BookingController
 
             $resultado = $this->reservaService->crear($datos);
 
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
+            $this->flash($resultado['message']);
 
             $this->redirect('/dashboard/booking');
         } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->recordarInputs($_POST);
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking/add');
         }
@@ -150,58 +133,39 @@ class BookingController
 
     public function showEditBookingForm(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
-        $flashMessage = $_SESSION['flash_message'] ?? '';
-        unset($_SESSION['flash_message']);
-
-        $flashStatus = $_SESSION['flash_status'] ?? '';
-        unset($_SESSION['flash_status']);
-
-        $old = $_SESSION['old_inputs'] ?? [];
-        unset($_SESSION['old_inputs']);
+        $old = $this->tomarInputs();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
             $reservaModel = new Reserva();
-            $reserva = $reservaModel->findById((int)$id);
+            $reserva = $reservaModel->findById($id);
 
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
             }
 
-            if ((int)$reserva['id_estado_reserva'] === Reserva::ESTADO_CANCELADA ||
-                (int)$reserva['id_estado_reserva'] === Reserva::ESTADO_FINALIZADA) {
-                throw new Exception("No se puede editar una reserva cancelada o finalizada.");
-            }
-
-            $habitacionActual = (new Habitacion())->findById((int)$reserva['id_habitacion']);
-            if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
+            $estadoReserva = (int)$reserva['id_estado_reserva'];
+            if ($estadoReserva === Reserva::ESTADO_EN_CASA) {
                 throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
+            }
+            if ($estadoReserva !== Reserva::ESTADO_PENDIENTE && $estadoReserva !== Reserva::ESTADO_CONFIRMADA) {
+                throw new Exception("Solo se pueden editar reservas pendientes o confirmadas.");
             }
 
             $clientes     = (new Clientes())->getAll();
             $habitaciones = array_filter(
                 (new Habitacion())->getAllWithFilters(null, null, null, null),
-                function (array $h): bool {
-                    return (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_MANTENIMIENTO
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_BLOQUEADA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_OCUPADA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_SUCIA
-                        && (int)$h['id_estado_habitacion'] !== Habitacion::ESTADO_LIMPIANDO;
-                }
+                // La habitación actual de la reserva se muestra siempre, aunque hoy no sea reservable.
+                fn (array $h): bool => (int)$h['id'] === (int)$reserva['id_habitacion']
+                    || ReglasReserva::habitacionReservable((int)$h['id_estado_habitacion'])
             );
             $reservasActivas = (new Reserva())->getReservasActivas();
             $canales      = (new CanalOrigen())->getAll();
@@ -210,8 +174,7 @@ class BookingController
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking');
         }
@@ -219,102 +182,26 @@ class BookingController
 
     public function editBooking(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
-            $id             = (int)($_POST['id'] ?? 0);
-            $idCliente      = (int)($_POST['id_cliente'] ?? 0);
-            $idHabitacion   = (int)($_POST['id_habitacion'] ?? 0);
-            $idCanal        = (int)($_POST['id_canal_origen'] ?? 0);
-            $fechaEntrada   = trim($_POST['fecha_entrada'] ?? '');
-            $fechaSalida    = trim($_POST['fecha_salida'] ?? '');
-            $cantHuespedes  = (int)($_POST['cantidad_huespedes'] ?? 1);
-            $observaciones  = trim($_POST['observaciones'] ?? '');
+            $id = (int)($_POST['id'] ?? 0);
+            $datos = [
+                'id_cliente'         => (int)($_POST['id_cliente'] ?? 0),
+                'id_habitacion'      => (int)($_POST['id_habitacion'] ?? 0),
+                'id_canal_origen'    => (int)($_POST['id_canal_origen'] ?? 0),
+                'fecha_entrada'      => trim($_POST['fecha_entrada'] ?? ''),
+                'fecha_salida'       => trim($_POST['fecha_salida'] ?? ''),
+                'cantidad_huespedes' => (int)($_POST['cantidad_huespedes'] ?? 1),
+                'observaciones'      => trim($_POST['observaciones'] ?? ''),
+            ];
 
-            if ($id <= 0) {
-                throw new Exception("Ocurrió un error al seleccionar la reserva.");
-            }
-            if (empty($fechaEntrada)) {
-                throw new Exception("La fecha de entrada es obligatoria.");
-            }
-            if (empty($fechaSalida)) {
-                throw new Exception("La fecha de salida es obligatoria.");
-            }
-            if ($fechaSalida <= $fechaEntrada) {
-                throw new Exception("La fecha de salida debe ser posterior a la fecha de entrada.");
-            }
+            $resultado = $this->reservaService->editar($id, $datos);
 
-            $habitacionRow = (new Habitacion())->findById($idHabitacion);
-            if (!$habitacionRow) {
-                throw new Exception("La habitación seleccionada no existe.");
-            }
-
-            $capacidadMax = Habitacion::capacidadParaTipo((int)$habitacionRow['id_tipo_habitacion']);
-            if ($cantHuespedes > $capacidadMax) {
-                throw new Exception(
-                    "La cantidad de huéspedes (" . $cantHuespedes .
-                    ") supera la capacidad máxima de la habitación (" . $capacidadMax . " personas)."
-                );
-            }
-
-            $reservaModel = new Reserva();
-            $reservaActual = $reservaModel->findById($id);
-            if (!$reservaActual) {
-                throw new Exception("La reserva no existe.");
-            }
-
-            $habitacionActual = (new Habitacion())->findById((int)$reservaActual['id_habitacion']);
-            if ($habitacionActual !== null && (int)$habitacionActual['id_estado_habitacion'] === Habitacion::ESTADO_OCUPADA) {
-                throw new Exception("No se puede editar una reserva cuyo check-in ya fue realizado.");
-            }
-
-            if ((int)$reservaActual['id_habitacion'] !== $idHabitacion
-                && ((int)$habitacionRow['id_estado_habitacion'] === Habitacion::ESTADO_MANTENIMIENTO
-                    || (int)$habitacionRow['id_estado_habitacion'] === Habitacion::ESTADO_BLOQUEADA
-                    || (int)$habitacionRow['id_estado_habitacion'] === Habitacion::ESTADO_SUCIA
-                    || (int)$habitacionRow['id_estado_habitacion'] === Habitacion::ESTADO_LIMPIANDO)) {
-                throw new Exception("La habitación seleccionada no está disponible.");
-            }
-
-            if ($reservaModel->existeSolapamiento($idHabitacion, $fechaEntrada, $fechaSalida, $id)) {
-                throw new Exception("La habitación ya tiene una reserva pendiente o confirmada para ese rango de fechas.");
-            }
-
-            $reserva = new Reserva();
-            $reserva->setId($id);
-            $reserva->setIdCliente($idCliente);
-            $reserva->setIdHabitacion($idHabitacion);
-            $reserva->setIdCanalOrigen($idCanal);
-            $reserva->setFechaEntrada($fechaEntrada);
-            $reserva->setFechaSalida($fechaSalida);
-            $reserva->setCantidadHuespedes($cantHuespedes);
-            $reserva->setObservaciones($observaciones ?: null);
-
-            $success = $reservaModel->update($reserva);
-
-            if (!$success) {
-                throw new Exception("No se pudo actualizar la reserva.");
-            }
-
-            $reservaData = $reservaModel->findById($id);
-            if ($reservaData !== null) {
-                $this->pagoService->recalcularResumen($reservaData);
-                $_SESSION['flash_message'] = "Reserva actualizada y resumen de pago recalculado exitosamente.";
-                $_SESSION['flash_status']  = "success";
-            }
-
-            if (empty($_SESSION['flash_message'])) {
-                $_SESSION['flash_message'] = "Reserva actualizada exitosamente.";
-                $_SESSION['flash_status']  = "success";
-            }
+            $this->flash($resultado['message']);
 
             $this->redirect('/dashboard/booking');
         } catch (Exception $e) {
-            $_SESSION['old_inputs']    = $_POST;
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->recordarInputs($_POST);
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking/edit?id=' . ($_POST['id'] ?? 0));
         }
@@ -322,23 +209,17 @@ class BookingController
 
     public function showBookingDetail(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $errorMessage = $this->tomarDeSesion('auth_error');
 
-        $errorMessage = $_SESSION['auth_error'] ?? '';
-        unset($_SESSION['auth_error']);
+        [$flashMessage, $flashStatus] = $this->tomarFlash();
 
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['user_role'] ?? 0;
 
         try {
-            $id = $vars['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
+            $id = $this->idDe('id', self::ID_INVALIDO, $vars);
 
-            $reserva = (new Reserva())->findById((int)$id);
+            $reserva = (new Reserva())->findById($id);
             if (!$reserva) {
                 throw new Exception("La reserva no existe.");
             }
@@ -347,18 +228,43 @@ class BookingController
             $upgradeOptions = [];
             if ($estadoReserva === Reserva::ESTADO_CONFIRMADA || $estadoReserva === Reserva::ESTADO_EN_CASA) {
                 try {
-                    $upgradeOptions = $this->reservaService->getOpcionesUpgrade((int)$id);
+                    $upgradeOptions = $this->reservaService->getOpcionesUpgrade($id);
                 } catch (Exception $e) {
                     $upgradeOptions = [];
                 }
+            }
+
+            // Historial de auditoría: solo administrador y gerente
+            $historial = null;
+            if (\App\Middleware\AuthMiddleware::hasRole([\App\Models\Rol::ADMINISTRADOR, \App\Models\Rol::GERENTE])) {
+                try {
+                    $historial = (new \App\Services\AuditoriaService())->historial('reserva', $id);
+                } catch (Exception $e) {
+                    error_log("[SIRES AUDITORIA] " . $e->getMessage());
+                }
+            }
+
+            // Comprobantes PDF emitidos para la reserva
+            $comprobantes = [];
+            try {
+                $comprobantes = (new \App\Services\ComprobanteService())->porReserva($id);
+            } catch (\Throwable $e) {
+                error_log("[SIRES COMPROBANTE] " . $e->getMessage());
+            }
+
+            // Mails al huésped de esta reserva (Cola_Mails)
+            $mails = [];
+            try {
+                $mails = (new \App\Models\ColaMail())->porReserva($id);
+            } catch (\Throwable $e) {
+                error_log("[SIRES MAIL] " . $e->getMessage());
             }
 
             $contentView = __DIR__ . '/../views/dashboard/detailBooking.phtml';
             require_once __DIR__ . '/../views/dashboard/layout.phtml';
 
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking');
         }
@@ -366,166 +272,54 @@ class BookingController
 
     public function cancelBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->cancelar((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->cancelar($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function confirmBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->confirmar((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->confirmar($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function checkInBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkIn((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkIn($this->idDe('id', self::ID_INVALIDO)),
+            $this->destinoTrasAccion()
+        );
     }
 
     public function markNoShow(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->marcarNoShow((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->marcarNoShow($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function finalizeBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkOut((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkOut($this->idDe('id', self::ID_INVALIDO)),
+            $this->destinoTrasAccion()
+        );
     }
 
     public function earlyCheckoutBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        try {
-            $id = $_POST['id'] ?? '';
-            if (empty($id) || filter_var($id, FILTER_VALIDATE_INT) === false) {
-                throw new Exception("ID de reserva inválido.");
-            }
-
-            $resultado = $this->reservaService->checkoutAnticipado((int)$id);
-
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
-
-            $this->redirect('/dashboard/booking');
-        } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
-
-            $this->redirect('/dashboard/booking');
-        }
+        $this->ejecutarAccion(
+            fn() => $this->reservaService->checkoutAnticipado($this->idDe('id', self::ID_INVALIDO)),
+            '/dashboard/booking'
+        );
     }
 
     public function moveRoomBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $idReserva  = (int)($_POST['id'] ?? 0);
             $idNuevaHab = (int)($_POST['nueva_habitacion'] ?? 0);
@@ -536,13 +330,11 @@ class BookingController
 
             $resultado = $this->reservaService->moverHabitacion($idReserva, $idNuevaHab);
 
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
+            $this->flash($resultado['message']);
 
             $this->redirect('/dashboard/booking/detail?id=' . $idReserva);
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking');
         }
@@ -550,10 +342,6 @@ class BookingController
 
     public function extendBooking(array $vars): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $idReserva   = (int)($_POST['id'] ?? 0);
             $nuevaSalida = trim($_POST['nueva_fecha_salida'] ?? '');
@@ -564,13 +352,11 @@ class BookingController
 
             $resultado = $this->reservaService->extenderEstadia($idReserva, $nuevaSalida);
 
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
+            $this->flash($resultado['message']);
 
             $this->redirect('/dashboard/booking/detail?id=' . $idReserva);
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->flash($e->getMessage(), 'error');
 
             $this->redirect('/dashboard/booking');
         }
@@ -578,10 +364,6 @@ class BookingController
 
     public function upgradeBooking(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         try {
             $idReserva      = (int)($_POST['id'] ?? 0);
             $idNuevaHab     = (int)($_POST['nueva_habitacion'] ?? 0);
@@ -592,13 +374,11 @@ class BookingController
 
             $resultado = $this->reservaService->upgradeHabitacion($idReserva, $idNuevaHab);
 
-            $_SESSION['flash_message'] = $resultado['message'];
-            $_SESSION['flash_status']  = "success";
+            $this->flash($resultado['message']);
 
             $this->redirect('/dashboard/booking/detail?id=' . $idReserva);
         } catch (Exception $e) {
-            $_SESSION['flash_message'] = $e->getMessage();
-            $_SESSION['flash_status']  = "error";
+            $this->flash($e->getMessage(), 'error');
 
             $idReserva = (int)($_POST['id'] ?? 0);
             if ($idReserva > 0) {
@@ -607,5 +387,11 @@ class BookingController
                 $this->redirect('/dashboard/booking');
             }
         }
+    }
+
+    /** Check-in y check-out se pueden hacer desde el inicio: volver ahí si el formulario lo pide. */
+    private function destinoTrasAccion(): string
+    {
+        return ($_POST['volver'] ?? '') === 'inicio' ? '/dashboard' : '/dashboard/booking';
     }
 }
